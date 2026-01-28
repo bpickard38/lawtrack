@@ -30,6 +30,8 @@ interface AuthContextType {
     firmName?: string;
     role?: 'admin' | 'billing' | 'attorney';
   }) => Promise<void>;
+  updateProfile: (args: { email?: string; fullName?: string }) => Promise<void>;
+  changePassword: (args: { currentPassword: string; newPassword: string }) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -150,6 +152,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await login(args.email, args.password);
   }
 
+  async function updateProfile(args: { email?: string; fullName?: string }) {
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        email: args.email || undefined,
+        full_name: args.fullName || undefined,
+      }),
+    });
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.detail || 'Failed to update profile');
+    }
+
+    // Backend returns { user, access_token? }
+    if (data?.access_token) {
+      localStorage.setItem('auth_token', data.access_token);
+      setToken(data.access_token);
+      await fetchUserData(data.access_token);
+      return;
+    }
+
+    // If no new token, refresh current user data
+    await fetchUserData(token);
+  }
+
+  async function changePassword(args: { currentPassword: string; newPassword: string }) {
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_BASE}/api/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        current_password: args.currentPassword,
+        new_password: args.newPassword,
+      }),
+    });
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.detail || 'Failed to change password');
+    }
+  }
+
   function logout() {
     localStorage.removeItem('auth_token');
     setToken(null);
@@ -158,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, attorney, token, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, attorney, token, login, register, updateProfile, changePassword, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

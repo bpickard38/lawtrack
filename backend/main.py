@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from database import get_db, engine
 from models import Base, User, Attorney, Case, Activity, Firm, UserRole
 from schemas import (
-    UserCreate, UserLogin, UserResponse, Token,
+    UserCreate, UserLogin, UserResponse, Token, UserUpdate, PasswordChange, UserUpdateResponse,
     AttorneyCreate, AttorneyResponse,
     CaseCreate, CaseResponse,
     ActivityCreate, ActivityUpdate, ActivityResponse,
@@ -171,6 +171,58 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 def get_me(current_user: User = Depends(get_current_user)):
     """Get current user info"""
     return current_user
+
+@app.patch("/api/auth/me", response_model=UserUpdateResponse)
+def update_me(update: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Update current user's profile (name/email)."""
+    email_changed = False
+
+    if update.email and update.email != current_user.email:
+        # ensure unique email
+        existing = db.query(User).filter(User.email == update.email).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        current_user.email = update.email
+        email_changed = True
+
+    if update.full_name and update.full_name != current_user.full_name:
+        current_user.full_name = update.full_name
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+
+    # Keep attorney profile in sync for attorney users (best-effort)
+    if current_user.role == UserRole.ATTORNEY.value:
+        attorney = db.query(Attorney).filter(Attorney.user_id == current_user.id).first()
+        if attorney:
+            if update.full_name:
+                attorney.name = current_user.full_name
+            if update.email:
+                attorney.email = current_user.email
+            db.add(attorney)
+            db.commit()
+
+    new_token = None
+    if email_changed:
+        new_token = create_access_token(data={"sub": current_user.email})
+
+    return {"user": current_user, "access_token": new_token, "token_type": "bearer"}
+
+@app.post("/api/auth/change-password")
+def change_password(payload: PasswordChange, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Change current user's password."""
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    if len(payload.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    db.add(current_user)
+    db.commit()
+
+    return {"message": "Password updated"}
 
 @app.get("/api/auth/attorney", response_model=AttorneyResponse)
 def get_my_attorney(attorney: Attorney = Depends(get_current_attorney)):

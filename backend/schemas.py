@@ -40,6 +40,20 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+class UserUpdateResponse(BaseModel):
+    user: UserResponse
+    # If email changes, backend may return a fresh token for the new subject.
+    access_token: Optional[str] = None
+    token_type: str = "bearer"
+
 # ============================================================================
 # FIRM SCHEMAS
 # ============================================================================

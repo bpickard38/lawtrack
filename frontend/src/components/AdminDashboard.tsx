@@ -1,7 +1,14 @@
 import { useAuth } from '../AuthContext';
+import { useState } from 'react';
+import Profile from './Profile';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
+  const [view, setView] = useState<'dashboard' | 'profile'>('dashboard');
+
+  if (view === 'profile') {
+    return <Profile onBack={() => setView('dashboard')} />;
+  }
 
   return (
     <div className="app">
@@ -9,6 +16,9 @@ export default function AdminDashboard() {
         <div className="header-content">
           <h1>LawTrack Admin</h1>
           <div className="attorney-info">
+            <button onClick={() => setView('profile')} className="logout-btn">
+              Profile
+            </button>
             <span className="attorney-name">{user?.full_name}</span>
             <button onClick={logout} className="logout-btn">
               Sign Out

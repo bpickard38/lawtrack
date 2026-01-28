@@ -4,6 +4,7 @@ import { fetchCases, fetchActivities } from './api';
 import { useAuth } from './AuthContext';
 import AuthPage from './components/AuthPage';
 import AdminDashboard from './components/AdminDashboard';
+import Profile from './components/Profile';
 import AddCaseForm from './components/AddCaseForm';
 import AddActivityForm from './components/AddActivityForm';
 import ActivityTimeline from './components/ActivityTimeline';
@@ -11,7 +12,7 @@ import CaseReports from './components/CaseReports';
 import CaseList from './components/CaseList';
 import './styles.css';
 
-type View = 'timeline' | 'cases' | 'reports';
+type View = 'timeline' | 'cases' | 'reports' | 'profile';
 type DateFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
 
 function App() {
@@ -197,11 +198,19 @@ function App() {
           >
             📊 Reports
           </button>
+          <button
+            className={`nav-tab ${currentView === 'profile' ? 'active' : ''}`}
+            onClick={() => setCurrentView('profile')}
+          >
+            👤 Profile
+          </button>
         </nav>
       </header>
 
       <main className="app-main">
-        {currentView === 'timeline' ? (
+        {currentView === 'profile' ? (
+          <Profile onBack={() => setCurrentView('timeline')} />
+        ) : currentView === 'timeline' ? (
           <div className="timeline-view">
             <div className="view-header">
               <h2>Activity Timeline</h2>
