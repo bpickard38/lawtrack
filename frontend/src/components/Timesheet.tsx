@@ -1,105 +1,118 @@
-import { useState, useMemo } from 'react';
-import type { Activity, Case } from '../types';
-import { updateActivity, bulkAssignActivities, mergeActivities, deleteActivity } from '../api';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import type { Activity, Case, ActivityType } from '../types';
+import {
+  fetchActivities,
+  createActivity,
+  updateActivity,
+  deleteActivity,
+  createCase,
+} from '../api';
+
+const SLOT_MINUTES = 30;
+const GRID_START_HOUR = 6;
+const GRID_END_HOUR = 22;
+const SLOTS_PER_HOUR = 60 / SLOT_MINUTES;
+const ROW_HEIGHT = 48;
 
 interface TimesheetProps {
-  activities: Activity[];
+  attorneyId: number;
   cases: Case[];
-  onActivityUpdated: () => void;
+  onCaseAdded: () => void;
 }
 
-export default function Timesheet({ activities, cases, onActivityUpdated }: TimesheetProps) {
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [bulkCaseId, setBulkCaseId] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
-  const [weekOffset, setWeekOffset] = useState(0);
+type AddActivityPayload = { day: Date; slotIndex: number } | null;
+type EditActivityPayload = Activity | null;
 
-  // Calculate week boundaries
-  const { weekStart, weekEnd, days } = useMemo(() => {
+function toYMD(d: Date) {
+  return d.toISOString().slice(0, 10);
+}
+
+function slotToTime(slotIndex: number): { h: number; m: number } {
+  const m = slotIndex * SLOT_MINUTES;
+  return { h: GRID_START_HOUR + Math.floor(m / 60), m: m % 60 };
+}
+
+
+export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetProps) {
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addAt, setAddAt] = useState<AddActivityPayload>(null);
+  const [editActivity, setEditActivity] = useState<EditActivityPayload>(null);
+  const [showAddCase, setShowAddCase] = useState(false);
+
+  const { weekStart, weekEnd, days, slotCount } = useMemo(() => {
     const today = new Date();
     const start = new Date(today);
-    start.setDate(today.getDate() - today.getDay() + (weekOffset * 7));
+    start.setDate(today.getDate() - today.getDay() + weekOffset * 7);
     start.setHours(0, 0, 0, 0);
-    
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
     end.setHours(23, 59, 59, 999);
-
-    const daysArr = [];
+    const daysArr: Date[] = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       daysArr.push(d);
     }
-
-    return { weekStart: start, weekEnd: end, days: daysArr };
+    const slots = (GRID_END_HOUR - GRID_START_HOUR) * SLOTS_PER_HOUR;
+    return { weekStart: start, weekEnd: end, days: daysArr, slotCount: slots };
   }, [weekOffset]);
 
-  // Group activities by day
+  const loadActivities = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await fetchActivities({
+        attorney_id: attorneyId,
+        start_date: toYMD(weekStart),
+        end_date: toYMD(weekEnd),
+      });
+      setActivities(data);
+    } catch (e) {
+      console.error('Failed to load activities:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [attorneyId, toYMD(weekStart), toYMD(weekEnd)]);
+
+  useEffect(() => {
+    loadActivities();
+  }, [loadActivities]);
+
   const activitiesByDay = useMemo(() => {
     const map = new Map<string, Activity[]>();
     days.forEach(d => map.set(d.toDateString(), []));
-
-    activities.forEach(activity => {
-      const date = new Date(activity.start_time);
-      const key = date.toDateString();
-      if (map.has(key)) {
-        map.get(key)!.push(activity);
-      }
+    activities.forEach(a => {
+      const key = new Date(a.start_time).toDateString();
+      if (map.has(key)) map.get(key)!.push(a);
     });
-
-    // Sort each day's activities by start time
-    map.forEach((acts, key) => {
-      acts.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-    });
-
+    map.forEach((arr, k) => arr.sort((x, y) => new Date(x.start_time).getTime() - new Date(y.start_time).getTime()));
     return map;
   }, [activities, days]);
 
-  // Calculate totals
-  const dailyTotals = useMemo(() => {
-    const totals = new Map<string, { total: number; billable: number }>();
-    activitiesByDay.forEach((acts, day) => {
-      const total = acts.reduce((sum, a) => sum + a.duration_minutes, 0);
-      const billable = acts.filter(a => a.is_billable).reduce((sum, a) => sum + a.duration_minutes, 0);
-      totals.set(day, { total, billable });
-    });
-    return totals;
-  }, [activitiesByDay]);
+  const weekTotalMinutes = useMemo(() => {
+    return activities.reduce((s, a) => s + a.duration_minutes, 0);
+  }, [activities]);
 
-  const weekTotal = useMemo(() => {
-    let total = 0, billable = 0;
-    dailyTotals.forEach(t => {
-      total += t.total;
-      billable += t.billable;
-    });
-    return { total, billable };
-  }, [dailyTotals]);
-
-  const formatDuration = (minutes: number) => {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  const handleCellClick = (day: Date, slotIndex: number) => {
+    setAddAt({ day, slotIndex });
+    setEditActivity(null);
   };
 
-  const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const handleActivityClick = (e: React.MouseEvent, a: Activity) => {
+    e.stopPropagation();
+    setEditActivity(a);
+    setAddAt(null);
   };
 
-  const formatDayHeader = (date: Date) => {
-    const today = new Date();
-    const isToday = date.toDateString() === today.toDateString();
-    return (
-      <div className={`day-header ${isToday ? 'today' : ''}`}>
-        <div className="day-name">{date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-        <div className="day-date">{date.getDate()}</div>
-      </div>
-    );
-  };
+  const getCaseName = (caseId: number | null) =>
+    caseId ? cases.find(c => c.id === caseId)?.name ?? '—' : '—';
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
+  const getActivityName = (a: Activity) =>
+    a.document_name || a.email_subject || a.contact_name || a.description || 'Activity';
+
+  const getActivityIcon = (t: string) => {
+    switch (t) {
       case 'document': return '📄';
       case 'email': return '📧';
       case 'call': return '📞';
@@ -107,204 +120,357 @@ export default function Timesheet({ activities, cases, onActivityUpdated }: Time
     }
   };
 
-  const getCaseName = (caseId: number | null) => {
-    if (!caseId) return null;
-    return cases.find(c => c.id === caseId)?.name || 'Unknown';
-  };
-
-  const toggleSelect = (id: number) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
-    setSelectedIds(newSet);
-  };
-
-  const selectAll = () => {
-    const allIds = activities.map(a => a.id);
-    setSelectedIds(new Set(allIds));
-  };
-
-  const selectNone = () => {
-    setSelectedIds(new Set());
-  };
-
-  const handleBulkAssign = async () => {
-    if (!bulkCaseId || selectedIds.size === 0) return;
-    try {
-      await bulkAssignActivities(Array.from(selectedIds), parseInt(bulkCaseId));
-      setSelectedIds(new Set());
-      setBulkCaseId('');
-      onActivityUpdated();
-    } catch (error) {
-      alert('Error assigning activities: ' + (error as Error).message);
-    }
-  };
-
-  const handleMerge = async () => {
-    if (selectedIds.size < 2) {
-      alert('Select at least 2 activities to merge');
-      return;
-    }
-    const ids = Array.from(selectedIds);
-    const selected = activities.filter(a => ids.includes(a.id));
-    const types = new Set(selected.map(a => a.type));
-    if (types.size > 1) {
-      alert('Can only merge activities of the same type');
-      return;
-    }
-    try {
-      await mergeActivities(ids);
-      setSelectedIds(new Set());
-      onActivityUpdated();
-    } catch (error) {
-      alert('Error merging activities: ' + (error as Error).message);
-    }
-  };
-
-  const handleToggleBillable = async (activity: Activity) => {
-    try {
-      await updateActivity(activity.id, { is_billable: !activity.is_billable, status: 'edited' });
-      onActivityUpdated();
-    } catch (error) {
-      alert('Error updating activity: ' + (error as Error).message);
-    }
-  };
-
-  const handleDelete = async (activityId: number) => {
-    if (!confirm('Delete this activity?')) return;
-    try {
-      await deleteActivity(activityId);
-      onActivityUpdated();
-    } catch (error) {
-      alert('Error deleting activity: ' + (error as Error).message);
-    }
-  };
-
-  const handleUpdateNarrative = async (activity: Activity, narrative: string) => {
-    try {
-      await updateActivity(activity.id, { narrative, status: 'edited' });
-      setEditingId(null);
-      onActivityUpdated();
-    } catch (error) {
-      alert('Error updating narrative: ' + (error as Error).message);
-    }
-  };
-
   return (
-    <div className="timesheet">
-      {/* Header controls */}
-      <div className="timesheet-header">
-        <div className="week-nav">
-          <button onClick={() => setWeekOffset(w => w - 1)} className="nav-btn">← Prev</button>
-          <span className="week-label">
-            {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+    <div className="timesheet-calendar">
+      <div className="ts-header">
+        <div className="ts-nav">
+          <button type="button" className="ts-nav-btn" onClick={() => setWeekOffset(o => o - 1)}>← Prev</button>
+          <span className="ts-week-label">
+            {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
-          <button onClick={() => setWeekOffset(w => w + 1)} className="nav-btn">Next →</button>
+          <button type="button" className="ts-nav-btn" onClick={() => setWeekOffset(o => o + 1)}>Next →</button>
           {weekOffset !== 0 && (
-            <button onClick={() => setWeekOffset(0)} className="nav-btn" style={{ marginLeft: 8 }}>Today</button>
+            <button type="button" className="ts-nav-btn" onClick={() => setWeekOffset(0)}>Today</button>
           )}
         </div>
-
-        <div className="week-totals">
-          <span><strong>Week:</strong> {formatDuration(weekTotal.total)}</span>
-          <span style={{ marginLeft: 12 }}><strong>Billable:</strong> {formatDuration(weekTotal.billable)}</span>
+        <div className="ts-actions">
+          <span className="ts-total">Week: {Math.floor(weekTotalMinutes / 60)}h {weekTotalMinutes % 60}m</span>
+          <button type="button" className="ts-add-case-btn" onClick={() => setShowAddCase(true)}>+ Add a case</button>
         </div>
       </div>
 
-      {/* Bulk actions */}
-      {selectedIds.size > 0 && (
-        <div className="bulk-actions">
-          <span>{selectedIds.size} selected</span>
-          <select value={bulkCaseId} onChange={e => setBulkCaseId(e.target.value)}>
-            <option value="">Assign to case...</option>
-            {cases.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <button onClick={handleBulkAssign} disabled={!bulkCaseId}>Assign</button>
-          <button onClick={handleMerge} disabled={selectedIds.size < 2}>Merge</button>
-          <button onClick={selectNone}>Clear</button>
+      {loading ? (
+        <div className="ts-loading">Loading…</div>
+      ) : (
+        <div className="ts-grid-wrap">
+          <div className="ts-grid" style={{ '--rows': slotCount, '--row-height': `${ROW_HEIGHT}px` } as React.CSSProperties}>
+            <div className="ts-time-col">
+              <div className="ts-time-header" />
+              {Array.from({ length: slotCount }, (_, i) => {
+                const { h, m } = slotToTime(i);
+                const label = h < 12 ? `${h}:${m.toString().padStart(2, '0')} AM` : (h === 12 ? '12' : h - 12) + `:${m.toString().padStart(2, '0')} PM`;
+                return <div key={i} className="ts-time-slot">{label}</div>;
+              })}
+            </div>
+            {days.map(day => {
+              const key = day.toDateString();
+              const dayActivities = activitiesByDay.get(key) || [];
+              const isToday = day.toDateString() === new Date().toDateString();
+              return (
+                <div key={key} className={`ts-day-col ${isToday ? 'today' : ''}`}>
+                  <div className="ts-day-header">
+                    <div className="ts-day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                    <div className="ts-day-num">{day.getDate()}</div>
+                  </div>
+                  <div className="ts-day-cells">
+                    {Array.from({ length: slotCount }, (_, slotIndex) => (
+                      <div
+                        key={slotIndex}
+                        className="ts-cell"
+                        onClick={() => handleCellClick(day, slotIndex)}
+                        role="gridcell"
+                      />
+                    ))}
+                  </div>
+                  <div className="ts-day-blocks">
+                    {dayActivities.map(a => {
+                      const start = new Date(a.start_time);
+                      const end = new Date(a.end_time);
+                      const dayStart = new Date(day);
+                      dayStart.setHours(GRID_START_HOUR, 0, 0, 0);
+                      const topMin = (start.getTime() - dayStart.getTime()) / 60000;
+                      const durMin = a.duration_minutes;
+                      const top = (topMin / SLOT_MINUTES) * ROW_HEIGHT;
+                      const height = Math.max((durMin / SLOT_MINUTES) * ROW_HEIGHT, 24);
+                      return (
+                        <div
+                          key={a.id}
+                          className="ts-block"
+                          style={{ top, height }}
+                          onClick={e => handleActivityClick(e, a)}
+                        >
+                          <span className="ts-block-icon">{getActivityIcon(a.type)}</span>
+                          <span className="ts-block-time">
+                            {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – {end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                          </span>
+                          <span className="ts-block-name">{getActivityName(a)}</span>
+                          {a.case_id && <span className="ts-block-case">{getCaseName(a.case_id)}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Week grid */}
-      <div className="timesheet-grid">
-        {days.map(day => {
-          const key = day.toDateString();
-          const dayActivities = activitiesByDay.get(key) || [];
-          const totals = dailyTotals.get(key) || { total: 0, billable: 0 };
+      {addAt && (
+        <ActivityModal
+          mode="add"
+          attorneyId={attorneyId}
+          cases={cases}
+          initialDay={addAt.day}
+          initialSlotIndex={addAt.slotIndex}
+          slotToTime={slotToTime}
+          onClose={() => setAddAt(null)}
+          onSaved={() => { setAddAt(null); loadActivities(); }}
+        />
+      )}
 
-          return (
-            <div key={key} className="timesheet-day">
-              {formatDayHeader(day)}
-              <div className="day-totals">
-                {formatDuration(totals.total)} ({formatDuration(totals.billable)} billable)
-              </div>
-              <div className="day-activities">
-                {dayActivities.length === 0 ? (
-                  <div className="no-activities">—</div>
-                ) : (
-                  dayActivities.map(activity => (
-                    <div
-                      key={activity.id}
-                      className={`timesheet-activity ${activity.is_billable ? 'billable' : 'non-billable'} ${activity.case_id ? 'assigned' : 'unassigned'} ${selectedIds.has(activity.id) ? 'selected' : ''}`}
-                    >
-                      <div className="activity-row">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(activity.id)}
-                          onChange={() => toggleSelect(activity.id)}
-                        />
-                        <span className="activity-icon">{getActivityIcon(activity.type)}</span>
-                        <span className="activity-time">{formatTime(activity.start_time)}</span>
-                        <span className="activity-duration">{formatDuration(activity.duration_minutes)}</span>
-                        <button
-                          className={`billable-toggle ${activity.is_billable ? 'on' : 'off'}`}
-                          onClick={() => handleToggleBillable(activity)}
-                          title={activity.is_billable ? 'Billable' : 'Non-billable'}
-                        >
-                          {activity.is_billable ? '$' : '—'}
-                        </button>
-                        <button className="delete-btn" onClick={() => handleDelete(activity.id)} title="Delete">×</button>
-                      </div>
-                      <div className="activity-details">
-                        <div className="activity-desc">
-                          {activity.document_name || activity.email_subject || activity.contact_name || activity.description || 'Activity'}
-                        </div>
-                        {activity.case_id ? (
-                          <div className="case-badge small">✓ {getCaseName(activity.case_id)}</div>
-                        ) : (
-                          <div className="unassigned-badge">Unassigned</div>
-                        )}
-                      </div>
-                      {editingId === activity.id ? (
-                        <div className="narrative-edit">
-                          <input
-                            type="text"
-                            defaultValue={activity.narrative || ''}
-                            placeholder="Billing narrative..."
-                            onBlur={e => handleUpdateNarrative(activity, e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleUpdateNarrative(activity, (e.target as HTMLInputElement).value)}
-                            autoFocus
-                          />
-                        </div>
-                      ) : (
-                        <div className="narrative-display" onClick={() => setEditingId(activity.id)}>
-                          {activity.narrative || <span className="placeholder">+ Add billing narrative</span>}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
+      {editActivity && (
+        <ActivityModal
+          mode="edit"
+          attorneyId={attorneyId}
+          cases={cases}
+          activity={editActivity}
+          slotToTime={slotToTime}
+          onClose={() => setEditActivity(null)}
+          onSaved={() => { setEditActivity(null); loadActivities(); }}
+          onDeleted={() => { setEditActivity(null); loadActivities(); }}
+        />
+      )}
+
+      {showAddCase && (
+        <AddCaseModal
+          attorneyId={attorneyId}
+          onClose={() => setShowAddCase(false)}
+          onAdded={() => { setShowAddCase(false); onCaseAdded(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+interface ActivityModalProps {
+  mode: 'add' | 'edit';
+  attorneyId: number;
+  cases: Case[];
+  activity?: Activity;
+  initialDay?: Date;
+  initialSlotIndex?: number;
+  slotToTime: (i: number) => { h: number; m: number };
+  onClose: () => void;
+  onSaved: () => void;
+  onDeleted?: () => void;
+}
+
+function ActivityModal({
+  mode,
+  attorneyId,
+  cases,
+  activity,
+  initialDay,
+  initialSlotIndex = 0,
+  slotToTime,
+  onClose,
+  onSaved,
+  onDeleted,
+}: ActivityModalProps) {
+  const { h: defaultH, m: defaultM } = slotToTime(initialSlotIndex ?? 0);
+  const endM = defaultM + SLOT_MINUTES;
+  const endH = endM >= 60 ? defaultH + 1 : defaultH;
+  const endM2 = endM % 60;
+
+  const [type, setType] = useState<ActivityType>(activity?.type ?? 'document');
+  const [startDate, setStartDate] = useState(() => {
+    if (activity) return new Date(activity.start_time).toISOString().slice(0, 10);
+    return initialDay ? toYMD(initialDay) : toYMD(new Date());
+  });
+  const [startTime, setStartTime] = useState(() => {
+    if (activity) {
+      const s = new Date(activity.start_time);
+      return `${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')}`;
+    }
+    return `${defaultH.toString().padStart(2, '0')}:${defaultM.toString().padStart(2, '0')}`;
+  });
+  const [endTime, setEndTime] = useState(() => {
+    if (activity) {
+      const e = new Date(activity.end_time);
+      return `${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`;
+    }
+    return `${endH.toString().padStart(2, '0')}:${(endM2).toString().padStart(2, '0')}`;
+  });
+  const [name, setName] = useState(() => getActName(activity));
+  const [description, setDescription] = useState(activity?.description ?? '');
+  const [caseId, setCaseId] = useState<string>(activity?.case_id?.toString() ?? '');
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  function getActName(a?: Activity) {
+    if (!a) return '';
+    return a.document_name || a.email_subject || a.contact_name || '';
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const start = new Date(`${startDate}T${startTime}`);
+      const end = new Date(`${startDate}T${endTime}`);
+      if (end.getTime() <= start.getTime()) {
+        alert('End time must be after start time');
+        setSaving(false);
+        return;
+      }
+      if (mode === 'add') {
+        const payload: any = {
+          attorney_id: attorneyId,
+          type,
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          description: description || undefined,
+        };
+        if (type === 'document') payload.document_name = name || undefined;
+        else if (type === 'email') payload.email_subject = name || undefined;
+        else if (type === 'call') payload.contact_name = name || undefined;
+        const created = await createActivity(payload);
+        if (caseId) {
+          await updateActivity(created.id, { case_id: parseInt(caseId), status: 'edited' });
+        }
+      } else if (activity) {
+        const up: any = {
+          type,
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          description: description || undefined,
+          case_id: caseId ? parseInt(caseId) : null,
+          status: 'edited',
+        };
+        if (type === 'document') up.document_name = name || undefined;
+        else if (type === 'email') up.email_subject = name || undefined;
+        else if (type === 'call') up.contact_name = name || undefined;
+        await updateActivity(activity.id, up);
+      }
+      onSaved();
+    } catch (err) {
+      alert('Error saving: ' + (err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!activity || !onDeleted || !confirm('Delete this activity?')) return;
+    setDeleting(true);
+    try {
+      await deleteActivity(activity.id);
+      onDeleted();
+    } catch (err) {
+      alert('Error deleting: ' + (err as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <div className="ts-modal-overlay" onClick={onClose}>
+      <div className="ts-modal" onClick={e => e.stopPropagation()}>
+        <h3>{mode === 'add' ? 'Add activity' : 'Edit activity'}</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="ts-form-row">
+            <label>Type</label>
+            <select value={type} onChange={e => setType(e.target.value as ActivityType)}>
+              <option value="document">📄 Document</option>
+              <option value="email">📧 Email</option>
+              <option value="call">📞 Call</option>
+            </select>
+          </div>
+          <div className="ts-form-row">
+            <label>Date</label>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required />
+          </div>
+          <div className="ts-form-row ts-form-row-2">
+            <div>
+              <label>Start</label>
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} required />
             </div>
-          );
-        })}
+            <div>
+              <label>End</label>
+              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} required />
+            </div>
+          </div>
+          <div className="ts-form-row">
+            <label>Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder={type === 'document' ? 'Document name' : type === 'email' ? 'Subject' : 'Contact name'}
+            />
+          </div>
+          <div className="ts-form-row">
+            <label>Description</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Notes…" rows={2} />
+          </div>
+          <div className="ts-form-row">
+            <label>Case</label>
+            <select value={caseId} onChange={e => setCaseId(e.target.value)}>
+              <option value="">—</option>
+              {cases.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="ts-form-actions">
+            {mode === 'edit' && onDeleted && (
+              <button type="button" className="ts-btn-delete" onClick={handleDelete} disabled={deleting}>
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            )}
+            <div className="ts-form-actions-right">
+              <button type="button" className="ts-btn-cancel" onClick={onClose}>Cancel</button>
+              <button type="submit" className="ts-btn-save" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+            </div>
+          </div>
+        </form>
       </div>
+    </div>
+  );
+}
 
-      <div className="timesheet-footer">
-        <button onClick={selectAll} className="select-all-btn">Select All</button>
+function AddCaseModal({
+  attorneyId,
+  onClose,
+  onAdded,
+}: { attorneyId: number; onClose: () => void; onAdded: () => void }) {
+  const [name, setName] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      await createCase({ name: name.trim(), client_name: clientName.trim() || undefined, attorney_id: attorneyId });
+      setName('');
+      setClientName('');
+      onAdded();
+    } catch (err) {
+      alert('Error adding case: ' + (err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="ts-modal-overlay" onClick={onClose}>
+      <div className="ts-modal" onClick={e => e.stopPropagation()}>
+        <h3>Add a case</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="ts-form-row">
+            <label>Case name *</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Smith v. Jones" required />
+          </div>
+          <div className="ts-form-row">
+            <label>Client name</label>
+            <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Optional" />
+          </div>
+          <div className="ts-form-actions">
+            <button type="button" className="ts-btn-cancel" onClick={onClose}>Cancel</button>
+            <button type="submit" className="ts-btn-save" disabled={saving}>{saving ? 'Saving…' : 'Add case'}</button>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -93,6 +93,9 @@ body {
 /* Main Content */
 .app-main {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
@@ -1569,6 +1572,387 @@ body {
   .timesheet-day {
     min-height: auto;
   }
+}
+
+/* ============================================================================
+   TIMESHEET CALENDAR (Google Calendar style)
+   ============================================================================ */
+
+.timesheet-calendar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+}
+
+.timesheet-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.timesheet-view .timesheet-calendar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ts-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ts-nav-btn {
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.ts-nav-btn:hover {
+  background: #f3f4f6;
+}
+
+.ts-week-label {
+  font-weight: 600;
+  font-size: 16px;
+  color: #111827;
+}
+
+.ts-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ts-total {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.ts-add-case-btn {
+  padding: 10px 18px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ts-add-case-btn:hover {
+  background: #4338ca;
+}
+
+.ts-loading {
+  padding: 48px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.ts-grid-wrap {
+  flex: 1;
+  overflow: auto;
+  padding: 0 24px 24px;
+}
+
+.ts-grid {
+  display: grid;
+  grid-template-columns: 72px repeat(7, minmax(0, 1fr));
+  min-width: 720px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ts-time-col {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+}
+
+.ts-time-header {
+  height: 56px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ts-time-slot {
+  height: 48px;
+  flex-shrink: 0;
+  padding: 0 8px;
+  font-size: 11px;
+  color: #6b7280;
+  display: flex;
+  align-items: flex-start;
+  margin-top: -10px;
+}
+
+.ts-day-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.ts-day-col:last-child {
+  border-right: none;
+}
+
+.ts-day-col.today {
+  background: #fefce8;
+}
+
+.ts-day-header {
+  height: 56px;
+  flex-shrink: 0;
+  padding: 8px;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.ts-day-col.today .ts-day-header {
+  background: #fef9c3;
+}
+
+.ts-day-name {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.ts-day-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.ts-day-col.today .ts-day-num {
+  color: #ca8a04;
+}
+
+.ts-day-cells {
+  display: flex;
+  flex-direction: column;
+}
+
+.ts-cell {
+  height: 48px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ts-cell:hover {
+  background: #eff6ff;
+}
+
+.ts-day-blocks {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 56px;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ts-day-blocks > * {
+  pointer-events: auto;
+}
+
+.ts-block {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 1px 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  background: #e0e7ff;
+  border: 1px solid #a5b4fc;
+  color: #3730a3;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+}
+
+.ts-block:hover {
+  background: #c7d2fe;
+  border-color: #818cf8;
+}
+
+.ts-block-icon {
+  font-size: 14px;
+}
+
+.ts-block-time {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.ts-block-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ts-block-case {
+  font-size: 10px;
+  color: #6366f1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Activity / Add Case modals */
+.ts-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ts-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.ts-modal h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+}
+
+.ts-form-row {
+  margin-bottom: 16px;
+}
+
+.ts-form-row label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #374151;
+}
+
+.ts-form-row input,
+.ts-form-row select,
+.ts-form-row textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.ts-form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ts-form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.ts-form-actions-right {
+  display: flex;
+  gap: 10px;
+}
+
+.ts-btn-cancel {
+  padding: 10px 18px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.ts-btn-cancel:hover {
+  background: #e5e7eb;
+}
+
+.ts-btn-save {
+  padding: 10px 18px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ts-btn-save:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.ts-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ts-btn-delete {
+  padding: 10px 18px;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.ts-btn-delete:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.ts-btn-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ============================================================================

@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 
-# Load .env if python-dotenv is installed
+# Load .env from Agent folder (same dir as this file), regardless of cwd
+_AGENT_DIR = Path(__file__).resolve().parent
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    load_dotenv(_AGENT_DIR / ".env")
 except ImportError:
     pass
 
