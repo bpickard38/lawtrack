@@ -1,0 +1,149 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+interface User {
+  id: number;
+  email: string;
+  full_name: string;
+}
+
+interface Attorney {
+  id: number;
+  user_id: number;
+  name: string;
+  email: string;
+  billable_rate: number;
+}
+
+interface AuthContextType {
+  user: User | null;
+  attorney: Attorney | null;
+  token: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, fullName: string) => Promise<void>;
+  logout: () => void;
+  isLoading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [attorney, setAttorney] = useState<Attorney | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check for existing token on mount
+  useEffect(() => {
+    const savedToken = localStorage.getItem('auth_token');
+    if (savedToken) {
+      setToken(savedToken);
+      fetchUserData(savedToken);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  async function fetchUserData(authToken: string) {
+    try {
+      // Get user info
+      const userResponse = await fetch('http://localhost:8000/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user');
+      }
+      
+      const userData = await userResponse.json();
+      setUser(userData);
+
+      // Get attorney profile
+      const attorneyResponse = await fetch('http://localhost:8000/api/auth/attorney', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (attorneyResponse.ok) {
+        const attorneyData = await attorneyResponse.json();
+        setAttorney(attorneyData);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      localStorage.removeItem('auth_token');
+      setToken(null);
+      setUser(null);
+      setAttorney(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function login(email: string, password: string) {
+    const formData = new FormData();
+    formData.append('username', email); // OAuth2 expects 'username' field
+    formData.append('password', password);
+
+    const response = await fetch('http://localhost:8000/api/auth/login', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Login failed');
+    }
+
+    const data = await response.json();
+    const authToken = data.access_token;
+    
+    localStorage.setItem('auth_token', authToken);
+    setToken(authToken);
+    await fetchUserData(authToken);
+  }
+
+  async function register(email: string, password: string, fullName: string) {
+    const response = await fetch('http://localhost:8000/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        full_name: fullName,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Registration failed');
+    }
+
+    // Auto-login after registration
+    await login(email, password);
+  }
+
+  function logout() {
+    localStorage.removeItem('auth_token');
+    setToken(null);
+    setUser(null);
+    setAttorney(null);
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, attorney, token, login, register, logout, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
