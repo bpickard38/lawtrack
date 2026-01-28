@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 interface User {
   id: number;
   email: string;
@@ -46,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function fetchUserData(authToken: string) {
     try {
       // Get user info
-      const userResponse = await fetch('http://localhost:8000/api/auth/me', {
+      const userResponse = await fetch(`${API_BASE}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -60,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
 
       // Get attorney profile
-      const attorneyResponse = await fetch('http://localhost:8000/api/auth/attorney', {
+      const attorneyResponse = await fetch(`${API_BASE}/api/auth/attorney`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -86,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     formData.append('username', email); // OAuth2 expects 'username' field
     formData.append('password', password);
 
-    const response = await fetch('http://localhost:8000/api/auth/login', {
+    const response = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       body: formData,
     });
@@ -105,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function register(email: string, password: string, fullName: string) {
-    const response = await fetch('http://localhost:8000/api/auth/register', {
+    const response = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
