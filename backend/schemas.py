@@ -201,3 +201,43 @@ class CaseTimeSummary(BaseModel):
     email_minutes: int
     call_minutes: int
     activity_count: int
+
+# ============================================================================
+# CASE RULES (Auto-assignment)
+# ============================================================================
+
+class RuleType(str, Enum):
+    document_contains = "document_contains"
+    email_subject_contains = "email_subject_contains"
+    email_from_contains = "email_from_contains"
+    email_domain_equals = "email_domain_equals"
+    contact_name_contains = "contact_name_contains"
+    description_contains = "description_contains"
+
+class CaseRuleCreate(BaseModel):
+    case_id: int
+    rule_type: RuleType
+    pattern: str
+    enabled: bool = True
+    priority: int = 0
+
+class CaseRuleUpdate(BaseModel):
+    case_id: Optional[int] = None
+    rule_type: Optional[RuleType] = None
+    pattern: Optional[str] = None
+    enabled: Optional[bool] = None
+    priority: Optional[int] = None
+
+class CaseRuleResponse(BaseModel):
+    id: int
+    firm_id: Optional[int]
+    attorney_id: int
+    case_id: int
+    rule_type: str
+    pattern: str
+    enabled: bool
+    priority: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

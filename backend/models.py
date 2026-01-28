@@ -22,6 +22,14 @@ class ActivityStatus(enum.Enum):
     APPROVED = "approved"      # ready for billing
     INVOICED = "invoiced"      # billed to client
 
+class RuleType(enum.Enum):
+    DOCUMENT_CONTAINS = "document_contains"      # document_name contains pattern
+    EMAIL_SUBJECT_CONTAINS = "email_subject_contains"  # email_subject contains pattern
+    EMAIL_FROM_CONTAINS = "email_from_contains"  # email_from contains pattern
+    EMAIL_DOMAIN_EQUALS = "email_domain_equals"  # email domain matches exactly
+    CONTACT_NAME_CONTAINS = "contact_name_contains"  # call contact name contains
+    DESCRIPTION_CONTAINS = "description_contains"  # description contains pattern
+
 class Firm(Base):
     __tablename__ = "firms"
 
@@ -92,5 +100,22 @@ class Activity(Base):
     is_billable = Column(Boolean, default=True)
     narrative = Column(Text)  # Billing-friendly description
     status = Column(String(50), default="captured")  # captured/edited/approved/invoiced
+    
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+class CaseRule(Base):
+    """Rules for auto-assigning activities to cases"""
+    __tablename__ = "case_rules"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    firm_id = Column(Integer, ForeignKey("firms.id"), nullable=True, index=True)
+    attorney_id = Column(Integer, ForeignKey("attorneys.id"), nullable=False)  # rule owner
+    case_id = Column(Integer, ForeignKey("cases.id"), nullable=False)  # target case
+    
+    rule_type = Column(String(50), nullable=False)  # document_contains, email_subject_contains, etc.
+    pattern = Column(String(500), nullable=False)   # the text to match (case-insensitive)
+    
+    enabled = Column(Boolean, default=True)
+    priority = Column(Integer, default=0)  # higher priority rules checked first
     
     created_at = Column(TIMESTAMP, server_default=func.now())

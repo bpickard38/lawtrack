@@ -7,14 +7,15 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 
 from database import get_db, engine
-from models import Base, User, Attorney, Case, Activity, Firm, UserRole
+from models import Base, User, Attorney, Case, Activity, Firm, UserRole, CaseRule
 from schemas import (
     UserCreate, UserLogin, UserResponse, Token, UserUpdate, PasswordChange, UserUpdateResponse,
     AttorneyCreate, AttorneyResponse,
     CaseCreate, CaseResponse,
     ActivityCreate, ActivityUpdate, ActivityResponse,
     CaseTimeSummary, ActivityType,
-    BulkAssignRequest, MergeActivitiesRequest, SplitActivityRequest
+    BulkAssignRequest, MergeActivitiesRequest, SplitActivityRequest,
+    CaseRuleCreate, CaseRuleUpdate, CaseRuleResponse
 )
 from auth_utils import (
     get_password_hash, verify_password, create_access_token,
@@ -54,6 +55,25 @@ def _ensure_schema() -> None:
             conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS is_billable BOOLEAN DEFAULT TRUE;"))
             conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS narrative TEXT;"))
             conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'captured';"))
+
+            # Case rules table for auto-assignment
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS case_rules (
+                        id SERIAL PRIMARY KEY,
+                        firm_id INTEGER REFERENCES firms(id),
+                        attorney_id INTEGER NOT NULL REFERENCES attorneys(id),
+                        case_id INTEGER NOT NULL REFERENCES cases(id),
+                        rule_type VARCHAR(50) NOT NULL,
+                        pattern VARCHAR(500) NOT NULL,
+                        enabled BOOLEAN DEFAULT TRUE,
+                        priority INTEGER DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT now()
+                    );
+                    """
+                )
+            )
     except Exception:
         # Don't crash startup if this is running on a non-Postgres/local setup.
         # The ORM create_all will still run below.
@@ -347,6 +367,46 @@ def delete_case(
 # ACTIVITIES (Protected)
 # ============================================================================
 
+def _match_rule(rule: CaseRule, activity_data: dict) -> bool:
+    """Check if an activity matches a case rule (case-insensitive)."""
+    pattern = rule.pattern.lower()
+    rule_type = rule.rule_type
+
+    if rule_type == "document_contains":
+        doc_name = (activity_data.get("document_name") or "").lower()
+        return pattern in doc_name
+    elif rule_type == "email_subject_contains":
+        subject = (activity_data.get("email_subject") or "").lower()
+        return pattern in subject
+    elif rule_type == "email_from_contains":
+        email_from = (activity_data.get("email_from") or "").lower()
+        return pattern in email_from
+    elif rule_type == "email_domain_equals":
+        email_from = activity_data.get("email_from") or ""
+        if "@" in email_from:
+            domain = email_from.split("@")[1].lower()
+            return domain == pattern
+        return False
+    elif rule_type == "contact_name_contains":
+        contact = (activity_data.get("contact_name") or "").lower()
+        return pattern in contact
+    elif rule_type == "description_contains":
+        desc = (activity_data.get("description") or "").lower()
+        return pattern in desc
+    return False
+
+def _auto_assign_case(db: Session, attorney_id: int, activity_data: dict) -> Optional[int]:
+    """Find the first matching rule and return the case_id, or None."""
+    rules = db.query(CaseRule).filter(
+        CaseRule.attorney_id == attorney_id,
+        CaseRule.enabled == True
+    ).order_by(CaseRule.priority.desc(), CaseRule.id).all()
+
+    for rule in rules:
+        if _match_rule(rule, activity_data):
+            return rule.case_id
+    return None
+
 @app.post("/api/activities", response_model=ActivityResponse)
 def create_activity(
     activity: ActivityCreate,
@@ -355,8 +415,16 @@ def create_activity(
 ):
     duration = int((activity.end_time - activity.start_time).total_seconds() / 60)
     
+    activity_dict = activity.dict()
+    
+    # Auto-assign case based on rules (if no case already set)
+    case_id = activity_dict.get("case_id")
+    if not case_id:
+        case_id = _auto_assign_case(db, current_attorney.id, activity_dict)
+    
     db_activity = Activity(
-        **activity.dict(),
+        **activity_dict,
+        case_id=case_id,
         duration_minutes=duration
     )
     db.add(db_activity)
@@ -653,6 +721,112 @@ def get_case_time_summary(
         call_minutes=call_minutes,
         activity_count=len(activities)
     )
+
+# ============================================================================
+# CASE RULES (Auto-assignment)
+# ============================================================================
+
+@app.get("/api/case-rules", response_model=List[CaseRuleResponse])
+def get_case_rules(
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db)
+):
+    """Get all case rules for the current attorney."""
+    return db.query(CaseRule).filter(
+        CaseRule.attorney_id == current_attorney.id
+    ).order_by(CaseRule.priority.desc(), CaseRule.id).all()
+
+@app.post("/api/case-rules", response_model=CaseRuleResponse)
+def create_case_rule(
+    rule: CaseRuleCreate,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db)
+):
+    """Create a new case rule."""
+    # Verify case access
+    case = db.query(Case).filter(Case.id == rule.case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if case.attorney_id != current_attorney.id:
+        raise HTTPException(status_code=403, detail="Access denied to case")
+
+    db_rule = CaseRule(
+        firm_id=current_attorney.firm_id,
+        attorney_id=current_attorney.id,
+        case_id=rule.case_id,
+        rule_type=rule.rule_type.value,
+        pattern=rule.pattern,
+        enabled=rule.enabled,
+        priority=rule.priority,
+    )
+    db.add(db_rule)
+    db.commit()
+    db.refresh(db_rule)
+    return db_rule
+
+@app.patch("/api/case-rules/{rule_id}", response_model=CaseRuleResponse)
+def update_case_rule(
+    rule_id: int,
+    update: CaseRuleUpdate,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db)
+):
+    """Update a case rule."""
+    rule = db.query(CaseRule).filter(CaseRule.id == rule_id).first()
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    if rule.attorney_id != current_attorney.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # If changing case, verify access
+    if update.case_id and update.case_id != rule.case_id:
+        case = db.query(Case).filter(Case.id == update.case_id).first()
+        if not case or case.attorney_id != current_attorney.id:
+            raise HTTPException(status_code=403, detail="Access denied to case")
+        rule.case_id = update.case_id
+
+    if update.rule_type is not None:
+        rule.rule_type = update.rule_type.value
+    if update.pattern is not None:
+        rule.pattern = update.pattern
+    if update.enabled is not None:
+        rule.enabled = update.enabled
+    if update.priority is not None:
+        rule.priority = update.priority
+
+    db.commit()
+    db.refresh(rule)
+    return rule
+
+@app.delete("/api/case-rules/{rule_id}")
+def delete_case_rule(
+    rule_id: int,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db)
+):
+    """Delete a case rule."""
+    rule = db.query(CaseRule).filter(CaseRule.id == rule_id).first()
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
+    if rule.attorney_id != current_attorney.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    db.delete(rule)
+    db.commit()
+    return {"message": "Rule deleted"}
+
+@app.post("/api/case-rules/test")
+def test_case_rules(
+    activity_data: dict,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db)
+):
+    """Test which rule would match for given activity data (dry run)."""
+    case_id = _auto_assign_case(db, current_attorney.id, activity_data)
+    if case_id:
+        case = db.query(Case).filter(Case.id == case_id).first()
+        return {"matched": True, "case_id": case_id, "case_name": case.name if case else None}
+    return {"matched": False, "case_id": None, "case_name": None}
 
 # ============================================================================
 # HEALTH CHECK (Public)

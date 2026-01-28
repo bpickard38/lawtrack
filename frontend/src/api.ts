@@ -1,4 +1,4 @@
-import type { Attorney, Case, Activity, ActivityCreate, CaseTimeSummary } from './types';
+import type { Attorney, Case, Activity, ActivityCreate, CaseTimeSummary, CaseRule, RuleType } from './types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -159,5 +159,70 @@ export async function splitActivity(activityId: number, splitAtMinutes: number):
     body: JSON.stringify({ split_at_minutes: splitAtMinutes }),
   });
   if (!response.ok) throw new Error('Failed to split activity');
+  return response.json();
+}
+
+// Case Rules
+export async function fetchCaseRules(): Promise<CaseRule[]> {
+  const response = await fetch(`${API_BASE}/api/case-rules`, {
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to fetch case rules');
+  return response.json();
+}
+
+export async function createCaseRule(data: {
+  case_id: number;
+  rule_type: RuleType;
+  pattern: string;
+  enabled?: boolean;
+  priority?: number;
+}): Promise<CaseRule> {
+  const response = await fetch(`${API_BASE}/api/case-rules`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to create case rule');
+  return response.json();
+}
+
+export async function updateCaseRule(ruleId: number, data: {
+  case_id?: number;
+  rule_type?: RuleType;
+  pattern?: string;
+  enabled?: boolean;
+  priority?: number;
+}): Promise<CaseRule> {
+  const response = await fetch(`${API_BASE}/api/case-rules/${ruleId}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to update case rule');
+  return response.json();
+}
+
+export async function deleteCaseRule(ruleId: number): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/case-rules/${ruleId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to delete case rule');
+}
+
+export async function testCaseRules(activityData: {
+  document_name?: string;
+  email_subject?: string;
+  email_from?: string;
+  contact_name?: string;
+  description?: string;
+}): Promise<{ matched: boolean; case_id: number | null; case_name: string | null }> {
+  const response = await fetch(`${API_BASE}/api/case-rules/test`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(activityData),
+  });
+  if (!response.ok) throw new Error('Failed to test case rules');
   return response.json();
 }

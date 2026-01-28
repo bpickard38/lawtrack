@@ -1550,3 +1550,277 @@ body {
     min-height: auto;
   }
 }
+
+/* ============================================================================
+   CASE RULES STYLES
+   ============================================================================ */
+
+.case-rules {
+  padding: 24px;
+}
+
+.rules-header {
+  margin-bottom: 24px;
+}
+
+.rules-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+}
+
+.rules-description {
+  color: #6b7280;
+  margin: 0 0 16px 0;
+  font-size: 14px;
+}
+
+.add-rule-btn {
+  padding: 10px 20px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.add-rule-btn:hover {
+  background: #4338ca;
+}
+
+.rules-test {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.rules-test input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.rules-test button {
+  padding: 10px 20px;
+  background: #374151;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.test-result {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.test-result.matched {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.test-result.no-match {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.no-rules {
+  text-align: center;
+  padding: 48px;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rule-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.rule-item.disabled {
+  opacity: 0.5;
+  background: #f9fafb;
+}
+
+.rule-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rule-priority {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.rule-type {
+  font-size: 13px;
+  color: #374151;
+}
+
+.rule-pattern {
+  font-weight: 600;
+  color: #4f46e5;
+  font-family: monospace;
+  background: #eef2ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.rule-arrow {
+  color: #9ca3af;
+}
+
+.rule-case {
+  font-weight: 600;
+  color: #065f46;
+  background: #d1fae5;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.rule-actions button {
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  background: white;
+}
+
+.rule-actions .toggle-btn.on {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #10b981;
+}
+
+.rule-actions .toggle-btn.off {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.rule-actions .edit-btn:hover {
+  background: #eef2ff;
+  border-color: #4f46e5;
+}
+
+.rule-actions .delete-btn:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.rule-form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.rule-form {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.rule-form h3 {
+  margin: 0 0 24px 0;
+}
+
+.rule-form .form-group {
+  margin-bottom: 20px;
+}
+
+.rule-form label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.rule-form input[type="text"],
+.rule-form input[type="number"],
+.rule-form select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.rule-form small {
+  display: block;
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.rule-form .form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.rule-form .form-row .form-group {
+  flex: 1;
+}
+
+.rule-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.rule-form .cancel-btn {
+  padding: 10px 20px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.rule-form .submit-btn {
+  padding: 10px 20px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}

@@ -70,3 +70,23 @@ export interface CaseTimeSummary {
   call_minutes: number;
   activity_count: number;
 }
+
+export type RuleType = 
+  | 'document_contains'
+  | 'email_subject_contains'
+  | 'email_from_contains'
+  | 'email_domain_equals'
+  | 'contact_name_contains'
+  | 'description_contains';
+
+export interface CaseRule {
+  id: number;
+  firm_id: number | null;
+  attorney_id: number;
+  case_id: number;
+  rule_type: RuleType;
+  pattern: string;
+  enabled: boolean;
+  priority: number;
+  created_at: string;
+}
