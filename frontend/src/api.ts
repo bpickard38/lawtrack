@@ -226,3 +226,29 @@ export async function testCaseRules(activityData: {
   if (!response.ok) throw new Error('Failed to test case rules');
   return response.json();
 }
+
+// Agent API key (for auto-tracking desktop agent)
+export async function getAgentKeyStatus(): Promise<{ has_key: boolean; key_prefix: string | null }> {
+  const response = await fetch(`${API_BASE}/api/auth/agent-key`, {
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to fetch agent key status');
+  return response.json();
+}
+
+export async function createAgentKey(): Promise<{ api_key: string; key_prefix: string; message: string }> {
+  const response = await fetch(`${API_BASE}/api/auth/agent-key`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to create agent key');
+  return response.json();
+}
+
+export async function revokeAgentKey(): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/auth/agent-key`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to revoke agent key');
+}

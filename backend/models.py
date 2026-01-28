@@ -119,3 +119,13 @@ class CaseRule(Base):
     priority = Column(Integer, default=0)  # higher priority rules checked first
     
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+class AgentApiKey(Base):
+    """API keys for the desktop auto-tracking agent (one per attorney)"""
+    __tablename__ = "agent_api_keys"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    attorney_id = Column(Integer, ForeignKey("attorneys.id"), nullable=False, unique=True)
+    key_hash = Column(String(64), nullable=False)   # SHA-256 hex
+    key_prefix = Column(String(20), nullable=False, unique=True)  # first chars for lookup
+    created_at = Column(TIMESTAMP, server_default=func.now())

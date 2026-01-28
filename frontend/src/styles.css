@@ -1017,6 +1017,26 @@ body {
   cursor: not-allowed;
 }
 
+.agent-key-reveal,
+.agent-key-status {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.agent-key-reveal code,
+.agent-key-status code {
+  display: block;
+  margin: 8px 0;
+  padding: 12px;
+  background: #1f2937;
+  color: #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  word-break: break-all;
+}
+
 .auth-switch {
   text-align: center;
   margin-top: 24px;

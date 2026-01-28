@@ -10,9 +10,10 @@
    cd C:\Users\bpick\lawtrack-fresh\frontend
    npm start  # or npm run dev
 
-   Agent
-   cd C:\Users\bpick\lawtrack-fresh\agent
-   .\venv\Scripts\activate
+   Agent (auto-tracking)
+   cd Agent
+   pip install -r requirements.txt
+   Set LAWTRACK_API_URL and LAWTRACK_API_KEY (create key in Profile → Auto-tracking agent).
    python main.py
 
 

@@ -1,18 +1,21 @@
+import hashlib
+import secrets
+
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 from typing import List, Optional
 from datetime import datetime, timedelta
 
 from database import get_db, engine
-from models import Base, User, Attorney, Case, Activity, Firm, UserRole, CaseRule
+from models import Base, User, Attorney, Case, Activity, Firm, UserRole, CaseRule, AgentApiKey
 from schemas import (
     UserCreate, UserLogin, UserResponse, Token, UserUpdate, PasswordChange, UserUpdateResponse,
     AttorneyCreate, AttorneyResponse,
     CaseCreate, CaseResponse,
-    ActivityCreate, ActivityUpdate, ActivityResponse,
+    ActivityCreate, ActivityUpdate, ActivityResponse, AgentActivityCreate,
     CaseTimeSummary, ActivityType,
     BulkAssignRequest, MergeActivitiesRequest, SplitActivityRequest,
     CaseRuleCreate, CaseRuleUpdate, CaseRuleResponse
@@ -21,6 +24,8 @@ from auth_utils import (
     get_password_hash, verify_password, create_access_token,
     decode_access_token, oauth2_scheme
 )
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 def _ensure_schema() -> None:
     """
@@ -69,6 +74,21 @@ def _ensure_schema() -> None:
                         pattern VARCHAR(500) NOT NULL,
                         enabled BOOLEAN DEFAULT TRUE,
                         priority INTEGER DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT now()
+                    );
+                    """
+                )
+            )
+
+            # Agent API keys for auto-tracking
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS agent_api_keys (
+                        id SERIAL PRIMARY KEY,
+                        attorney_id INTEGER NOT NULL UNIQUE REFERENCES attorneys(id),
+                        key_hash VARCHAR(64) NOT NULL,
+                        key_prefix VARCHAR(20) NOT NULL UNIQUE,
                         created_at TIMESTAMP DEFAULT now()
                     );
                     """
@@ -125,6 +145,30 @@ async def get_current_attorney(current_user: User = Depends(get_current_user), d
     attorney = db.query(Attorney).filter(Attorney.user_id == current_user.id).first()
     if not attorney:
         raise HTTPException(status_code=404, detail="Attorney profile not found")
+    return attorney
+
+def _hash_api_key(key: str) -> str:
+    return hashlib.sha256(key.encode()).hexdigest()
+
+def _api_key_prefix(key: str, n: int = 12) -> str:
+    return key[:n] if len(key) >= n else key
+
+async def get_attorney_from_api_key(
+    api_key: Optional[str] = Depends(api_key_header),
+    db: Session = Depends(get_db),
+):
+    """Validate X-API-Key and return the associated attorney. Used by the auto-tracking agent."""
+    if not api_key or not api_key.strip():
+        raise HTTPException(status_code=401, detail="Missing X-API-Key header")
+    key = api_key.strip()
+    prefix = _api_key_prefix(key)
+    key_hash = _hash_api_key(key)
+    row = db.query(AgentApiKey).filter(AgentApiKey.key_prefix == prefix).first()
+    if not row or row.key_hash != key_hash:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    attorney = db.query(Attorney).filter(Attorney.id == row.attorney_id).first()
+    if not attorney:
+        raise HTTPException(status_code=401, detail="Attorney not found")
     return attorney
 
 # ============================================================================
@@ -254,6 +298,54 @@ def change_password(payload: PasswordChange, current_user: User = Depends(get_cu
 def get_my_attorney(attorney: Attorney = Depends(get_current_attorney)):
     """Get current user's attorney profile"""
     return attorney
+
+@app.post("/api/auth/agent-key")
+def create_agent_key(
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db),
+):
+    """Create or replace agent API key for auto-tracking. Returns raw key once; store it securely."""
+    raw = "lt_" + secrets.token_urlsafe(24)
+    key_hash = _hash_api_key(raw)
+    key_prefix = _api_key_prefix(raw)
+
+    existing = db.query(AgentApiKey).filter(AgentApiKey.attorney_id == current_attorney.id).first()
+    if existing:
+        db.delete(existing)
+        db.commit()
+
+    row = AgentApiKey(
+        attorney_id=current_attorney.id,
+        key_hash=key_hash,
+        key_prefix=key_prefix,
+    )
+    db.add(row)
+    db.commit()
+
+    return {"api_key": raw, "key_prefix": key_prefix, "message": "Store this key securely; it won't be shown again."}
+
+@app.delete("/api/auth/agent-key")
+def revoke_agent_key(
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db),
+):
+    """Revoke the current agent API key."""
+    row = db.query(AgentApiKey).filter(AgentApiKey.attorney_id == current_attorney.id).first()
+    if row:
+        db.delete(row)
+        db.commit()
+    return {"message": "Agent key revoked"}
+
+@app.get("/api/auth/agent-key")
+def get_agent_key_status(
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db),
+):
+    """Return whether user has an agent key and its masked prefix."""
+    row = db.query(AgentApiKey).filter(AgentApiKey.attorney_id == current_attorney.id).first()
+    if not row:
+        return {"has_key": False, "key_prefix": None}
+    return {"has_key": True, "key_prefix": row.key_prefix}
 
 # ============================================================================
 # ATTORNEYS (Protected)
@@ -827,6 +919,35 @@ def test_case_rules(
         case = db.query(Case).filter(Case.id == case_id).first()
         return {"matched": True, "case_id": case_id, "case_name": case.name if case else None}
     return {"matched": False, "case_id": None, "case_name": None}
+
+# ============================================================================
+# AGENT (API Key) – auto-tracking desktop agent
+# ============================================================================
+
+@app.post("/api/agent/activities", response_model=ActivityResponse)
+def agent_create_activity(
+    payload: AgentActivityCreate,
+    attorney: Attorney = Depends(get_attorney_from_api_key),
+    db: Session = Depends(get_db),
+):
+    """Create activity from the auto-tracking agent. Auth via X-API-Key."""
+    duration = int((payload.end_time - payload.start_time).total_seconds() / 60)
+    data = payload.dict()
+    data["attorney_id"] = attorney.id
+    data["firm_id"] = attorney.firm_id
+    data["source"] = "agent"
+
+    case_id = _auto_assign_case(db, attorney.id, data)
+
+    db_activity = Activity(
+        **data,
+        case_id=case_id,
+        duration_minutes=duration,
+    )
+    db.add(db_activity)
+    db.commit()
+    db.refresh(db_activity)
+    return db_activity
 
 # ============================================================================
 # HEALTH CHECK (Public)

@@ -1,13 +1,17 @@
 import os
 
-# Backend endpoint where the agent posts activity records.
-BACKEND_URL = os.getenv("LAWTRACK_BACKEND_URL", "http://localhost:8000/api/activities")
-
-# Which attorney id to report as (change this to your attorney ID)
+# Load .env if python-dotenv is installed
 try:
-    ATTORNEY_ID = int(os.getenv("LAWTRACK_ATTORNEY_ID", "2"))
-except ValueError:
-    ATTORNEY_ID = 1
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# Base API URL (no trailing slash). Agent posts to {API_URL}/api/agent/activities
+API_URL = os.getenv("LAWTRACK_API_URL", "http://localhost:8000")
+
+# API key from Profile → Auto-tracking agent (Create API key). Required for agent.
+API_KEY = os.getenv("LAWTRACK_API_KEY", "").strip()
 
 # Ignore app switches shorter than this many seconds (default 60)
 try:

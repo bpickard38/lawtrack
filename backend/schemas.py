@@ -135,6 +135,20 @@ class ActivityCreate(BaseModel):
     contact_name: Optional[str] = None
     phone_number: Optional[str] = None
 
+
+class AgentActivityCreate(BaseModel):
+    """Payload from auto-tracking agent; attorney_id derived from API key."""
+    type: ActivityType
+    start_time: datetime
+    end_time: datetime
+    description: Optional[str] = None
+    document_name: Optional[str] = None
+    email_from: Optional[str] = None
+    email_to: Optional[str] = None
+    email_subject: Optional[str] = None
+    contact_name: Optional[str] = None
+    phone_number: Optional[str] = None
+
 class ActivityUpdate(BaseModel):
     case_id: Optional[int] = None
     description: Optional[str] = None
