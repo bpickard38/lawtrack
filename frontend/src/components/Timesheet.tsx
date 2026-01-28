@@ -24,12 +24,17 @@ type AddActivityPayload = { day: Date; slotIndex: number } | null;
 type EditActivityPayload = Activity | null;
 
 function toYMD(d: Date) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function slotToTime(slotIndex: number): { h: number; m: number } {
-  const m = slotIndex * SLOT_MINUTES;
-  return { h: GRID_START_HOUR + Math.floor(m / 60), m: m % 60 };
+  const totalMin = slotIndex * SLOT_MINUTES;
+  const h = GRID_START_HOUR + Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return { h, m };
 }
 
 
@@ -227,7 +232,13 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
           activity={editActivity}
           slotToTime={slotToTime}
           onClose={() => setEditActivity(null)}
-          onSaved={() => { setEditActivity(null); loadActivities(); }}
+          onSaved={(updated) => {
+            setEditActivity(null);
+            if (updated) {
+              setActivities(prev => prev.map(a => a.id === updated.id ? updated : a));
+            }
+            loadActivities();
+          }}
           onDeleted={() => { setEditActivity(null); loadActivities(); }}
         />
       )}
@@ -252,7 +263,7 @@ interface ActivityModalProps {
   initialSlotIndex?: number;
   slotToTime: (i: number) => { h: number; m: number };
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (updated?: Activity) => void;
   onDeleted?: () => void;
 }
 
@@ -275,7 +286,7 @@ function ActivityModal({
 
   const [type, setType] = useState<ActivityType>(activity?.type ?? 'document');
   const [startDate, setStartDate] = useState(() => {
-    if (activity) return new Date(activity.start_time).toISOString().slice(0, 10);
+    if (activity) return toYMD(new Date(activity.start_time));
     return initialDay ? toYMD(initialDay) : toYMD(new Date());
   });
   const [startTime, setStartTime] = useState(() => {
@@ -303,12 +314,18 @@ function ActivityModal({
     return a.document_name || a.email_subject || a.contact_name || '';
   }
 
+  function parseLocalDT(dateStr: string, timeStr: string): Date {
+    const [y, mo, d] = dateStr.split('-').map(Number);
+    const [h, mi] = timeStr.split(':').map(Number);
+    return new Date(y, mo - 1, d, h, mi, 0, 0);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      const start = new Date(`${startDate}T${startTime}`);
-      const end = new Date(`${startDate}T${endTime}`);
+      const start = parseLocalDT(startDate, startTime);
+      const end = parseLocalDT(startDate, endTime);
       if (end.getTime() <= start.getTime()) {
         alert('End time must be after start time');
         setSaving(false);
@@ -329,6 +346,7 @@ function ActivityModal({
         if (caseId) {
           await updateActivity(created.id, { case_id: parseInt(caseId), status: 'edited' });
         }
+        onSaved();
       } else if (activity) {
         const up: any = {
           type,
@@ -341,9 +359,9 @@ function ActivityModal({
         if (type === 'document') up.document_name = name || undefined;
         else if (type === 'email') up.email_subject = name || undefined;
         else if (type === 'call') up.contact_name = name || undefined;
-        await updateActivity(activity.id, up);
+        const updated = await updateActivity(activity.id, up);
+        onSaved(updated);
       }
-      onSaved();
     } catch (err) {
       alert('Error saving: ' + (err as Error).message);
     } finally {
