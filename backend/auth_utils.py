@@ -6,12 +6,11 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-# Password hashing - Updated configuration to fix bcrypt issue
+# Password hashing
+# Use bcrypt_sha256 to avoid bcrypt's 72-byte password limitation and backend quirks.
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
+    schemes=["bcrypt_sha256"],
     deprecated="auto",
-    bcrypt__rounds=12,
-    bcrypt__ident="2b"  # Use bcrypt 2b variant
 )
 
 # JWT settings
@@ -28,11 +27,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     """Hash a password"""
-    # Truncate password to 72 bytes if needed (bcrypt limitation)
-    password_bytes = password.encode('utf-8')
-    if len(password_bytes) > 72:
-        # Truncate bytes, then decode (ignore incomplete characters)
-        password = password_bytes[:72].decode('utf-8', errors='ignore')
+    # bcrypt_sha256 internally hashes the password with sha256 before bcrypt,
+    # so we don't need to manually truncate and can support long passwords.
     return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
