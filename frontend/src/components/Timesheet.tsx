@@ -37,6 +37,13 @@ function slotToTime(slotIndex: number): { h: number; m: number } {
   return { h, m };
 }
 
+/** Parse API datetime as UTC so display (local) matches what we sent. Append Z if no tz. */
+function parseUTC(s: string): Date {
+  const t = s.trim();
+  if (!/Z$|[-+]\d{2}:?\d{2}$/.test(t) && t.includes('T')) return new Date(t + 'Z');
+  return new Date(t);
+}
+
 
 export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetProps) {
   const [weekOffset, setWeekOffset] = useState(0);
@@ -88,10 +95,10 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
     const map = new Map<string, Activity[]>();
     days.forEach(d => map.set(d.toDateString(), []));
     activities.forEach(a => {
-      const key = new Date(a.start_time).toDateString();
+      const key = parseUTC(a.start_time).toDateString();
       if (map.has(key)) map.get(key)!.push(a);
     });
-    map.forEach((arr, k) => arr.sort((x, y) => new Date(x.start_time).getTime() - new Date(y.start_time).getTime()));
+    map.forEach((arr, k) => arr.sort((x, y) => parseUTC(x.start_time).getTime() - parseUTC(y.start_time).getTime()));
     return map;
   }, [activities, days]);
 
@@ -148,62 +155,81 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
         <div className="ts-loading">Loading…</div>
       ) : (
         <div className="ts-grid-wrap">
-          <div className="ts-grid" style={{ '--rows': slotCount, '--row-height': `${ROW_HEIGHT}px` } as React.CSSProperties}>
-            <div className="ts-time-col">
-              <div className="ts-time-header" />
-              {Array.from({ length: slotCount }, (_, i) => {
-                const { h, m } = slotToTime(i);
-                const label = h < 12 ? `${h}:${m.toString().padStart(2, '0')} AM` : (h === 12 ? '12' : h - 12) + `:${m.toString().padStart(2, '0')} PM`;
-                return <div key={i} className="ts-time-slot">{label}</div>;
-              })}
-            </div>
-            {days.map(day => {
+          <div
+            className="ts-grid"
+            style={{
+              gridTemplateRows: `56px repeat(${slotCount}, ${ROW_HEIGHT}px)`,
+              gridTemplateColumns: '72px repeat(7, 1fr)',
+            }}
+          >
+            <div className="ts-time-header" style={{ gridColumn: 1, gridRow: 1 }} />
+            {days.map((day, j) => {
+              const key = day.toDateString();
+              const isToday = day.toDateString() === new Date().toDateString();
+              return (
+                <div
+                  key={key}
+                  className={`ts-day-header ${isToday ? 'today' : ''}`}
+                  style={{ gridColumn: j + 2, gridRow: 1 }}
+                >
+                  <div className="ts-day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                  <div className="ts-day-num">{day.getDate()}</div>
+                </div>
+              );
+            })}
+            {Array.from({ length: slotCount }, (_, i) => {
+              const { h, m } = slotToTime(i);
+              const label = h < 12 ? `${h}:${m.toString().padStart(2, '0')} AM` : (h === 12 ? '12' : h - 12) + `:${m.toString().padStart(2, '0')} PM`;
+              return (
+                <div key={`t-${i}`} className="ts-time-slot" style={{ gridColumn: 1, gridRow: i + 2 }}>
+                  {label}
+                </div>
+              );
+            })}
+            {days.map((day, j) => {
+              const key = day.toDateString();
+              const isToday = day.toDateString() === new Date().toDateString();
+              return Array.from({ length: slotCount }, (_, i) => (
+                <div
+                  key={`${key}-${i}`}
+                  className={`ts-cell ${isToday ? 'today' : ''}`}
+                  style={{ gridColumn: j + 2, gridRow: i + 2 }}
+                  onClick={() => handleCellClick(day, i)}
+                  role="gridcell"
+                />
+              ));
+            })}
+            {days.map((day, j) => {
               const key = day.toDateString();
               const dayActivities = activitiesByDay.get(key) || [];
               const isToday = day.toDateString() === new Date().toDateString();
               return (
-                <div key={key} className={`ts-day-col ${isToday ? 'today' : ''}`}>
-                  <div className="ts-day-header">
-                    <div className="ts-day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                    <div className="ts-day-num">{day.getDate()}</div>
-                  </div>
-                  <div className="ts-day-cells">
-                    {Array.from({ length: slotCount }, (_, slotIndex) => (
+                <div key={`blocks-${key}`} className={`ts-day-blocks ${isToday ? 'today' : ''}`} style={{ gridColumn: j + 2, gridRow: `2 / ${2 + slotCount}` }}>
+                  {dayActivities.map(a => {
+                    const start = parseUTC(a.start_time);
+                    const end = parseUTC(a.end_time);
+                    const dayStart = new Date(day);
+                    dayStart.setHours(GRID_START_HOUR, 0, 0, 0);
+                    const topMin = (start.getTime() - dayStart.getTime()) / 60000;
+                    const durMin = a.duration_minutes;
+                    const top = (topMin / SLOT_MINUTES) * ROW_HEIGHT;
+                    const height = Math.max((durMin / SLOT_MINUTES) * ROW_HEIGHT, 24);
+                    return (
                       <div
-                        key={slotIndex}
-                        className="ts-cell"
-                        onClick={() => handleCellClick(day, slotIndex)}
-                        role="gridcell"
-                      />
-                    ))}
-                  </div>
-                  <div className="ts-day-blocks">
-                    {dayActivities.map(a => {
-                      const start = new Date(a.start_time);
-                      const end = new Date(a.end_time);
-                      const dayStart = new Date(day);
-                      dayStart.setHours(GRID_START_HOUR, 0, 0, 0);
-                      const topMin = (start.getTime() - dayStart.getTime()) / 60000;
-                      const durMin = a.duration_minutes;
-                      const top = (topMin / SLOT_MINUTES) * ROW_HEIGHT;
-                      const height = Math.max((durMin / SLOT_MINUTES) * ROW_HEIGHT, 24);
-                      return (
-                        <div
-                          key={a.id}
-                          className="ts-block"
-                          style={{ top, height }}
-                          onClick={e => handleActivityClick(e, a)}
-                        >
-                          <span className="ts-block-icon">{getActivityIcon(a.type)}</span>
-                          <span className="ts-block-time">
-                            {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – {end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                          </span>
-                          <span className="ts-block-name">{getActivityName(a)}</span>
-                          {a.case_id && <span className="ts-block-case">{getCaseName(a.case_id)}</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
+                        key={a.id}
+                        className="ts-block"
+                        style={{ top, height }}
+                        onClick={e => handleActivityClick(e, a)}
+                      >
+                        <span className="ts-block-icon">{getActivityIcon(a.type)}</span>
+                        <span className="ts-block-time">
+                          {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – {end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                        </span>
+                        <span className="ts-block-name">{getActivityName(a)}</span>
+                        {a.case_id && <span className="ts-block-case">{getCaseName(a.case_id)}</span>}
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -286,19 +312,19 @@ function ActivityModal({
 
   const [type, setType] = useState<ActivityType>(activity?.type ?? 'document');
   const [startDate, setStartDate] = useState(() => {
-    if (activity) return toYMD(new Date(activity.start_time));
+    if (activity) return toYMD(parseUTC(activity.start_time));
     return initialDay ? toYMD(initialDay) : toYMD(new Date());
   });
   const [startTime, setStartTime] = useState(() => {
     if (activity) {
-      const s = new Date(activity.start_time);
+      const s = parseUTC(activity.start_time);
       return `${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')}`;
     }
     return `${defaultH.toString().padStart(2, '0')}:${defaultM.toString().padStart(2, '0')}`;
   });
   const [endTime, setEndTime] = useState(() => {
     if (activity) {
-      const e = new Date(activity.end_time);
+      const e = parseUTC(activity.end_time);
       return `${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`;
     }
     return `${endH.toString().padStart(2, '0')}:${(endM2).toString().padStart(2, '0')}`;

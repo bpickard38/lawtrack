@@ -1786,59 +1786,36 @@ body {
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   overflow: hidden;
-}
-
-.ts-time-col {
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border-right: 1px solid #e5e7eb;
+  position: relative;
 }
 
 .ts-time-header {
-  height: 56px;
-  flex-shrink: 0;
+  background: white;
+  border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
 }
 
 .ts-time-slot {
-  height: 48px;
-  flex-shrink: 0;
   padding: 0 8px;
   font-size: 11px;
   color: #6b7280;
   display: flex;
-  align-items: flex-start;
-  margin-top: -10px;
-}
-
-.ts-day-col {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
   background: white;
   border-right: 1px solid #e5e7eb;
-  position: relative;
-}
-
-.ts-day-col:last-child {
-  border-right: none;
-}
-
-.ts-day-col.today {
-  background: #fefce8;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .ts-day-header {
-  height: 56px;
-  flex-shrink: 0;
   padding: 8px;
   text-align: center;
+  border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
 }
 
-.ts-day-col.today .ts-day-header {
+.ts-day-header.today {
   background: #fef9c3;
 }
 
@@ -1855,32 +1832,35 @@ body {
   color: #111827;
 }
 
-.ts-day-col.today .ts-day-num {
+.ts-day-header.today .ts-day-num {
   color: #ca8a04;
 }
 
-.ts-day-cells {
-  display: flex;
-  flex-direction: column;
-}
-
 .ts-cell {
-  height: 48px;
-  flex-shrink: 0;
+  border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #f3f4f6;
   cursor: pointer;
   transition: background 0.15s;
+  background: white;
 }
 
 .ts-cell:hover {
   background: #eff6ff;
 }
 
+.ts-cell.today {
+  background: #fefce8;
+}
+
+.ts-cell.today:hover {
+  background: #fef9c3;
+}
+
 .ts-day-blocks {
   position: absolute;
-  left: 2px;
-  right: 2px;
-  top: 56px;
+  left: 0;
+  right: 0;
+  top: 0;
   bottom: 0;
   pointer-events: none;
   overflow: hidden;
