@@ -8,6 +8,8 @@ interface RegisterProps {
 export default function Register({ onSwitchToLogin }: RegisterProps) {
   const { register } = useAuth();
   const [fullName, setFullName] = useState('');
+  const [firmName, setFirmName] = useState('');
+  const [role, setRole] = useState<'attorney' | 'admin' | 'billing'>('attorney');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,7 +33,13 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
     setIsLoading(true);
 
     try {
-      await register(email, password, fullName);
+      await register({
+        email,
+        password,
+        fullName,
+        firmName: firmName.trim() || undefined,
+        role,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -53,6 +61,25 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
         )}
 
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Firm Name</label>
+            <input
+              type="text"
+              value={firmName}
+              onChange={(e) => setFirmName(e.target.value)}
+              placeholder="Smith & Associates"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Role</label>
+            <select value={role} onChange={(e) => setRole(e.target.value as any)}>
+              <option value="attorney">Attorney</option>
+              <option value="admin">Admin</option>
+              <option value="billing">Billing</option>
+            </select>
+          </div>
+
           <div className="form-group">
             <label>Full Name</label>
             <input

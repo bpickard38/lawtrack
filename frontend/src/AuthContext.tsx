@@ -23,7 +23,13 @@ interface AuthContextType {
   attorney: Attorney | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName: string) => Promise<void>;
+  register: (args: {
+    email: string;
+    password: string;
+    fullName: string;
+    firmName?: string;
+    role?: 'admin' | 'billing' | 'attorney';
+  }) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -114,16 +120,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetchUserData(authToken);
   }
 
-  async function register(email: string, password: string, fullName: string) {
+  async function register(args: {
+    email: string;
+    password: string;
+    fullName: string;
+    firmName?: string;
+    role?: 'admin' | 'billing' | 'attorney';
+  }) {
     const response = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email,
-        password,
-        full_name: fullName,
+        email: args.email,
+        password: args.password,
+        full_name: args.fullName,
+        firm_name: args.firmName || undefined,
+        role: args.role || undefined,
       }),
     });
 
@@ -133,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Auto-login after registration
-    await login(email, password);
+    await login(args.email, args.password);
   }
 
   function logout() {
