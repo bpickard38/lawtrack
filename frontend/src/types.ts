@@ -18,6 +18,8 @@ export interface Case {
   created_at: string;
 }
 
+export type ActivityStatus = 'captured' | 'edited' | 'approved' | 'invoiced';
+
 export interface Activity {
   id: number;
   attorney_id: number;
@@ -37,6 +39,9 @@ export interface Activity {
   phone_number: string | null;
   
   source: string;
+  is_billable: boolean;
+  narrative: string | null;
+  status: ActivityStatus;
   created_at: string;
 }
 

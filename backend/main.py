@@ -13,7 +13,8 @@ from schemas import (
     AttorneyCreate, AttorneyResponse,
     CaseCreate, CaseResponse,
     ActivityCreate, ActivityUpdate, ActivityResponse,
-    CaseTimeSummary, ActivityType
+    CaseTimeSummary, ActivityType,
+    BulkAssignRequest, MergeActivitiesRequest, SplitActivityRequest
 )
 from auth_utils import (
     get_password_hash, verify_password, create_access_token,
@@ -48,6 +49,11 @@ def _ensure_schema() -> None:
             conn.execute(text("ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
             conn.execute(text("ALTER TABLE cases ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
             conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
+
+            # Timesheet/billing fields for activities
+            conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS is_billable BOOLEAN DEFAULT TRUE;"))
+            conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS narrative TEXT;"))
+            conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'captured';"))
     except Exception:
         # Don't crash startup if this is running on a non-Postgres/local setup.
         # The ORM create_all will still run below.
@@ -471,6 +477,145 @@ def delete_activity(
     db.delete(activity)
     db.commit()
     return {"message": "Activity deleted"}
+
+# ============================================================================
+# BULK ACTIVITY OPERATIONS (Protected)
+# ============================================================================
+
+@app.post("/api/activities/bulk-assign")
+def bulk_assign_activities(
+    request: BulkAssignRequest,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db)
+):
+    """Assign multiple activities to a case at once."""
+    # Verify case access
+    case = db.query(Case).filter(Case.id == request.case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if case.attorney_id != current_attorney.id:
+        raise HTTPException(status_code=403, detail="Access denied to case")
+
+    activities = db.query(Activity).filter(
+        Activity.id.in_(request.activity_ids),
+        Activity.attorney_id == current_attorney.id
+    ).all()
+
+    if len(activities) != len(request.activity_ids):
+        raise HTTPException(status_code=400, detail="Some activities not found or not accessible")
+
+    for activity in activities:
+        activity.case_id = request.case_id
+
+    db.commit()
+    return {"message": f"Assigned {len(activities)} activities to case", "count": len(activities)}
+
+@app.post("/api/activities/merge", response_model=ActivityResponse)
+def merge_activities(
+    request: MergeActivitiesRequest,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db)
+):
+    """Merge multiple activities into one (uses earliest start, latest end)."""
+    if len(request.activity_ids) < 2:
+        raise HTTPException(status_code=400, detail="Need at least 2 activities to merge")
+
+    activities = db.query(Activity).filter(
+        Activity.id.in_(request.activity_ids),
+        Activity.attorney_id == current_attorney.id
+    ).order_by(Activity.start_time).all()
+
+    if len(activities) != len(request.activity_ids):
+        raise HTTPException(status_code=400, detail="Some activities not found or not accessible")
+
+    # All must be same type
+    types = set(a.type for a in activities)
+    if len(types) > 1:
+        raise HTTPException(status_code=400, detail="Can only merge activities of the same type")
+
+    # Use the first activity as the base
+    base = activities[0]
+    start_time = min(a.start_time for a in activities)
+    end_time = max(a.end_time for a in activities)
+    duration = int((end_time - start_time).total_seconds() / 60)
+
+    # Combine descriptions
+    descriptions = [a.description for a in activities if a.description]
+    combined_desc = request.description or "; ".join(descriptions) or None
+
+    # Update base activity
+    base.start_time = start_time
+    base.end_time = end_time
+    base.duration_minutes = duration
+    base.description = combined_desc
+    base.narrative = request.narrative or base.narrative
+    base.status = "edited"
+
+    # Delete the other activities
+    for activity in activities[1:]:
+        db.delete(activity)
+
+    db.commit()
+    db.refresh(base)
+    return base
+
+@app.post("/api/activities/{activity_id}/split")
+def split_activity(
+    activity_id: int,
+    request: SplitActivityRequest,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db)
+):
+    """Split an activity into two at a given point (minutes from start)."""
+    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if activity.attorney_id != current_attorney.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if request.split_at_minutes <= 0 or request.split_at_minutes >= activity.duration_minutes:
+        raise HTTPException(status_code=400, detail="Split point must be within activity duration")
+
+    # Calculate split point
+    split_time = activity.start_time + timedelta(minutes=request.split_at_minutes)
+
+    # Create second activity
+    second_activity = Activity(
+        firm_id=activity.firm_id,
+        attorney_id=activity.attorney_id,
+        case_id=activity.case_id,
+        type=activity.type,
+        start_time=split_time,
+        end_time=activity.end_time,
+        duration_minutes=activity.duration_minutes - request.split_at_minutes,
+        description=activity.description,
+        document_name=activity.document_name,
+        email_from=activity.email_from,
+        email_to=activity.email_to,
+        email_subject=activity.email_subject,
+        contact_name=activity.contact_name,
+        phone_number=activity.phone_number,
+        source=activity.source,
+        is_billable=activity.is_billable,
+        narrative=activity.narrative,
+        status="edited",
+    )
+    db.add(second_activity)
+
+    # Update first activity
+    activity.end_time = split_time
+    activity.duration_minutes = request.split_at_minutes
+    activity.status = "edited"
+
+    db.commit()
+    db.refresh(activity)
+    db.refresh(second_activity)
+
+    return {
+        "message": "Activity split",
+        "first": {"id": activity.id, "duration_minutes": activity.duration_minutes},
+        "second": {"id": second_activity.id, "duration_minutes": second_activity.duration_minutes},
+    }
 
 # ============================================================================
 # CASE TIME SUMMARY (Protected)

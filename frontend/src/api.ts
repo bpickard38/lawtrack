@@ -130,3 +130,34 @@ export async function fetchCaseTimeSummary(caseId: number): Promise<CaseTimeSumm
   if (!response.ok) throw new Error('Failed to fetch case summary');
   return response.json();
 }
+
+// Bulk Operations
+export async function bulkAssignActivities(activityIds: number[], caseId: number): Promise<{ count: number }> {
+  const response = await fetch(`${API_BASE}/api/activities/bulk-assign`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ activity_ids: activityIds, case_id: caseId }),
+  });
+  if (!response.ok) throw new Error('Failed to bulk assign activities');
+  return response.json();
+}
+
+export async function mergeActivities(activityIds: number[], description?: string, narrative?: string): Promise<Activity> {
+  const response = await fetch(`${API_BASE}/api/activities/merge`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ activity_ids: activityIds, description, narrative }),
+  });
+  if (!response.ok) throw new Error('Failed to merge activities');
+  return response.json();
+}
+
+export async function splitActivity(activityId: number, splitAtMinutes: number): Promise<{ first: { id: number }, second: { id: number } }> {
+  const response = await fetch(`${API_BASE}/api/activities/${activityId}/split`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ split_at_minutes: splitAtMinutes }),
+  });
+  if (!response.ok) throw new Error('Failed to split activity');
+  return response.json();
+}

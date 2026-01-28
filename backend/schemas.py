@@ -138,6 +138,11 @@ class ActivityCreate(BaseModel):
 class ActivityUpdate(BaseModel):
     case_id: Optional[int] = None
     description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    is_billable: Optional[bool] = None
+    narrative: Optional[str] = None
+    status: Optional[str] = None  # captured/edited/approved/invoiced
 
 class ActivityResponse(BaseModel):
     id: int
@@ -158,10 +163,29 @@ class ActivityResponse(BaseModel):
     phone_number: Optional[str]
     
     source: str
+    is_billable: Optional[bool] = True
+    narrative: Optional[str] = None
+    status: Optional[str] = "captured"
     created_at: datetime
     
     class Config:
         from_attributes = True
+
+# ============================================================================
+# BULK OPERATIONS
+# ============================================================================
+
+class BulkAssignRequest(BaseModel):
+    activity_ids: list[int]
+    case_id: int
+
+class MergeActivitiesRequest(BaseModel):
+    activity_ids: list[int]  # min 2
+    description: Optional[str] = None
+    narrative: Optional[str] = None
+
+class SplitActivityRequest(BaseModel):
+    split_at_minutes: int  # minutes from start where to split
 
 # ============================================================================
 # CASE TIME SUMMARY

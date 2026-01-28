@@ -16,6 +16,12 @@ class ActivityType(enum.Enum):
     EMAIL = "email"
     CALL = "call"
 
+class ActivityStatus(enum.Enum):
+    CAPTURED = "captured"      # auto-tracked, not yet reviewed
+    EDITED = "edited"          # manually reviewed/adjusted
+    APPROVED = "approved"      # ready for billing
+    INVOICED = "invoiced"      # billed to client
+
 class Firm(Base):
     __tablename__ = "firms"
 
@@ -81,4 +87,10 @@ class Activity(Base):
     phone_number = Column(String(50))
     
     source = Column(String(50), default="manual")
+    
+    # Billing/review fields
+    is_billable = Column(Boolean, default=True)
+    narrative = Column(Text)  # Billing-friendly description
+    status = Column(String(50), default="captured")  # captured/edited/approved/invoiced
+    
     created_at = Column(TIMESTAMP, server_default=func.now())

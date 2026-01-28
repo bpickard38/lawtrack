@@ -10,9 +10,10 @@ import AddActivityForm from './components/AddActivityForm';
 import ActivityTimeline from './components/ActivityTimeline';
 import CaseReports from './components/CaseReports';
 import CaseList from './components/CaseList';
+import Timesheet from './components/Timesheet';
 import './styles.css';
 
-type View = 'timeline' | 'cases' | 'reports' | 'profile';
+type View = 'timeline' | 'cases' | 'reports' | 'timesheet' | 'profile';
 type DateFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
 
 function App() {
@@ -193,6 +194,12 @@ function App() {
             📁 Cases
           </button>
           <button 
+            className={`nav-tab ${currentView === 'timesheet' ? 'active' : ''}`}
+            onClick={() => setCurrentView('timesheet')}
+          >
+            📅 Timesheet
+          </button>
+          <button 
             className={`nav-tab ${currentView === 'reports' ? 'active' : ''}`}
             onClick={() => setCurrentView('reports')}
           >
@@ -349,6 +356,14 @@ function App() {
               />
             </div>
             <CaseList cases={cases} onCaseUpdated={handleCaseAdded} />
+          </div>
+        ) : currentView === 'timesheet' ? (
+          <div className="timesheet-view">
+            <Timesheet
+              activities={activities}
+              cases={cases}
+              onActivityUpdated={handleActivityUpdated}
+            />
           </div>
         ) : (
           <div className="reports-view">
