@@ -8,6 +8,11 @@ class ActivityType(str, Enum):
     EMAIL = "email"
     CALL = "call"
 
+class UserRole(str, Enum):
+    admin = "admin"
+    billing = "billing"
+    attorney = "attorney"
+
 # ============================================================================
 # USER / AUTH SCHEMAS
 # ============================================================================
@@ -16,6 +21,8 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     full_name: str
+    firm_name: Optional[str] = None
+    role: Optional[UserRole] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -23,11 +30,28 @@ class UserLogin(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
+    firm_id: Optional[int] = None
     email: str
     full_name: str
+    role: str
     is_active: bool
     created_at: datetime
     
+    class Config:
+        from_attributes = True
+
+# ============================================================================
+# FIRM SCHEMAS
+# ============================================================================
+
+class FirmCreate(BaseModel):
+    name: str
+
+class FirmResponse(BaseModel):
+    id: int
+    name: str
+    created_at: datetime
+
     class Config:
         from_attributes = True
 

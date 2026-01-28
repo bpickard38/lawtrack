@@ -6,19 +6,33 @@ import enum
 
 Base = declarative_base()
 
+class UserRole(enum.Enum):
+    ADMIN = "admin"
+    BILLING = "billing"
+    ATTORNEY = "attorney"
+
 class ActivityType(enum.Enum):
     DOCUMENT = "document"
     EMAIL = "email"
     CALL = "call"
+
+class Firm(Base):
+    __tablename__ = "firms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
 
 class User(Base):
     """User accounts for authentication"""
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
+    firm_id = Column(Integer, ForeignKey("firms.id"), nullable=True, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
+    role = Column(String(50), default=UserRole.ATTORNEY.value, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
@@ -26,6 +40,7 @@ class Attorney(Base):
     __tablename__ = "attorneys"
     
     id = Column(Integer, primary_key=True, index=True)
+    firm_id = Column(Integer, ForeignKey("firms.id"), nullable=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)  # Link to user account
     name = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
@@ -36,6 +51,7 @@ class Case(Base):
     __tablename__ = "cases"
     
     id = Column(Integer, primary_key=True, index=True)
+    firm_id = Column(Integer, ForeignKey("firms.id"), nullable=True, index=True)
     name = Column(String(255), nullable=False)
     client_name = Column(String(255))
     attorney_id = Column(Integer, ForeignKey("attorneys.id"))
@@ -46,6 +62,7 @@ class Activity(Base):
     __tablename__ = "activities"
     
     id = Column(Integer, primary_key=True, index=True)
+    firm_id = Column(Integer, ForeignKey("firms.id"), nullable=True, index=True)
     attorney_id = Column(Integer, ForeignKey("attorneys.id"), nullable=False)
     case_id = Column(Integer, ForeignKey("cases.id"), nullable=True)
     type = Column(String(50), nullable=False)

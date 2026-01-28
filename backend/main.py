@@ -2,12 +2,12 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, text
 from typing import List, Optional
 from datetime import datetime, timedelta
 
 from database import get_db, engine
-from models import Base, User, Attorney, Case, Activity
+from models import Base, User, Attorney, Case, Activity, Firm, UserRole
 from schemas import (
     UserCreate, UserLogin, UserResponse, Token,
     AttorneyCreate, AttorneyResponse,
@@ -20,7 +20,41 @@ from auth_utils import (
     decode_access_token, oauth2_scheme
 )
 
-# Create tables
+def _ensure_schema() -> None:
+    """
+    Lightweight, startup-time schema bootstrap for Postgres.
+    This project currently uses create_all() (no Alembic), so we add a small
+    safety net to create the new firms table and add new columns if missing.
+    """
+    try:
+        with engine.begin() as conn:
+            # Create new table(s) if missing
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS firms (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(255) NOT NULL,
+                        created_at TIMESTAMP DEFAULT now()
+                    );
+                    """
+                )
+            )
+
+            # Add new columns if missing (Postgres only)
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) NOT NULL DEFAULT 'attorney';"))
+
+            conn.execute(text("ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
+            conn.execute(text("ALTER TABLE cases ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
+            conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
+    except Exception:
+        # Don't crash startup if this is running on a non-Postgres/local setup.
+        # The ORM create_all will still run below.
+        pass
+
+# Create/upgrade tables
+_ensure_schema()
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="LawTrack API", version="1.0.0")
@@ -79,26 +113,40 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Create firm if needed
+    firm = None
+    firm_name = (user.firm_name or "").strip()
+    if firm_name:
+        firm = Firm(name=firm_name)
+        db.add(firm)
+        db.commit()
+        db.refresh(firm)
+
     # Create user
     hashed_password = get_password_hash(user.password)
+    role = (user.role.value if user.role else UserRole.ATTORNEY.value)
     db_user = User(
+        firm_id=firm.id if firm else None,
         email=user.email,
         hashed_password=hashed_password,
-        full_name=user.full_name
+        full_name=user.full_name,
+        role=role,
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     
-    # Create attorney profile automatically
-    attorney = Attorney(
-        user_id=db_user.id,
-        name=user.full_name,
-        email=user.email,
-        billable_rate=300.00
-    )
-    db.add(attorney)
-    db.commit()
+    # Create attorney profile automatically for attorney users (keeps current UI working)
+    if role == UserRole.ATTORNEY.value:
+        attorney = Attorney(
+            firm_id=firm.id if firm else None,
+            user_id=db_user.id,
+            name=user.full_name,
+            email=user.email,
+            billable_rate=300.00
+        )
+        db.add(attorney)
+        db.commit()
     
     return db_user
 
