@@ -6,6 +6,8 @@ interface User {
   id: number;
   email: string;
   full_name: string;
+  role?: 'admin' | 'billing' | 'attorney';
+  firm_id?: number | null;
 }
 
 interface Attorney {
@@ -61,16 +63,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await userResponse.json();
       setUser(userData);
 
-      // Get attorney profile
-      const attorneyResponse = await fetch(`${API_BASE}/api/auth/attorney`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
+      // Get attorney profile only for attorney-role users
+      if (userData?.role === 'attorney' || !userData?.role) {
+        const attorneyResponse = await fetch(`${API_BASE}/api/auth/attorney`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
 
-      if (attorneyResponse.ok) {
-        const attorneyData = await attorneyResponse.json();
-        setAttorney(attorneyData);
+        if (attorneyResponse.ok) {
+          const attorneyData = await attorneyResponse.json();
+          setAttorney(attorneyData);
+        } else {
+          setAttorney(null);
+        }
+      } else {
+        setAttorney(null);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);

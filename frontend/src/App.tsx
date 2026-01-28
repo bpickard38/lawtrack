@@ -3,6 +3,7 @@ import type { Case, Activity } from './types';
 import { fetchCases, fetchActivities } from './api';
 import { useAuth } from './AuthContext';
 import AuthPage from './components/AuthPage';
+import AdminDashboard from './components/AdminDashboard';
 import AddCaseForm from './components/AddCaseForm';
 import AddActivityForm from './components/AddActivityForm';
 import ActivityTimeline from './components/ActivityTimeline';
@@ -139,7 +140,17 @@ function App() {
   }
 
   // Show login if not authenticated
-  if (!user || !attorney) {
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  // Admin/billing users don't have an attorney profile; show admin area.
+  if (user.role && user.role !== 'attorney') {
+    return <AdminDashboard />;
+  }
+
+  // Attorney users must have an attorney profile.
+  if (!attorney) {
     return <AuthPage />;
   }
 
