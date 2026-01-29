@@ -5,7 +5,6 @@ import {
   createActivity,
   updateActivity,
   deleteActivity,
-  createCase,
 } from '../api';
 
 const SLOT_MINUTES = 30;
@@ -56,7 +55,6 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
   const [loading, setLoading] = useState(true);
   const [addAt, setAddAt] = useState<AddActivityPayload>(null);
   const [editActivity, setEditActivity] = useState<EditActivityPayload>(null);
-  const [showAddCase, setShowAddCase] = useState(false);
   const [draggingActivity, setDraggingActivity] = useState<Activity | null>(null);
   const [dropTarget, setDropTarget] = useState<{ dayIndex: number; slotIndex: number } | null>(null);
   const [dragPreview, setDragPreview] = useState<{ x: number; y: number } | null>(null);
@@ -230,48 +228,35 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
 
   return (
     <div className="timesheet-calendar">
-      <div className="ts-header">
-        <div className="ts-nav">
-          <button type="button" className="ts-nav-btn" onClick={() => setWeekOffset(o => o - 1)}>← Prev</button>
-          <span className="ts-week-label">
-            {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-          </span>
-          <button type="button" className="ts-nav-btn" onClick={() => setWeekOffset(o => o + 1)}>Next →</button>
-          {weekOffset !== 0 && (
-            <button type="button" className="ts-nav-btn" onClick={() => setWeekOffset(0)}>Today</button>
-          )}
-        </div>
-        <div className="ts-actions">
-          <span className="ts-total">Week: {Math.floor(weekTotalMinutes / 60)}h {weekTotalMinutes % 60}m</span>
-          <button type="button" className="ts-add-case-btn" onClick={() => setShowAddCase(true)}>+ Add a case</button>
-        </div>
-      </div>
-
       {loading ? (
         <div className="ts-loading">Loading…</div>
       ) : (
         <div className="ts-grid-outer">
-          <div
-            className="ts-grid-head"
-            style={{
-              gridTemplateColumns: '72px repeat(7, 1fr)',
-            }}
-          >
-            <div className="ts-time-header" />
-            {days.map((day, j) => {
-              const key = day.toDateString();
-              const isToday = day.toDateString() === new Date().toDateString();
-              return (
-                <div
-                  key={key}
-                  className={`ts-day-header ${isToday ? 'today' : ''}`}
-                  style={{ gridColumn: j + 2 }}
-                >
-                  <div className="ts-day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                  <div className="ts-day-num">{day.getDate()}</div>
-                </div>
-              );
-            })}
+          <div className="ts-daybar">
+            <button type="button" className="ts-daybar-arrow" onClick={() => setWeekOffset(o => o - 1)}>←</button>
+            <div
+              className="ts-grid-head"
+              style={{
+                gridTemplateColumns: '72px repeat(7, 1fr)',
+              }}
+            >
+              <div className="ts-time-header" />
+              {days.map((day, j) => {
+                const key = day.toDateString();
+                const isToday = day.toDateString() === new Date().toDateString();
+                return (
+                  <div
+                    key={key}
+                    className={`ts-day-header ${isToday ? 'today' : ''}`}
+                    style={{ gridColumn: j + 2 }}
+                  >
+                    <div className="ts-day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                    <div className="ts-day-num">{day.getDate()}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <button type="button" className="ts-daybar-arrow" onClick={() => setWeekOffset(o => o + 1)}>→</button>
           </div>
 
           <div className="ts-grid-body-wrap">
@@ -402,14 +387,6 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
             setEditActivity(null);
             setActivities(prev => prev.filter(a => a.id !== deletedId));
           }}
-        />
-      )}
-
-      {showAddCase && (
-        <AddCaseModal
-          attorneyId={attorneyId}
-          onClose={() => setShowAddCase(false)}
-          onAdded={() => { setShowAddCase(false); onCaseAdded(); }}
         />
       )}
     </div>
@@ -601,54 +578,6 @@ function ActivityModal({
               <button type="button" className="ts-btn-cancel" onClick={onClose}>Cancel</button>
               <button type="submit" className="ts-btn-save" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
             </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function AddCaseModal({
-  attorneyId,
-  onClose,
-  onAdded,
-}: { attorneyId: number; onClose: () => void; onAdded: () => void }) {
-  const [name, setName] = useState('');
-  const [clientName, setClientName] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setSaving(true);
-    try {
-      await createCase({ name: name.trim(), client_name: clientName.trim() || undefined, attorney_id: attorneyId });
-      setName('');
-      setClientName('');
-      onAdded();
-    } catch (err) {
-      alert('Error adding case: ' + (err as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="ts-modal-overlay" onClick={onClose}>
-      <div className="ts-modal" onClick={e => e.stopPropagation()}>
-        <h3>Add a case</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="ts-form-row">
-            <label>Case name *</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Smith v. Jones" required />
-          </div>
-          <div className="ts-form-row">
-            <label>Client name</label>
-            <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Optional" />
-          </div>
-          <div className="ts-form-actions">
-            <button type="button" className="ts-btn-cancel" onClick={onClose}>Cancel</button>
-            <button type="submit" className="ts-btn-save" disabled={saving}>{saving ? 'Saving…' : 'Add case'}</button>
           </div>
         </form>
       </div>

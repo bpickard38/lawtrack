@@ -332,7 +332,7 @@ body {
   justify-content: center;
   padding: 4px 32px 10px;
   gap: 4px;
-  background: #f9fafb;
+  background: transparent;
 }
 
 .nav-tab {
@@ -2051,6 +2051,27 @@ body {
   padding: 0 24px 24px;
   display: flex;
   flex-direction: column;
+}
+
+.ts-daybar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ts-daybar-arrow {
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: white;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.ts-daybar-arrow:hover {
+  background: #f3f4f6;
 }
 
 .ts-grid-head {

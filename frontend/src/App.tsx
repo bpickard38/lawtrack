@@ -134,6 +134,33 @@ function App() {
           <button className="app-logo" type="button" onClick={() => setShowHomepage(true)}>
             ⚖️ LawTrack
           </button>
+          <nav className="nav-tabs">
+            <button 
+              className={`nav-tab ${currentView === 'timesheet' ? 'active' : ''}`}
+              onClick={() => setCurrentView('timesheet')}
+            >
+              📅 Timesheet
+            </button>
+            <button 
+              className={`nav-tab ${currentView === 'reports' ? 'active' : ''}`}
+              onClick={() => setCurrentView('reports')}
+            >
+              📊 Reports
+            </button>
+            <button 
+              className={`nav-tab ${currentView === 'rules' ? 'active' : ''}`}
+              onClick={() => setCurrentView('rules')}
+            >
+              🔗 Rules
+            </button>
+            <button
+              className={`nav-tab ${currentView === 'profile' ? 'active' : ''}`}
+              onClick={() => setCurrentView('profile')}
+            >
+              👤 Profile
+            </button>
+          </nav>
+
           <div className="attorney-info">
             <span className="attorney-name">{attorney.name}</span>
             <button onClick={logout} className="logout-btn">
@@ -141,33 +168,6 @@ function App() {
             </button>
           </div>
         </div>
-
-        <nav className="nav-tabs">
-          <button 
-            className={`nav-tab ${currentView === 'timesheet' ? 'active' : ''}`}
-            onClick={() => setCurrentView('timesheet')}
-          >
-            📅 Timesheet
-          </button>
-          <button 
-            className={`nav-tab ${currentView === 'reports' ? 'active' : ''}`}
-            onClick={() => setCurrentView('reports')}
-          >
-            📊 Reports
-          </button>
-          <button 
-            className={`nav-tab ${currentView === 'rules' ? 'active' : ''}`}
-            onClick={() => setCurrentView('rules')}
-          >
-            🔗 Rules
-          </button>
-          <button
-            className={`nav-tab ${currentView === 'profile' ? 'active' : ''}`}
-            onClick={() => setCurrentView('profile')}
-          >
-            👤 Profile
-          </button>
-        </nav>
       </header>
 
       <main className="app-main">
