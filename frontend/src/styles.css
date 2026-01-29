@@ -2106,44 +2106,43 @@ body {
   flex-direction: column;
 }
 
-.ts-daybar {
-  display: grid;
-  grid-template-columns: 48px 1fr 48px;
-  align-items: stretch;
-  width: 100%;
-  min-width: 720px;
+.ts-grid-head-wrapper {
+  position: relative;
 }
 
-.ts-daybar-arrow {
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
+.ts-header-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
   cursor: pointer;
   font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 4px 6px;
+  z-index: 20;
 }
 
-.ts-daybar-arrow:first-child {
-  border-top-left-radius: 10px;
+.ts-header-arrow.left {
+  left: 8px;
 }
 
-.ts-daybar-arrow:last-child {
-  border-top-right-radius: 10px;
+.ts-header-arrow.right {
+  right: 8px;
 }
 
-.ts-daybar-arrow:hover {
-  background: #f3f4f6;
+.ts-header-arrow:hover {
+  background: rgba(229, 231, 235, 0.7);
+  border-radius: 999px;
 }
 
 .ts-grid-head {
   display: grid;
   min-width: 720px;
   background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
-  border-left: none;
-  border-right: none;
+  border: 1px solid #e5e7eb;
+  border-bottom: none;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
   overflow: hidden;
 }
 

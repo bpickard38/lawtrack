@@ -228,8 +228,21 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
     <div className="timesheet-calendar">
       {!loading && (
         <div className="ts-grid-outer">
-          <div className="ts-daybar">
-            <button type="button" className="ts-daybar-arrow" onClick={() => setWeekOffset(o => o - 1)}>←</button>
+          <div className="ts-grid-head-wrapper">
+            <button
+              type="button"
+              className="ts-header-arrow left"
+              onClick={() => setWeekOffset(o => o - 1)}
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              className="ts-header-arrow right"
+              onClick={() => setWeekOffset(o => o + 1)}
+            >
+              →
+            </button>
             <div
               className="ts-grid-head"
               style={{
@@ -252,7 +265,6 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
                 );
               })}
             </div>
-            <button type="button" className="ts-daybar-arrow" onClick={() => setWeekOffset(o => o + 1)}>→</button>
           </div>
 
           <div className="ts-grid-body-wrap">
