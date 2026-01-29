@@ -153,16 +153,15 @@ function App() {
             >
               🔗 Rules
             </button>
-            <button
-              className={`nav-tab ${currentView === 'profile' ? 'active' : ''}`}
-              onClick={() => setCurrentView('profile')}
-            >
-              👤 Profile
-            </button>
           </nav>
 
           <div className="attorney-info">
-            <span className="attorney-name">{attorney.name}</span>
+            <span
+              className="attorney-name"
+              onClick={() => setCurrentView('profile')}
+            >
+              {attorney.name}
+            </span>
             <button onClick={logout} className="logout-btn">
               Sign Out
             </button>

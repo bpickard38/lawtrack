@@ -83,17 +83,15 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
 
   const loadActivities = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await fetchActivities({
         attorney_id: attorneyId,
         start_date: toYMD(weekStart),
         end_date: toYMD(weekEnd),
       });
       setActivities(data);
+      setLoading(false);
     } catch (e) {
       console.error('Failed to load activities:', e);
-    } finally {
-      setLoading(false);
     }
   }, [attorneyId, weekStart, weekEnd]);
 
@@ -228,9 +226,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
 
   return (
     <div className="timesheet-calendar">
-      {loading ? (
-        <div className="ts-loading">Loading…</div>
-      ) : (
+      {!loading && (
         <div className="ts-grid-outer">
           <div className="ts-daybar">
             <button type="button" className="ts-daybar-arrow" onClick={() => setWeekOffset(o => o - 1)}>←</button>
