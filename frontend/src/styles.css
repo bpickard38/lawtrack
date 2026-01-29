@@ -1856,6 +1856,41 @@ body {
   background: #fef9c3;
 }
 
+.ts-cell-drop-target {
+  background: #dbeafe !important;
+  border: 2px dashed #3b82f6;
+}
+
+.ts-day-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+}
+
+.ts-day-col:last-child {
+  border-right: none;
+}
+
+.ts-day-col.today {
+  background: #fefce8;
+}
+
+.ts-day-cells {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ts-day-cells .ts-cell {
+  height: 48px;
+  flex-shrink: 0;
+  border-right: none;
+}
+
 .ts-day-blocks {
   position: absolute;
   left: 0;
@@ -1874,10 +1909,10 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  margin: 1px 2px;
+  margin: 1px 4px;
   padding: 6px 8px;
   border-radius: 6px;
-  cursor: pointer;
+  cursor: grab;
   overflow: hidden;
   background: #e0e7ff;
   border: 1px solid #a5b4fc;
@@ -1887,12 +1922,45 @@ body {
   flex-direction: column;
   gap: 2px;
   min-height: 0;
+  user-select: none;
+  touch-action: none;
+}
+
+.ts-block:active {
+  cursor: grabbing;
 }
 
 .ts-block:hover {
   background: #c7d2fe;
   border-color: #818cf8;
 }
+
+.ts-block-dragging {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.ts-drag-preview {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  pointer-events: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #e0e7ff;
+  border: 2px solid #6366f1;
+  color: #3730a3;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+}
+
+.ts-drag-preview .ts-block-icon { font-size: 14px; }
+.ts-drag-preview .ts-block-time { font-weight: 600; font-size: 11px; }
+.ts-drag-preview .ts-block-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.ts-drag-preview .ts-block-case { font-size: 10px; color: #6366f1; }
 
 .ts-block-icon {
   font-size: 14px;

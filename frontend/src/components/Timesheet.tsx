@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Activity, Case, ActivityType } from '../types';
 import {
   fetchActivities,
@@ -37,6 +37,11 @@ function slotToTime(slotIndex: number): { h: number; m: number } {
   return { h, m };
 }
 
+function slotToDate(day: Date, slotIndex: number): Date {
+  const { h, m } = slotToTime(slotIndex);
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m, 0, 0);
+}
+
 /** Parse API datetime as UTC so display (local) matches what we sent. Append Z if no tz. */
 function parseUTC(s: string): Date {
   const t = s.trim();
@@ -52,6 +57,13 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
   const [addAt, setAddAt] = useState<AddActivityPayload>(null);
   const [editActivity, setEditActivity] = useState<EditActivityPayload>(null);
   const [showAddCase, setShowAddCase] = useState(false);
+  const [draggingActivity, setDraggingActivity] = useState<Activity | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ dayIndex: number; slotIndex: number } | null>(null);
+  const [dragPreview, setDragPreview] = useState<{ x: number; y: number } | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [didDrag, setDidDrag] = useState(false);
+  const dragRef = useRef<{ activity: Activity; startX: number; startY: number; didMove: boolean } | null>(null);
+  const dropTargetRef = useRef<{ dayIndex: number; slotIndex: number } | null>(null);
 
   const { weekStart, weekEnd, days, slotCount } = useMemo(() => {
     const today = new Date();
@@ -85,11 +97,90 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
     } finally {
       setLoading(false);
     }
-  }, [attorneyId, toYMD(weekStart), toYMD(weekEnd)]);
+  }, [attorneyId, weekStart, weekEnd]);
 
   useEffect(() => {
     loadActivities();
   }, [loadActivities]);
+
+  useEffect(() => {
+    if (!draggingActivity || dragStart == null) return;
+    const activity = draggingActivity;
+    const startX = dragStart.x;
+    const startY = dragStart.y;
+    dragRef.current = { activity, startX, startY, didMove: false };
+    dropTargetRef.current = null;
+
+    const onMove = (e: PointerEvent) => {
+      e.preventDefault();
+      setDragPreview({ x: e.clientX, y: e.clientY });
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (dx * dx + dy * dy > 25 && dragRef.current) {
+        setDidDrag(true);
+        dragRef.current.didMove = true;
+      }
+      const els = document.elementsFromPoint(e.clientX, e.clientY);
+      const cell = els.find(el => el instanceof HTMLElement && el.classList?.contains('ts-cell'));
+      if (cell instanceof HTMLElement) {
+        const di = cell.getAttribute('data-day-index');
+        const si = cell.getAttribute('data-slot');
+        if (di != null && si != null) {
+          const next = { dayIndex: +di, slotIndex: +si };
+          dropTargetRef.current = next;
+          setDropTarget(next);
+        } else {
+          dropTargetRef.current = null;
+          setDropTarget(null);
+        }
+      } else {
+        dropTargetRef.current = null;
+        setDropTarget(null);
+      }
+    };
+
+    const onUp = async () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      const ref = dragRef.current;
+      const dt = dropTargetRef.current;
+      setDraggingActivity(null);
+      setDropTarget(null);
+      setDragPreview(null);
+      setDragStart(null);
+      setDidDrag(false);
+      dragRef.current = null;
+      dropTargetRef.current = null;
+
+      if (ref && dt && ref.didMove) {
+        const day = days[dt.dayIndex];
+        const newStart = slotToDate(day, dt.slotIndex);
+        const newEnd = new Date(newStart.getTime() + ref.activity.duration_minutes * 60000);
+        try {
+          await updateActivity(ref.activity.id, {
+            start_time: newStart.toISOString(),
+            end_time: newEnd.toISOString(),
+          });
+          loadActivities();
+        } catch (err) {
+          console.error('Failed to move activity:', err);
+        }
+      } else if (ref && !ref.didMove) {
+        setEditActivity(ref.activity);
+        setAddAt(null);
+      }
+    };
+
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [draggingActivity, dragStart, days, loadActivities]);
 
   const activitiesByDay = useMemo(() => {
     const map = new Map<string, Activity[]>();
@@ -111,10 +202,11 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
     setEditActivity(null);
   };
 
-  const handleActivityClick = (e: React.MouseEvent, a: Activity) => {
+  const handleBlockPointerDown = (e: React.PointerEvent, a: Activity) => {
     e.stopPropagation();
-    setEditActivity(a);
-    setAddAt(null);
+    setDraggingActivity(a);
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setDragPreview({ x: e.clientX, y: e.clientY });
   };
 
   const getCaseName = (caseId: number | null) =>
@@ -189,51 +281,78 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
             {days.map((day, j) => {
               const key = day.toDateString();
               const isToday = day.toDateString() === new Date().toDateString();
-              return Array.from({ length: slotCount }, (_, i) => (
-                <div
-                  key={`${key}-${i}`}
-                  className={`ts-cell ${isToday ? 'today' : ''}`}
-                  style={{ gridColumn: j + 2, gridRow: i + 2 }}
-                  onClick={() => handleCellClick(day, i)}
-                  role="gridcell"
-                />
-              ));
-            })}
-            {days.map((day, j) => {
-              const key = day.toDateString();
               const dayActivities = activitiesByDay.get(key) || [];
-              const isToday = day.toDateString() === new Date().toDateString();
               return (
-                <div key={`blocks-${key}`} className={`ts-day-blocks ${isToday ? 'today' : ''}`} style={{ gridColumn: j + 2, gridRow: `2 / ${2 + slotCount}` }}>
-                  {dayActivities.map(a => {
-                    const start = parseUTC(a.start_time);
-                    const end = parseUTC(a.end_time);
-                    const dayStart = new Date(day);
-                    dayStart.setHours(GRID_START_HOUR, 0, 0, 0);
-                    const topMin = (start.getTime() - dayStart.getTime()) / 60000;
-                    const durMin = a.duration_minutes;
-                    const top = (topMin / SLOT_MINUTES) * ROW_HEIGHT;
-                    const height = Math.max((durMin / SLOT_MINUTES) * ROW_HEIGHT, 24);
-                    return (
-                      <div
-                        key={a.id}
-                        className="ts-block"
-                        style={{ top, height }}
-                        onClick={e => handleActivityClick(e, a)}
-                      >
-                        <span className="ts-block-icon">{getActivityIcon(a.type)}</span>
-                        <span className="ts-block-time">
-                          {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – {end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                        </span>
-                        <span className="ts-block-name">{getActivityName(a)}</span>
-                        {a.case_id && <span className="ts-block-case">{getCaseName(a.case_id)}</span>}
-                      </div>
-                    );
-                  })}
+                <div
+                  key={key}
+                  className={`ts-day-col ${isToday ? 'today' : ''}`}
+                  style={{ gridColumn: j + 2, gridRow: `2 / ${2 + slotCount}` }}
+                >
+                  <div className="ts-day-cells">
+                    {Array.from({ length: slotCount }, (_, i) => {
+                      const isDrop = dropTarget?.dayIndex === j && dropTarget?.slotIndex === i;
+                      return (
+                        <div
+                          key={i}
+                          className={`ts-cell ${isToday ? 'today' : ''} ${isDrop ? 'ts-cell-drop-target' : ''}`}
+                          data-day-index={j}
+                          data-slot={i}
+                          onClick={() => handleCellClick(day, i)}
+                          role="gridcell"
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="ts-day-blocks">
+                    {dayActivities.map(a => {
+                      const start = parseUTC(a.start_time);
+                      const end = parseUTC(a.end_time);
+                      const dayStart = new Date(day);
+                      dayStart.setHours(GRID_START_HOUR, 0, 0, 0);
+                      const topMin = (start.getTime() - dayStart.getTime()) / 60000;
+                      const durMin = a.duration_minutes;
+                      const top = (topMin / SLOT_MINUTES) * ROW_HEIGHT;
+                      const height = Math.max((durMin / SLOT_MINUTES) * ROW_HEIGHT, 24);
+                      const isDragging = draggingActivity?.id === a.id;
+                      return (
+                        <div
+                          key={a.id}
+                          className={`ts-block ${isDragging ? 'ts-block-dragging' : ''}`}
+                          style={{ top, height }}
+                          onPointerDown={e => handleBlockPointerDown(e, a)}
+                        >
+                          <span className="ts-block-icon">{getActivityIcon(a.type)}</span>
+                          <span className="ts-block-time">
+                            {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – {end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                          </span>
+                          <span className="ts-block-name">{getActivityName(a)}</span>
+                          {a.case_id && <span className="ts-block-case">{getCaseName(a.case_id)}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
           </div>
+        </div>
+      )}
+
+      {draggingActivity && dragPreview && (
+        <div
+          className="ts-drag-preview"
+          style={{
+            left: dragPreview.x,
+            top: dragPreview.y,
+          }}
+          aria-hidden
+        >
+          <span className="ts-block-icon">{getActivityIcon(draggingActivity.type)}</span>
+          <span className="ts-block-time">
+            {parseUTC(draggingActivity.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – {parseUTC(draggingActivity.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+          </span>
+          <span className="ts-block-name">{getActivityName(draggingActivity)}</span>
+          {draggingActivity.case_id && <span className="ts-block-case">{getCaseName(draggingActivity.case_id)}</span>}
         </div>
       )}
 
