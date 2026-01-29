@@ -250,15 +250,14 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
       {loading ? (
         <div className="ts-loading">Loading…</div>
       ) : (
-        <div className="ts-grid-wrap">
+        <div className="ts-grid-outer">
           <div
-            className="ts-grid"
+            className="ts-grid-head"
             style={{
-              gridTemplateRows: `56px repeat(${slotCount}, ${ROW_HEIGHT}px)`,
               gridTemplateColumns: '72px repeat(7, 1fr)',
             }}
           >
-            <div className="ts-time-header" style={{ gridColumn: 1, gridRow: 1 }} />
+            <div className="ts-time-header" />
             {days.map((day, j) => {
               const key = day.toDateString();
               const isToday = day.toDateString() === new Date().toDateString();
@@ -266,22 +265,32 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
                 <div
                   key={key}
                   className={`ts-day-header ${isToday ? 'today' : ''}`}
-                  style={{ gridColumn: j + 2, gridRow: 1 }}
+                  style={{ gridColumn: j + 2 }}
                 >
                   <div className="ts-day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
                   <div className="ts-day-num">{day.getDate()}</div>
                 </div>
               );
             })}
-            {Array.from({ length: slotCount }, (_, i) => {
-              const { h, m } = slotToTime(i);
-              const label = h < 12 ? `${h}:${m.toString().padStart(2, '0')} AM` : (h === 12 ? '12' : h - 12) + `:${m.toString().padStart(2, '0')} PM`;
-              return (
-                <div key={`t-${i}`} className="ts-time-slot" style={{ gridColumn: 1, gridRow: i + 2 }}>
-                  {label}
-                </div>
-              );
-            })}
+          </div>
+
+          <div className="ts-grid-body-wrap">
+            <div
+              className="ts-grid-body"
+              style={{
+                gridTemplateRows: `repeat(${slotCount}, ${ROW_HEIGHT}px)`,
+                gridTemplateColumns: '72px repeat(7, 1fr)',
+              }}
+            >
+              {Array.from({ length: slotCount }, (_, i) => {
+                const { h, m } = slotToTime(i);
+                const label = h < 12 ? `${h}:${m.toString().padStart(2, '0')} AM` : (h === 12 ? '12' : h - 12) + `:${m.toString().padStart(2, '0')} PM`;
+                return (
+                  <div key={`t-${i}`} className="ts-time-slot" style={{ gridColumn: 1, gridRow: i + 1 }}>
+                    {label}
+                  </div>
+                );
+              })}
             {days.map((day, j) => {
               const key = day.toDateString();
               const isToday = day.toDateString() === new Date().toDateString();
@@ -290,7 +299,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
                 <div
                   key={key}
                   className={`ts-day-col ${isToday ? 'today' : ''}`}
-                  style={{ gridColumn: j + 2, gridRow: `2 / ${2 + slotCount}` }}
+                  style={{ gridColumn: j + 2, gridRow: `1 / ${1 + slotCount}` }}
                 >
                   <div className="ts-day-cells">
                     {Array.from({ length: slotCount }, (_, i) => {
@@ -338,6 +347,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
       )}

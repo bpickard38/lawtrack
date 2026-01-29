@@ -1772,20 +1772,36 @@ body {
   color: #6b7280;
 }
 
-.ts-grid-wrap {
+.ts-grid-outer {
   flex: 1;
-  overflow: auto;
+  overflow-x: auto;
   padding: 0 24px 24px;
 }
 
-.ts-grid {
+.ts-grid-head {
   display: grid;
-  grid-template-columns: 72px repeat(7, minmax(0, 1fr));
   min-width: 720px;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-bottom: none;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
   overflow: hidden;
+}
+
+.ts-grid-body-wrap {
+  overflow-y: auto;
+  max-height: 100%;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  background: #f9fafb;
+}
+
+.ts-grid-body {
+  display: grid;
+  min-width: 720px;
   position: relative;
 }
 
@@ -1794,8 +1810,8 @@ body {
   border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
   position: sticky;
-  top: 0;
-  z-index: 5;
+  left: 0;
+  z-index: 10;
 }
 
 .ts-time-slot {
@@ -1808,6 +1824,9 @@ body {
   background: white;
   border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #f3f4f6;
+  position: sticky;
+  left: 0;
+  z-index: 6;
 }
 
 .ts-day-header {
@@ -1816,9 +1835,7 @@ body {
   border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
-  position: sticky;
-  top: 0;
-  z-index: 5;
+  /* header row is outside the scroller now */
 }
 
 .ts-day-header.today {
