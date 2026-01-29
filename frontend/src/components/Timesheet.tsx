@@ -162,7 +162,11 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
             start_time: newStart.toISOString(),
             end_time: newEnd.toISOString(),
           });
-          loadActivities();
+          setActivities(prev => prev.map(a => a.id === ref.activity.id ? {
+            ...a,
+            start_time: newStart.toISOString(),
+            end_time: newEnd.toISOString(),
+          } : a));
         } catch (err) {
           console.error('Failed to move activity:', err);
         }
@@ -365,7 +369,10 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
           initialSlotIndex={addAt.slotIndex}
           slotToTime={slotToTime}
           onClose={() => setAddAt(null)}
-          onSaved={() => { setAddAt(null); loadActivities(); }}
+          onSaved={(created) => {
+            setAddAt(null);
+            setActivities(prev => [created, ...prev]);
+          }}
         />
       )}
 
@@ -379,12 +386,12 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
           onClose={() => setEditActivity(null)}
           onSaved={(updated) => {
             setEditActivity(null);
-            if (updated) {
-              setActivities(prev => prev.map(a => a.id === updated.id ? updated : a));
-            }
-            loadActivities();
+            setActivities(prev => prev.map(a => a.id === updated.id ? updated : a));
           }}
-          onDeleted={() => { setEditActivity(null); loadActivities(); }}
+          onDeleted={(deletedId) => {
+            setEditActivity(null);
+            setActivities(prev => prev.filter(a => a.id !== deletedId));
+          }}
         />
       )}
 
@@ -408,8 +415,8 @@ interface ActivityModalProps {
   initialSlotIndex?: number;
   slotToTime: (i: number) => { h: number; m: number };
   onClose: () => void;
-  onSaved: (updated?: Activity) => void;
-  onDeleted?: () => void;
+  onSaved: (saved: Activity) => void;
+  onDeleted?: (deletedId: number) => void;
 }
 
 function ActivityModal({
@@ -487,11 +494,11 @@ function ActivityModal({
         if (type === 'document') payload.document_name = name || undefined;
         else if (type === 'email') payload.email_subject = name || undefined;
         else if (type === 'call') payload.contact_name = name || undefined;
-        const created = await createActivity(payload);
+        let created = await createActivity(payload);
         if (caseId) {
-          await updateActivity(created.id, { case_id: parseInt(caseId), status: 'edited' });
+          created = await updateActivity(created.id, { case_id: parseInt(caseId), status: 'edited' });
         }
-        onSaved();
+        onSaved(created);
       } else if (activity) {
         const up: any = {
           type,
@@ -519,7 +526,7 @@ function ActivityModal({
     setDeleting(true);
     try {
       await deleteActivity(activity.id);
-      onDeleted();
+      onDeleted(activity.id);
     } catch (err) {
       alert('Error deleting: ' + (err as Error).message);
     } finally {

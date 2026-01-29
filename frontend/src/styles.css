@@ -1793,6 +1793,9 @@ body {
   background: white;
   border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 .ts-time-slot {
@@ -1813,6 +1816,9 @@ body {
   border-right: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
 .ts-day-header.today {
