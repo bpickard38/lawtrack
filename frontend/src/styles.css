@@ -13,9 +13,10 @@ body {
 }
 
 .app {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Header */
@@ -23,6 +24,9 @@ body {
   background: white;
   border-bottom: 2px solid #e5e7eb;
   padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .header-content {
@@ -100,6 +104,7 @@ body {
   width: 100%;
   margin: 0 auto;
   padding: 32px;
+  overflow: auto;
 }
 
 .view-header {
@@ -1713,6 +1718,9 @@ body {
   padding: 16px 24px;
   background: white;
   border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 60;
 }
 
 .ts-nav {
@@ -1774,8 +1782,11 @@ body {
 
 .ts-grid-outer {
   flex: 1;
+  min-height: 0;
   overflow-x: auto;
   padding: 0 24px 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .ts-grid-head {
@@ -1791,7 +1802,7 @@ body {
 
 .ts-grid-body-wrap {
   overflow-y: auto;
-  max-height: 100%;
+  flex: 1;
   border: 1px solid #e5e7eb;
   border-top: none;
   border-bottom-left-radius: 10px;
