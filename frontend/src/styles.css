@@ -309,13 +309,65 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
+  position: relative;
 }
 
 .attorney-name {
   font-size: 16px;
   font-weight: 600;
   color: #374151;
+}
+
+.user-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 999px;
   cursor: pointer;
+}
+
+.user-menu-btn:hover {
+  background: #f9fafb;
+}
+
+.user-menu-caret {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 180px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 200;
+}
+
+.user-menu-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: white;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #111827;
+}
+
+.user-menu-item:hover {
+  background: #f3f4f6;
+}
+
+.user-menu-item.danger {
+  color: #b91c1c;
 }
 
 .attorney-select {
@@ -2055,20 +2107,29 @@ body {
 }
 
 .ts-daybar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  display: grid;
+  grid-template-columns: 48px 1fr 48px;
+  align-items: stretch;
+  width: 100%;
+  min-width: 720px;
 }
 
 .ts-daybar-arrow {
   border: 1px solid #e5e7eb;
-  border-radius: 999px;
-  background: white;
-  padding: 4px 8px;
+  background: #f9fafb;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ts-daybar-arrow:first-child {
+  border-top-left-radius: 10px;
+}
+
+.ts-daybar-arrow:last-child {
+  border-top-right-radius: 10px;
 }
 
 .ts-daybar-arrow:hover {
@@ -2079,10 +2140,10 @@ body {
   display: grid;
   min-width: 720px;
   background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-bottom: none;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  border-left: none;
+  border-right: none;
   overflow: hidden;
 }
 

@@ -22,6 +22,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [publicView, setPublicView] = useState<PublicView>('home');
   const [showHomepage, setShowHomepage] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     if (attorney) loadCases();
@@ -156,15 +157,32 @@ function App() {
           </nav>
 
           <div className="attorney-info">
-            <span
-              className="attorney-name"
-              onClick={() => setCurrentView('profile')}
+            <button
+              type="button"
+              className="user-menu-btn"
+              onClick={() => setUserMenuOpen((v) => !v)}
             >
-              {attorney.name}
-            </span>
-            <button onClick={logout} className="logout-btn">
-              Sign Out
+              <span className="attorney-name">{attorney.name}</span>
+              <span className="user-menu-caret">▾</span>
             </button>
+            {userMenuOpen && (
+              <div className="user-menu-dropdown" role="menu">
+                <button
+                  type="button"
+                  className="user-menu-item"
+                  onClick={() => { setUserMenuOpen(false); setCurrentView('profile'); }}
+                >
+                  Profile
+                </button>
+                <button
+                  type="button"
+                  className="user-menu-item danger"
+                  onClick={() => { setUserMenuOpen(false); logout(); }}
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
