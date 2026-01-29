@@ -8,9 +8,11 @@ import Profile from './components/Profile';
 import CaseReports from './components/CaseReports';
 import Timesheet from './components/Timesheet';
 import CaseRules from './components/CaseRules';
+import LandingPage from './components/LandingPage';
 import './styles.css';
 
 type View = 'timesheet' | 'reports' | 'rules' | 'profile';
+type PublicView = 'home' | 'auth';
 
 function App() {
   const { user, attorney, logout, isLoading: authLoading } = useAuth();
@@ -18,6 +20,8 @@ function App() {
   const [cases, setCases] = useState<Case[]>([]);
   const [currentView, setCurrentView] = useState<View>('timesheet');
   const [loading, setLoading] = useState(true);
+  const [publicView, setPublicView] = useState<PublicView>('home');
+  const [showHomepage, setShowHomepage] = useState(false);
 
   useEffect(() => {
     if (attorney) loadCases();
@@ -51,7 +55,36 @@ function App() {
 
   // Show login if not authenticated
   if (!user) {
-    return <AuthPage />;
+    if (publicView === 'auth') {
+      return (
+        <div className="app">
+          <header className="app-header">
+            <div className="header-content">
+              <button className="app-logo" type="button" onClick={() => setPublicView('home')}>
+                ⚖️ LawTrack
+              </button>
+              <button className="logout-btn" type="button" onClick={() => setPublicView('home')}>
+                Back
+              </button>
+            </div>
+          </header>
+          <main className="app-main">
+            <AuthPage />
+          </main>
+        </div>
+      );
+    }
+
+    return (
+      <LandingPage
+        rightCta={
+          <button className="lp-signin-btn" type="button" onClick={() => setPublicView('auth')}>
+            Sign In
+          </button>
+        }
+        onLogoClick={() => setPublicView('home')}
+      />
+    );
   }
 
   // Admin/billing users don't have an attorney profile; show admin area.
@@ -75,11 +108,32 @@ function App() {
     );
   }
 
+  // Logged in, but user wants to view the homepage/marketing site.
+  if (showHomepage) {
+    return (
+      <LandingPage
+        rightCta={
+          <div className="lp-cta-row">
+            <button className="lp-signin-btn" type="button" onClick={() => setShowHomepage(false)}>
+              Go to app
+            </button>
+            <button onClick={logout} className="logout-btn" type="button">
+              Sign Out
+            </button>
+          </div>
+        }
+        onLogoClick={() => setShowHomepage(true)}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-header">
         <div className="header-content">
-          <h1>⚖️ LawTrack</h1>
+          <button className="app-logo" type="button" onClick={() => setShowHomepage(true)}>
+            ⚖️ LawTrack
+          </button>
           <div className="attorney-info">
             <span className="attorney-name">{attorney.name}</span>
             <button onClick={logout} className="logout-btn">
