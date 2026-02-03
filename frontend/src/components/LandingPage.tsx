@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 
 type Tab = 'home' | 'pricing';
 
-// Installer download URL: set VITE_AGENT_INSTALLER_URL in Vercel (e.g. GitHub Releases or your host)
+// Installer download URL: set VITE_AGENT_INSTALLER_URL in Vercel. Create a GitHub Release and upload LawTrackAgent-Setup.exe for the link to work.
 const AGENT_INSTALLER_URL =
   (import.meta.env.VITE_AGENT_INSTALLER_URL as string) ||
-  'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe';
+  'https://github.com/bpickard38/lawtrack-fresh/releases/latest/download/LawTrackAgent-Setup.exe';
 
 export default function LandingPage({
   initialTab = 'home',
