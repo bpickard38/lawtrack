@@ -1,8 +1,12 @@
 import os
+import sys
 from pathlib import Path
 
-# Load .env from Agent folder (same dir as this file), regardless of cwd
-_AGENT_DIR = Path(__file__).resolve().parent
+# When running as PyInstaller exe, load .env from the folder containing the exe
+if getattr(sys, "frozen", False):
+    _AGENT_DIR = Path(sys.executable).parent
+else:
+    _AGENT_DIR = Path(__file__).resolve().parent
 try:
     from dotenv import load_dotenv
     load_dotenv(_AGENT_DIR / ".env")

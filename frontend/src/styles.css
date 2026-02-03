@@ -411,6 +411,26 @@ body {
   background: white;
 }
 
+.install-app-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2563eb;
+  text-decoration: none;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+.install-app-link:hover {
+  background: #2563eb;
+  color: white;
+}
+
 /* Main Content */
 .app-main {
   flex: 1;

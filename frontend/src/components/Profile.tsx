@@ -183,6 +183,18 @@ export default function Profile({ onBack }: { onBack: () => void }) {
                 Use an API key to run the desktop agent on your machine. The agent tracks documents, email, and calls
                 and sends activities to LawTrack. Create a key, add it to the agent config, then run the agent.
               </p>
+              <p style={{ marginBottom: 16 }}>
+                <a
+                  href={(import.meta.env.VITE_AGENT_INSTALLER_URL as string) || 'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe'}
+                  className="install-app-link"
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Install desktop app
+                </a>
+                {' '}(Windows)
+              </p>
               {agentKeyJustCreated ? (
                 <div className="agent-key-reveal">
                   <p><strong>Store this key securely; it won&apos;t be shown again.</strong></p>

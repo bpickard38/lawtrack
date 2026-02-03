@@ -2,3 +2,5 @@ pywin32
 psutil
 requests
 python-dotenv
+pystray
+Pillow

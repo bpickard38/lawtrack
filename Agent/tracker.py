@@ -1,6 +1,7 @@
+import os
+import threading
 import time
 import logging
-import os
 from typing import Callable, Optional, Tuple
 
 import psutil
@@ -112,12 +113,15 @@ def extract_filename_from_title(window_title: str, process_name: str) -> str:
     
     return process_name
 
-def track_activity(on_activity_finished: Callable[[str, str, float], None]) -> None:
+def track_activity(
+    on_activity_finished: Callable[[str, str, float], None],
+    stop_event: Optional[threading.Event] = None,
+) -> None:
     """
     Poll the active window and call on_activity_finished(app_name, document_name, seconds)
     when the foreground application changes and the elapsed time >= MIN_SECONDS.
 
-    The function runs indefinitely until interrupted (KeyboardInterrupt).
+    The function runs indefinitely until interrupted (KeyboardInterrupt) or stop_event is set.
     """
     current_pid = os.getpid()
     last_app: Optional[Tuple[str, str]] = None
@@ -126,7 +130,7 @@ def track_activity(on_activity_finished: Callable[[str, str, float], None]) -> N
     LOG.info("Starting tracker (min seconds = %s)", MIN_SECONDS)
 
     try:
-        while True:
+        while stop_event is None or not stop_event.is_set():
             try:
                 app_data = get_active_app()
 
@@ -162,9 +166,14 @@ def track_activity(on_activity_finished: Callable[[str, str, float], None]) -> N
                     last_app = app_data
                     start_time = now
 
-                time.sleep(2)
+                # Sleep in small steps so we can check stop_event
+                for _ in range(10):
+                    if stop_event and stop_event.is_set():
+                        break
+                    time.sleep(0.2)
             except Exception as e:
                 LOG.exception("Tracker loop error: %s", e)
                 time.sleep(5)
+        LOG.info("Tracker stopped.")
     except KeyboardInterrupt:
         LOG.info("Tracker interrupted by user, exiting.")

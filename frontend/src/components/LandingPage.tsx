@@ -2,6 +2,11 @@ import { useMemo, useState } from 'react';
 
 type Tab = 'home' | 'pricing';
 
+// Installer download URL: set VITE_AGENT_INSTALLER_URL in Vercel (e.g. GitHub Releases or your host)
+const AGENT_INSTALLER_URL =
+  (import.meta.env.VITE_AGENT_INSTALLER_URL as string) ||
+  'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe';
+
 export default function LandingPage({
   initialTab = 'home',
   rightCta,
@@ -98,6 +103,15 @@ export default function LandingPage({
                 <div className="lp-pill">Reports</div>
                 <div className="lp-pill">Auto-tracking agent</div>
               </div>
+              <a
+                href={AGENT_INSTALLER_URL}
+                className="lp-install-btn"
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Download for Windows
+              </a>
             </div>
             <div className="lp-hero-right">
               <div className="lp-card">
@@ -110,6 +124,19 @@ export default function LandingPage({
                 </ul>
               </div>
             </div>
+          </section>
+
+          <section className="lp-download-section">
+            <a
+              href={AGENT_INSTALLER_URL}
+              className="lp-install-btn large"
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Install LawTrack on your PC
+            </a>
+            <p className="lp-download-note">Runs in your system tray and tracks documents, email, and calls automatically.</p>
           </section>
 
           <section className="lp-features">

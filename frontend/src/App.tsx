@@ -11,6 +11,10 @@ import CaseRules from './components/CaseRules';
 import LandingPage from './components/LandingPage';
 import './styles.css';
 
+const AGENT_INSTALLER_URL =
+  (import.meta.env.VITE_AGENT_INSTALLER_URL as string) ||
+  'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe';
+
 type View = 'timesheet' | 'reports' | 'rules' | 'profile';
 type PublicView = 'home' | 'auth';
 
@@ -155,6 +159,16 @@ function App() {
               🔗 Rules
             </button>
           </nav>
+
+          <a
+            href={AGENT_INSTALLER_URL}
+            className="install-app-link"
+            download
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Install app
+          </a>
 
           <div className="attorney-info">
             <button
