@@ -13,7 +13,7 @@ import './styles.css';
 
 const AGENT_INSTALLER_URL =
   (import.meta.env.VITE_AGENT_INSTALLER_URL as string) ||
-  'https://github.com/bpickard38/lawtrack-fresh/releases/latest/download/LawTrackAgent-Setup.exe';
+  'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe';
 
 type View = 'timesheet' | 'reports' | 'rules' | 'profile';
 type PublicView = 'home' | 'auth';

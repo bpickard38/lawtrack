@@ -185,7 +185,7 @@ export default function Profile({ onBack }: { onBack: () => void }) {
               </p>
               <p style={{ marginBottom: 16 }}>
                 <a
-                  href={(import.meta.env.VITE_AGENT_INSTALLER_URL as string) || 'https://github.com/bpickard38/lawtrack-fresh/releases/latest/download/LawTrackAgent-Setup.exe'}
+                  href={(import.meta.env.VITE_AGENT_INSTALLER_URL as string) || 'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe'}
                   className="install-app-link"
                   download
                   target="_blank"
