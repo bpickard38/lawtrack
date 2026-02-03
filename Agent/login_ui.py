@@ -51,11 +51,21 @@ def _login_request(email: str, password: str) -> str | None:
         return None
 
 
+# UI colors (match LawTrack branding)
+_BG = "#f8fafc"
+_CARD_BG = "#ffffff"
+_TEXT = "#1e293b"
+_TEXT_MUTED = "#64748b"
+_ACCENT = "#2563eb"
+_ACCENT_HOVER = "#1d4ed8"
+_ERR = "#dc2626"
+_ENTRY_BG = "#f1f5f9"
+_ENTRY_BORDER = "#e2e8f0"
+
+
 def run_login_gui() -> bool:
     """
-    Show a simple email/password dialog, get API key, write to .env.
-    Returns True if login succeeded and .env was updated (caller should restart).
-    Returns False on cancel or failure.
+    Show a polished sign-in window. Returns True if login succeeded and .env was updated.
     """
     try:
         import tkinter as tk
@@ -64,51 +74,117 @@ def run_login_gui() -> bool:
         LOG.error("tkinter not available; cannot show login window")
         return False
 
-    result: list[bool] = []  # [True] if success
-    api_key_value: list[str] = []
+    result: list[bool] = []
 
     def do_login():
         email = email_var.get().strip()
         password = password_var.get()
         if not email or not password:
-            messagebox.showerror("Error", "Please enter email and password.")
+            err_label.config(text="Please enter your email and password.")
             return
-        err_label.config(text="Signing in...")
+        err_label.config(text="")
+        signin_btn.config(state=tk.DISABLED, text="Signing in…")
         root.update()
         key = _login_request(email, password)
         if key:
             _write_env_file(key)
-            api_key_value.append(key)
             result.append(True)
             root.quit()
         else:
+            signin_btn.config(state=tk.NORMAL, text="Sign in")
             err_label.config(text="Invalid email or password, or not an attorney account.")
 
     root = tk.Tk()
-    root.title("LawTrack — Sign in")
+    root.title("LawTrack")
     root.resizable(False, False)
-    root.geometry("340x180")
+    root.geometry("420x380")
+    root.configure(bg=_BG)
 
-    f = tk.Frame(root, padx=16, pady=16)
-    f.pack(fill=tk.BOTH, expand=True)
+    # Center window on screen
+    root.update_idletasks()
+    w, h = 420, 380
+    x = (root.winfo_screenwidth() // 2) - (w // 2)
+    y = (root.winfo_screenheight() // 2) - (h // 2)
+    root.geometry(f"{w}x{h}+{x}+{y}")
 
-    tk.Label(f, text="Sign in with your LawTrack account", font=("Segoe UI", 10)).pack(anchor=tk.W)
-    tk.Label(f, text="(same email and password as the website)").pack(anchor=tk.W)
+    # Card container
+    card = tk.Frame(root, bg=_CARD_BG, padx=40, pady=36)
+    card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=380, height=320)
 
+    # Header
+    title = tk.Label(
+        card, text="LawTrack",
+        font=("Segoe UI", 24, "bold"),
+        fg=_TEXT, bg=_CARD_BG,
+    )
+    title.pack(anchor=tk.W)
+    subtitle = tk.Label(
+        card, text="Sign in with your account to start tracking",
+        font=("Segoe UI", 11),
+        fg=_TEXT_MUTED, bg=_CARD_BG,
+    )
+    subtitle.pack(anchor=tk.W, pady=(4, 24))
+
+    # Email
     email_var = tk.StringVar()
+    tk.Label(card, text="Email", font=("Segoe UI", 10, "bold"), fg=_TEXT, bg=_CARD_BG).pack(anchor=tk.W, pady=(0, 6))
+    email_entry = tk.Entry(
+        card, textvariable=email_var, font=("Segoe UI", 11),
+        width=36, relief=tk.FLAT, bg=_ENTRY_BG, fg=_TEXT,
+        insertbackground=_TEXT,
+    )
+    email_entry.pack(fill=tk.X, ipady=10, ipadx=12, pady=(0, 16))
+    email_entry.focus_set()
+
+    # Password
     password_var = tk.StringVar()
-    tk.Label(f, text="Email").pack(anchor=tk.W)
-    tk.Entry(f, textvariable=email_var, width=40).pack(fill=tk.X, pady=(0, 8))
-    tk.Label(f, text="Password").pack(anchor=tk.W)
-    tk.Entry(f, textvariable=password_var, show="*", width=40).pack(fill=tk.X, pady=(0, 8))
+    tk.Label(card, text="Password", font=("Segoe UI", 10, "bold"), fg=_TEXT, bg=_CARD_BG).pack(anchor=tk.W, pady=(0, 6))
+    password_entry = tk.Entry(
+        card, textvariable=password_var, show="*", font=("Segoe UI", 11),
+        width=36, relief=tk.FLAT, bg=_ENTRY_BG, fg=_TEXT,
+        insertbackground=_TEXT,
+    )
+    password_entry.pack(fill=tk.X, ipady=10, ipadx=12, pady=(0, 24))
 
-    err_label = tk.Label(f, text="", fg="red", font=("Segoe UI", 9))
-    err_label.pack(anchor=tk.W, pady=(0, 4))
+    # Error message
+    err_label = tk.Label(card, text="", font=("Segoe UI", 10), fg=_ERR, bg=_CARD_BG)
+    err_label.pack(anchor=tk.W, pady=(0, 12))
 
-    btn_frame = tk.Frame(f)
+    # Buttons
+    btn_frame = tk.Frame(card, bg=_CARD_BG)
     btn_frame.pack(fill=tk.X)
-    tk.Button(btn_frame, text="Sign in", command=do_login, width=12).pack(side=tk.LEFT, padx=(0, 8))
-    tk.Button(btn_frame, text="Cancel", command=root.quit, width=12).pack(side=tk.LEFT)
+    signin_btn = tk.Button(
+        btn_frame,
+        text="Sign in",
+        command=do_login,
+        font=("Segoe UI", 11, "bold"),
+        fg="white",
+        bg=_ACCENT,
+        activeforeground="white",
+        activebackground=_ACCENT_HOVER,
+        relief=tk.FLAT,
+        cursor="hand2",
+        padx=24,
+        pady=10,
+    )
+    signin_btn.pack(side=tk.LEFT, padx=(0, 12))
+    tk.Button(
+        btn_frame,
+        text="Cancel",
+        command=root.quit,
+        font=("Segoe UI", 11),
+        fg=_TEXT_MUTED,
+        bg=_CARD_BG,
+        activeforeground=_TEXT,
+        activebackground=_ENTRY_BG,
+        relief=tk.FLAT,
+        cursor="hand2",
+        padx=24,
+        pady=10,
+    ).pack(side=tk.LEFT)
+
+    # Bind Enter to sign in
+    root.bind("<Return>", lambda e: do_login())
 
     root.mainloop()
     root.destroy()

@@ -19,7 +19,7 @@ from config import API_URL, API_KEY, MIN_SECONDS
 from tracker import track_activity
 from classifier import classify
 from sender import send_activity
-from login_ui import ensure_api_key, restart_self
+from login_ui import ensure_api_key, restart_self, run_login_gui
 
 logging.basicConfig(
     level=logging.INFO,
@@ -65,6 +65,9 @@ def open_lawtrack():
     webbrowser.open(url)
 
 
+_relogin_requested = False
+
+
 def run_tray(stop_event: threading.Event):
     try:
         import pystray
@@ -72,20 +75,24 @@ def run_tray(stop_event: threading.Event):
         LOG.error("pystray not installed. Run: pip install pystray Pillow")
         return
 
+    global _relogin_requested
+    _relogin_requested = False
+
+    def sign_in_again(icon, item):
+        global _relogin_requested
+        _relogin_requested = True
+        stop_event.set()
+        icon.stop()
+
     icon_image = create_tray_icon()
     menu = pystray.Menu(
         pystray.MenuItem("LawTrack is running", lambda: None, enabled=False),
         pystray.MenuItem("Open LawTrack", lambda *a: open_lawtrack()),
+        pystray.MenuItem("Sign in again", sign_in_again),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Quit", lambda icon, item: (stop_event.set(), icon.stop())),
     )
     icon = pystray.Icon("lawtrack", icon_image, "LawTrack", menu)
-
-    def on_quit():
-        stop_event.set()
-        icon.stop()
-
-    # Replace Quit handler so it sets stop_event then stops the icon
     icon.run()
 
 
@@ -115,6 +122,10 @@ def main():
         stop_event.set()
         tracker_thread.join(timeout=5)
     LOG.info("LawTrack Agent stopped.")
+
+    # If user chose "Sign in again", show login and restart with new key
+    if _relogin_requested and run_login_gui():
+        restart_self()
 
 
 if __name__ == "__main__":
