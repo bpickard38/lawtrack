@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(error.detail || 'Registration failed');
     }
 
-    // Auto-login after registration
+    // Auto-login after registration; desktop agent uses same email/password to sign in
     await login(args.email, args.password);
   }
 

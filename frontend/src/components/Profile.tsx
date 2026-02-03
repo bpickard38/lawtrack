@@ -180,8 +180,8 @@ export default function Profile({ onBack }: { onBack: () => void }) {
               <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
               <h2 style={{ marginBottom: 12 }}>Auto-tracking agent</h2>
               <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
-                Use an API key to run the desktop agent on your machine. The agent tracks documents, email, and calls
-                and sends activities to LawTrack. Create a key, add it to the agent config, then run the agent.
+                The desktop app tracks documents, email, and calls and sends activities to LawTrack. Install it, then
+                open the app and sign in with your LawTrack email and password — no API key to copy.
               </p>
               <p style={{ marginBottom: 16 }}>
                 <a

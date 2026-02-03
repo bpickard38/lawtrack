@@ -19,6 +19,7 @@ from config import API_URL, API_KEY, MIN_SECONDS
 from tracker import track_activity
 from classifier import classify
 from sender import send_activity
+from login_ui import ensure_api_key, restart_self
 
 logging.basicConfig(
     level=logging.INFO,
@@ -90,10 +91,14 @@ def run_tray(stop_event: threading.Event):
 
 def main():
     LOG.info("LawTrack Agent starting (tray mode)...")
-    if API_KEY:
-        LOG.info("API key configured; posting to %s", API_URL)
-    else:
-        LOG.warning("LAWTRACK_API_KEY not set. Set it in .env next to this app or in Profile → Auto-tracking agent.")
+    if not API_KEY:
+        LOG.info("No API key — opening sign-in so you can use your LawTrack email and password.")
+        if ensure_api_key():
+            restart_self()
+            return
+        LOG.warning("Sign-in cancelled or failed. Restart the agent and sign in to start tracking.")
+        return
+    LOG.info("Signed in; posting to %s", API_URL)
 
     stop_event = threading.Event()
     tracker_thread = threading.Thread(

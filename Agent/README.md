@@ -16,15 +16,12 @@ Desktop agent that tracks active windows (Word, Outlook, browsers, etc.) and sen
 - Optional: check **“Run LawTrack Agent when I sign in”** so tracking starts automatically after each login.
 - Finish and, if you chose to, **Launch LawTrack Agent** when the installer asks.
 
-### 3. Configure once
+### 3. Sign in once
 
-- The app runs in the **system tray** (near the clock). No window opens.
-- **Right‑click the LawTrack tray icon** → **Open LawTrack** to open the web app in your browser.
-- Sign in → **Profile** → **Auto-tracking agent** → **Create API key**. Copy the key (it’s shown only once).
-- In the install folder (e.g. `C:\Program Files\LawTrack Agent`) there is a file **`.env`**. Open it with Notepad and set:
-  - `LAWTRACK_API_URL=` your backend URL (e.g. `https://your-app.up.railway.app`, no trailing slash).
-  - `LAWTRACK_API_KEY=` the key you just copied.
-- Save, then **right‑click the tray icon → Quit**, and start **LawTrack Agent** again from the Start Menu (or reboot if you enabled “Run when I sign in”).
+- The app runs in the **system tray** (near the clock). On first run, a **Sign in** window opens.
+- Enter your **LawTrack email and password** (same as the website). The app gets an API key and saves it for you — you never see or copy a key.
+- If your server is not the default, edit **`.env`** in the install folder (e.g. `C:\Program Files\LawTrack Agent`) and set `LAWTRACK_API_URL=` to your backend URL (no trailing slash).
+- **Right‑click the tray icon** → **Open LawTrack** to open the web app in your browser.
 
 After that, the agent runs in the background and sends time to LawTrack. Use **Quit** from the tray menu to stop it.
 

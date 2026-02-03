@@ -13,6 +13,7 @@ from database import get_db, engine
 from models import Base, User, Attorney, Case, Activity, Firm, UserRole, CaseRule, AgentApiKey
 from schemas import (
     UserCreate, UserLogin, UserResponse, Token, UserUpdate, PasswordChange, UserUpdateResponse,
+    RegisterResponse, AgentKeyLoginRequest,
     AttorneyCreate, AttorneyResponse,
     CaseCreate, CaseResponse,
     ActivityCreate, ActivityUpdate, ActivityResponse, AgentActivityCreate,
@@ -175,9 +176,9 @@ async def get_attorney_from_api_key(
 # AUTH ENDPOINTS
 # ============================================================================
 
-@app.post("/api/auth/register", response_model=UserResponse)
+@app.post("/api/auth/register", response_model=RegisterResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user"""
+    """Register a new user. For attorneys, an agent API key is created and returned once."""
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
@@ -206,7 +207,9 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     
-    # Create attorney profile automatically for attorney users (keeps current UI working)
+    agent_api_key: Optional[str] = None
+
+    # Create attorney profile and agent API key for attorney users
     if role == UserRole.ATTORNEY.value:
         attorney = Attorney(
             firm_id=firm.id if firm else None,
@@ -217,8 +220,16 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         )
         db.add(attorney)
         db.commit()
-    
-    return db_user
+        db.refresh(attorney)
+        # Create agent API key so they can use the desktop app without manually creating one
+        raw = "lt_" + secrets.token_urlsafe(24)
+        key_hash = _hash_api_key(raw)
+        key_prefix = _api_key_prefix(raw)
+        db.add(AgentApiKey(attorney_id=attorney.id, key_hash=key_hash, key_prefix=key_prefix))
+        db.commit()
+        agent_api_key = raw
+
+    return RegisterResponse(user=UserResponse.model_validate(db_user), agent_api_key=agent_api_key)
 
 @app.post("/api/auth/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -335,6 +346,36 @@ def revoke_agent_key(
         db.delete(row)
         db.commit()
     return {"message": "Agent key revoked"}
+
+@app.post("/api/auth/agent-key/from-login")
+def agent_key_from_login(payload: AgentKeyLoginRequest, db: Session = Depends(get_db)):
+    """
+    Desktop agent: sign in with LawTrack email and password to get an API key.
+    Creates a key if the attorney doesn't have one. The agent stores it locally; user never sees it.
+    """
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user or not verify_password(payload.password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Account is inactive")
+    if user.role != UserRole.ATTORNEY.value:
+        raise HTTPException(status_code=400, detail="Only attorney accounts can use the desktop agent")
+    attorney = db.query(Attorney).filter(Attorney.user_id == user.id).first()
+    if not attorney:
+        raise HTTPException(status_code=400, detail="Attorney profile not found")
+
+    # Get or replace key (we only store hash, so if they already have one we issue a new one)
+    row = db.query(AgentApiKey).filter(AgentApiKey.attorney_id == attorney.id).first()
+    if row:
+        db.delete(row)
+        db.commit()
+    raw = "lt_" + secrets.token_urlsafe(24)
+    key_hash = _hash_api_key(raw)
+    key_prefix = _api_key_prefix(raw)
+    db.add(AgentApiKey(attorney_id=attorney.id, key_hash=key_hash, key_prefix=key_prefix))
+    db.commit()
+    return {"api_key": raw}
+
 
 @app.get("/api/auth/agent-key")
 def get_agent_key_status(

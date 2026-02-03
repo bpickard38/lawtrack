@@ -54,6 +54,16 @@ class UserUpdateResponse(BaseModel):
     access_token: Optional[str] = None
     token_type: str = "bearer"
 
+class RegisterResponse(BaseModel):
+    """Returned from register; includes optional agent API key (attorney only, shown once)."""
+    user: UserResponse
+    agent_api_key: Optional[str] = None
+
+class AgentKeyLoginRequest(BaseModel):
+    """Email + password for desktop agent to obtain API key (no key copy needed)."""
+    email: EmailStr
+    password: str
+
 # ============================================================================
 # FIRM SCHEMAS
 # ============================================================================
