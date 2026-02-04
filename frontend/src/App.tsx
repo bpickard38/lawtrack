@@ -231,7 +231,7 @@ function App() {
             <div className="view-header">
               <h2>Case Time Reports</h2>
             </div>
-            <CaseReports attorneyId={attorney.id} cases={cases} />
+            <CaseReports attorneyId={attorney.id} cases={cases} onCaseAdded={handleCaseAdded} />
           </div>
         )}
       </main>

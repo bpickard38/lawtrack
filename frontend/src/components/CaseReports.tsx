@@ -5,6 +5,7 @@ import {
   fetchActivities,
   updateActivity,
   deleteActivity,
+  createCase,
 } from '../api';
 
 function toYMD(d: Date) {
@@ -17,11 +18,12 @@ function toYMD(d: Date) {
 interface CaseReportsProps {
   attorneyId: number;
   cases: Case[];
+  onCaseAdded?: () => void;
 }
 
 type ExpandKey = { caseId: number; type: 'document' | 'email' | 'call' };
 
-export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
+export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseReportsProps) {
   const [summaries, setSummaries] = useState<Record<number, CaseTimeSummary>>({});
   const [unassignedSummary, setUnassignedSummary] = useState<CaseTimeSummary>({
     total_minutes: 0,
@@ -40,6 +42,10 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
   const [expandedUnassigned, setExpandedUnassigned] = useState<'document' | 'email' | 'call' | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Activity | null>(null);
+  const [showAddCase, setShowAddCase] = useState(false);
+  const [newCaseName, setNewCaseName] = useState('');
+  const [newClientName, setNewClientName] = useState('');
+  const [creatingCase, setCreatingCase] = useState(false);
 
   const loadSummaries = useCallback(async () => {
     setLoading(true);
@@ -182,20 +188,117 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
     setExpandedUnassigned(isSame ? null : type);
   }
 
+  async function handleCreateCase(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newCaseName.trim()) {
+      alert('Please enter a case name');
+      return;
+    }
+    setCreatingCase(true);
+    try {
+      await createCase({
+        name: newCaseName.trim(),
+        client_name: newClientName.trim() || undefined,
+        attorney_id: attorneyId,
+      });
+      setNewCaseName('');
+      setNewClientName('');
+      setShowAddCase(false);
+      if (onCaseAdded) {
+        onCaseAdded();
+      }
+      // Reload summaries to include the new case
+      loadSummaries();
+    } catch (err) {
+      alert('Error creating case: ' + (err as Error).message);
+    } finally {
+      setCreatingCase(false);
+    }
+  }
+
   if (loading) {
     return <div className="loading">Loading case reports...</div>;
   }
 
-  if (cases.length === 0) {
+  if (cases.length === 0 && !showAddCase) {
     return (
       <div className="empty-state">
         <p>No cases yet.</p>
+        <button onClick={() => setShowAddCase(true)} className="add-case-btn" style={{ marginTop: 16 }}>
+          + Add Case
+        </button>
+      </div>
+    );
+  }
+
+  if (cases.length === 0 && showAddCase) {
+    return (
+      <div className="case-reports">
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <form onSubmit={handleCreateCase} style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, maxWidth: 600 }}>
+            <input
+              type="text"
+              value={newCaseName}
+              onChange={(e) => setNewCaseName(e.target.value)}
+              placeholder="Case name *"
+              required
+              style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, flex: 1 }}
+            />
+            <input
+              type="text"
+              value={newClientName}
+              onChange={(e) => setNewClientName(e.target.value)}
+              placeholder="Client name"
+              style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, flex: 1 }}
+            />
+            <button type="submit" className="submit-btn" disabled={creatingCase} style={{ padding: '8px 16px' }}>
+              {creatingCase ? 'Creating...' : 'Create'}
+            </button>
+            <button type="button" onClick={() => { setShowAddCase(false); setNewCaseName(''); setNewClientName(''); }} className="cancel-btn" style={{ padding: '8px 16px' }}>
+              Cancel
+            </button>
+          </form>
+        </div>
+        <div className="empty-state">
+          <p>No cases yet. Create your first case above.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="case-reports">
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {!showAddCase ? (
+          <button onClick={() => setShowAddCase(true)} className="add-case-btn" style={{ marginLeft: 0 }}>
+            + Add Case
+          </button>
+        ) : (
+          <form onSubmit={handleCreateCase} style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, maxWidth: 600 }}>
+            <input
+              type="text"
+              value={newCaseName}
+              onChange={(e) => setNewCaseName(e.target.value)}
+              placeholder="Case name *"
+              required
+              style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, flex: 1 }}
+            />
+            <input
+              type="text"
+              value={newClientName}
+              onChange={(e) => setNewClientName(e.target.value)}
+              placeholder="Client name"
+              style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, flex: 1 }}
+            />
+            <button type="submit" className="submit-btn" disabled={creatingCase} style={{ padding: '8px 16px' }}>
+              {creatingCase ? 'Creating...' : 'Create'}
+            </button>
+            <button type="button" onClick={() => { setShowAddCase(false); setNewCaseName(''); setNewClientName(''); }} className="cancel-btn" style={{ padding: '8px 16px' }}>
+              Cancel
+            </button>
+          </form>
+        )}
+      </div>
       <div className="case-reports-grid">
         {/* Unassigned Activities Card */}
         <div className="case-report-card">
