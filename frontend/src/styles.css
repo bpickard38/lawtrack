@@ -431,6 +431,122 @@ body {
   color: white;
 }
 
+/* Agent status pill: bottom-right, Active (green) / Inactive (red), click to toggle */
+.agent-status-pill {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.agent-status-pill:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.agent-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.agent-status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.agent-status-active .agent-status-dot {
+  background: #22c55e;
+}
+
+.agent-status-start {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.agent-status-start .agent-status-dot {
+  display: none;
+}
+
+.agent-quit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.agent-quit-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  padding: 24px;
+  max-width: 380px;
+}
+
+.agent-quit-modal h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: #1a1a1a;
+}
+
+.agent-quit-modal p {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.agent-quit-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.agent-quit-done-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+}
+
+.agent-quit-done-btn:hover {
+  background: #f3f4f6;
+}
+
+.agent-quit-gotit-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  background: #4f46e5;
+  color: white;
+  cursor: pointer;
+}
+
+.agent-quit-gotit-btn:hover {
+  background: #4338ca;
+}
+
 /* Main Content */
 .app-main {
   flex: 1;

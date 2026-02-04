@@ -1,6 +1,7 @@
 """
 LawTrack Agent — system tray app. Runs the tracker in the background and shows a tray icon.
 Use this as the entry point for the installed app (e.g. PyInstaller .exe).
+Supports lawtrack://launch URL protocol (single-instance: second launch exits).
 """
 import logging
 import os
@@ -105,7 +106,36 @@ def run_tray(stop_event: threading.Event):
     icon.run()
 
 
+def _is_second_instance() -> bool:
+    """Return True if another instance is already running (Windows single-instance mutex)."""
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes
+        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+        mutex_name = "LawTrackAgentSingleInstance"
+        mutex = kernel32.CreateMutexW(None, True, mutex_name)
+        if mutex is None:
+            return True
+        err = kernel32.GetLastError()
+        # ERROR_ALREADY_EXISTS = 183
+        if err == 183:
+            kernel32.CloseHandle(mutex)
+            return True
+        # Keep mutex handle open for app lifetime (never release)
+        return False
+    except Exception as e:
+        LOG.debug("Single-instance check failed: %s", e)
+        return False
+
+
 def main():
+    # Single-instance: if launched via lawtrack://launch or normally while another instance runs, exit
+    if _is_second_instance():
+        LOG.info("LawTrack Agent already running; exiting.")
+        sys.exit(0)
+
     LOG.info("LawTrack Agent starting (tray mode)...")
     # Fallback: if still no key (e.g. dotenv path quirk), read once from user .env when frozen
     key = API_KEY

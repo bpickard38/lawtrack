@@ -44,6 +44,12 @@ Source: ".env.example"; DestDir: "{app}"; DestName: ".env.example"; Flags: ignor
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Comment: "Start time tracking for LawTrack"
 Name: "{autostartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: startup; Comment: "LawTrack time tracking"
 
+; Register lawtrack:// URL protocol so the website can launch the agent (e.g. lawtrack://launch)
+[Registry]
+Root: HKCU; Subkey: "Software\Classes\lawtrack"; ValueType: string; ValueName: ""; ValueData: "URL:LawTrack Agent Protocol"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\lawtrack\URL Protocol"; ValueType: string; ValueName: ""; ValueData: ""; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\lawtrack\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: uninsdeletekey
+
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
