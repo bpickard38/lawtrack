@@ -46,6 +46,7 @@ exe = EXE(
     strip=False,
     upx=True,
     console=False,
+    icon='lawtrack.ico',
 )
 coll = COLLECT(
     exe,

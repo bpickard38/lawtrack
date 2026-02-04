@@ -57,5 +57,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # Optional: add icon='lawtrack.ico' if you have one
+    icon='lawtrack.ico',  # Purple and white L (generate with: python build_icon.py)
 )
