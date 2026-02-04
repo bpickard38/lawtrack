@@ -48,16 +48,19 @@ function App() {
     if (agentIndicatorActive) {
       setShowQuitInstructions(true);
     } else {
-      // Try to launch the agent
-      const launchWindow = window.open(LAWTRACK_LAUNCH_URL, '_blank', 'noopener,noreferrer');
-      
-      // If protocol handler isn't registered, browser may open blank page
-      // Show install prompt after a short delay (user can close it if agent launched)
+      // Launch agent via custom protocol. Use a temporary link + click so the browser
+      // hands off to the OS (window.open often opens a blank tab instead).
+      const a = document.createElement('a');
+      a.href = LAWTRACK_LAUNCH_URL;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
       setTimeout(() => {
         setShowInstallPrompt(true);
       }, 500);
-      
-      // Mark as active optimistically (user can mark inactive if agent didn't start)
+
       setAgentIndicatorActive(true);
       try {
         localStorage.setItem(AGENT_INDICATOR_STORAGE_KEY, 'true');
