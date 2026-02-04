@@ -25,8 +25,8 @@ try:
     from dotenv import load_dotenv
     # Load install-time defaults first (e.g. LAWTRACK_API_URL from installer .env)
     load_dotenv(_INSTALL_DIR / ".env")
-    # Then load per-user overrides (e.g. LAWTRACK_API_KEY written by login)
-    load_dotenv(_AGENT_DIR / ".env")
+    # Then load per-user overrides (e.g. LAWTRACK_API_KEY written by login); override so key is never blanked
+    load_dotenv(_AGENT_DIR / ".env", override=True)
 except ImportError:
     pass
 

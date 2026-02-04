@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import requests
 
-from config import API_URL, API_KEY
+import config
 
 LOG = logging.getLogger("lawtrack.agent")
 LOG.setLevel(logging.INFO)
@@ -23,7 +23,7 @@ def send_activity(app_name: str, document_name: str, seconds: float, activity_ty
         LOG.debug("Skipping send: duration too short")
         return False
 
-    if not API_KEY:
+    if not config.API_KEY:
         LOG.warning("LAWTRACK_API_KEY not set; skipping send. Create a key in Profile → Auto-tracking agent.")
         return False
 
@@ -46,8 +46,8 @@ def send_activity(app_name: str, document_name: str, seconds: float, activity_ty
         "document_name": doc_name if norm_type == "document" else None,
     }
 
-    url = f"{API_URL.rstrip('/')}/api/agent/activities"
-    headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
+    url = f"{config.API_URL.rstrip('/')}/api/agent/activities"
+    headers = {"X-API-Key": config.API_KEY, "Content-Type": "application/json"}
 
     try:
         LOG.debug("Sending activity: %s", payload)

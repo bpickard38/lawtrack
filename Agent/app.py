@@ -3,18 +3,27 @@ LawTrack Agent — system tray app. Runs the tracker in the background and shows
 Use this as the entry point for the installed app (e.g. PyInstaller .exe).
 """
 import logging
+import os
 import sys
 import threading
 from pathlib import Path
 
-# Ensure .env is loaded from the app directory (important when running as frozen exe)
+# Load .env before any config import so API key is always found when present
 _APP_DIR = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 try:
     from dotenv import load_dotenv
     load_dotenv(_APP_DIR / ".env")
+    # When frozen, also load user's .env (where login saves the key) so it overrides install .env
+    if getattr(sys, "frozen", False):
+        if sys.platform == "win32":
+            _user_env = Path(os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")) / "LawTrackAgent" / ".env"
+        else:
+            _user_env = Path(os.environ.get("LOCALAPPDATA") or str(Path.home())) / "LawTrackAgent" / ".env"
+        load_dotenv(_user_env)
 except ImportError:
     pass
 
+import config
 from config import API_URL, API_KEY, MIN_SECONDS
 from tracker import track_activity
 from classifier import classify
@@ -98,7 +107,24 @@ def run_tray(stop_event: threading.Event):
 
 def main():
     LOG.info("LawTrack Agent starting (tray mode)...")
-    if not API_KEY:
+    # Fallback: if still no key (e.g. dotenv path quirk), read once from user .env when frozen
+    key = API_KEY
+    if not key and getattr(sys, "frozen", False):
+        try:
+            if sys.platform == "win32":
+                p = Path(os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")) / "LawTrackAgent" / ".env"
+            else:
+                p = Path(os.environ.get("LOCALAPPDATA") or str(Path.home())) / "LawTrackAgent" / ".env"
+            if p.exists():
+                for line in p.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if line.startswith("LAWTRACK_API_KEY=") and len(line) > 17:
+                        key = line[17:].strip().strip('"').strip("'")
+                        config.API_KEY = key
+                        break
+        except Exception as e:
+            LOG.debug("Fallback key read failed: %s", e)
+    if not config.API_KEY:
         LOG.info("No API key — opening sign-in so you can use your LawTrack email and password.")
         if ensure_api_key():
             restart_self()
