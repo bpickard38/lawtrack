@@ -66,11 +66,10 @@ def create_tray_icon():
 
 
 def open_lawtrack():
-    """Open LawTrack in the default browser."""
+    """Open the LawTrack web app (frontend) in the default browser."""
     import webbrowser
-    url = API_URL.rstrip("/") if API_URL else "https://lawtrack.vercel.app"
-    if not url.startswith("http"):
-        url = "https://lawtrack.vercel.app"
+    # Open the frontend app, not the backend API
+    url = "https://lawtrack.vercel.app"
     webbrowser.open(url)
 
 
