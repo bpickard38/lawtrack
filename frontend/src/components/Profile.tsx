@@ -224,7 +224,6 @@ export default function Profile({ onBack }: { onBack: () => void }) {
           >
             {saving ? 'Deleting...' : 'Delete account'}
           </button>
-        </div>
       </div>
     </main>
   );
