@@ -23,7 +23,14 @@ type ExpandKey = { caseId: number; type: 'document' | 'email' | 'call' };
 
 export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
   const [summaries, setSummaries] = useState<Record<number, CaseTimeSummary>>({});
-  const [unassignedSummary, setUnassignedSummary] = useState<CaseTimeSummary | null>(null);
+  const [unassignedSummary, setUnassignedSummary] = useState<CaseTimeSummary>({
+    total_minutes: 0,
+    total_hours: 0,
+    document_minutes: 0,
+    email_minutes: 0,
+    call_minutes: 0,
+    activity_count: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [activitiesByCase, setActivitiesByCase] = useState<Record<number, Activity[]>>({});
   const [unassignedActivities, setUnassignedActivities] = useState<Activity[]>([]);
@@ -68,7 +75,7 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
       });
     } catch (error) {
       console.error('Failed to load unassigned activities:', error);
-      // Set empty summary on error so card doesn't show
+      // Set empty summary on error - card will still show
       setUnassignedSummary({
         total_minutes: 0,
         total_hours: 0,
@@ -191,8 +198,7 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
     <div className="case-reports">
       <div className="case-reports-grid">
         {/* Unassigned Activities Card */}
-        {unassignedSummary && unassignedSummary.activity_count > 0 && (
-          <div className="case-report-card">
+        <div className="case-report-card">
             <div className="case-report-header">
               <div>
                 <h3>Unassigned</h3>
@@ -295,12 +301,17 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
               </div>
             </div>
           </div>
-        )}
 
         {/* Case Cards */}
         {cases.map((c) => {
-        const summary = summaries[c.id];
-        if (!summary || summary.total_minutes === 0) return null;
+        const summary = summaries[c.id] || {
+          total_minutes: 0,
+          total_hours: 0,
+          document_minutes: 0,
+          email_minutes: 0,
+          call_minutes: 0,
+          activity_count: 0,
+        };
 
         const activities = activitiesByCase[c.id] || [];
         const docs = activities.filter(a => a.type === 'document');
