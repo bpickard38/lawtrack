@@ -529,8 +529,8 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               <p className="client-name" style={{ color: '#f59e0b' }}>Activities not assigned to a case</p>
             </div>
             <div className="total-time">
-              <div className="time-value">{unassignedSummary.total_hours > 0 ? formatHours(unassignedSummary.total_hours) : '0.0'}</div>
-              <div className="time-label">hours</div>
+              <div className="time-value">{unassignedSummary.activity_count}</div>
+              <div className="time-label">unassigned</div>
             </div>
           </div>
 
@@ -560,6 +560,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                 }
               }}
               isUnassigned={true}
+              displayCount={unassignedActivities.filter(a => a.type === 'document').length}
             />
             <BreakdownSection
               type="email"
@@ -586,6 +587,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                 }
               }}
               isUnassigned={true}
+              displayCount={unassignedActivities.filter(a => a.type === 'email').length}
             />
             <BreakdownSection
               type="call"
@@ -612,6 +614,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                 }
               }}
               isUnassigned={true}
+              displayCount={unassignedActivities.filter(a => a.type === 'call').length}
             />
           </div>
 
@@ -707,6 +710,8 @@ interface BreakdownSectionProps {
   cases?: Case[];
   onAssign?: (activity: Activity, caseId: number) => void;
   isUnassigned?: boolean;
+  /** When set (e.g. for unassigned card), show this count instead of hours in the section header */
+  displayCount?: number;
 }
 
 function BreakdownSection({
@@ -726,10 +731,13 @@ function BreakdownSection({
   cases,
   onAssign,
   isUnassigned,
+  displayCount,
 }: BreakdownSectionProps) {
   const [assigningId, setAssigningId] = useState<number | null>(null);
   const pct = totalMinutes === 0 ? 0 : Math.round((minutes / totalMinutes) * 100);
   const fillClass = type === 'document' ? 'document' : type === 'email' ? 'email' : 'call';
+  const totalCount = displayCount ?? 0;
+  const showCount = displayCount !== undefined;
 
   async function handleAssign(activity: Activity, caseId: number) {
     if (!onAssign) return;
@@ -752,13 +760,19 @@ function BreakdownSection({
       >
         <span className="breakdown-icon">{icon}</span>
         <span className="breakdown-label">{label}</span>
-        <span className="breakdown-value">{(minutes / 60).toFixed(1)}h</span>
+        <span className="breakdown-value">
+          {showCount ? totalCount : `${(minutes / 60).toFixed(1)}h`}
+        </span>
         <span className="breakdown-chevron">{expanded ? '▾' : '▸'}</span>
       </div>
-      <div className="breakdown-bar">
-        <div className={`breakdown-fill ${fillClass}`} style={{ width: `${pct}%` }} />
-      </div>
-      <div className="breakdown-percent">{pct}%</div>
+      {!showCount && (
+        <>
+          <div className="breakdown-bar">
+            <div className={`breakdown-fill ${fillClass}`} style={{ width: `${pct}%` }} />
+          </div>
+          <div className="breakdown-percent">{pct}%</div>
+        </>
+      )}
 
       {expanded && (
         <div className="breakdown-dropdown">

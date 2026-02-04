@@ -62,6 +62,8 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
   const [didDrag, setDidDrag] = useState(false);
   const dragRef = useRef<{ activity: Activity; startX: number; startY: number; didMove: boolean } | null>(null);
   const dropTargetRef = useRef<{ dayIndex: number; slotIndex: number } | null>(null);
+  const gridBodyWrapRef = useRef<HTMLDivElement>(null);
+  const [now, setNow] = useState(() => new Date());
 
   const { weekStart, weekEnd, days, slotCount } = useMemo(() => {
     const today = new Date();
@@ -98,6 +100,35 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
   useEffect(() => {
     loadActivities();
   }, [loadActivities]);
+
+  // Update current time every minute for the red "now" bar
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Scroll grid to center on current time when viewing the week that contains today
+  const todayInWeek = days.some(d => d.toDateString() === new Date().toDateString());
+  useEffect(() => {
+    if (!todayInWeek || !gridBodyWrapRef.current) return;
+    const scrollToNow = () => {
+      const wrap = gridBodyWrapRef.current;
+      if (!wrap) return;
+      const totalMin = now.getHours() * 60 + now.getMinutes();
+      const gridStartMin = GRID_START_HOUR * 60;
+      const gridEndMin = GRID_END_HOUR * 60;
+      if (totalMin < gridStartMin || totalMin > gridEndMin) return;
+      const slotIndex = (totalMin - gridStartMin) / SLOT_MINUTES;
+      const currentTimeTop = slotIndex * ROW_HEIGHT;
+      const centerOffset = currentTimeTop - wrap.clientHeight / 2 + ROW_HEIGHT / 2;
+      wrap.scrollTop = Math.max(0, Math.min(centerOffset, wrap.scrollHeight - wrap.clientHeight));
+    };
+    const id = requestAnimationFrame(() => {
+      scrollToNow();
+      requestAnimationFrame(scrollToNow);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [todayInWeek, weekOffset, slotCount, days]);
 
   useEffect(() => {
     if (!draggingActivity || dragStart == null) return;
@@ -275,7 +306,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
             </div>
           </div>
 
-          <div className="ts-grid-body-wrap">
+          <div className="ts-grid-body-wrap" ref={gridBodyWrapRef}>
             <div
               className="ts-grid-body"
               style={{
@@ -283,6 +314,21 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
                 gridTemplateColumns: '72px repeat(7, 1fr)',
               }}
             >
+              {/* Red "current time" bar - only when today is in view */}
+              {todayInWeek && (() => {
+                const totalMin = now.getHours() * 60 + now.getMinutes();
+                const gridStartMin = GRID_START_HOUR * 60;
+                const gridEndMin = GRID_END_HOUR * 60;
+                if (totalMin < gridStartMin || totalMin > gridEndMin) return null;
+                const slotIndex = (totalMin - gridStartMin) / SLOT_MINUTES;
+                const frac = (totalMin - gridStartMin) % SLOT_MINUTES / SLOT_MINUTES;
+                const top = (slotIndex + frac) * ROW_HEIGHT;
+                return (
+                  <div className="ts-now-indicator" style={{ top }} aria-hidden>
+                    <span className="ts-now-dot" />
+                  </div>
+                );
+              })()}
               {Array.from({ length: slotCount }, (_, i) => {
                 const { h, m } = slotToTime(i);
                 const label = h < 12 ? `${h}:${m.toString().padStart(2, '0')} AM` : (h === 12 ? '12' : h - 12) + `:${m.toString().padStart(2, '0')} PM`;

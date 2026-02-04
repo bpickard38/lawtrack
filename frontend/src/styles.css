@@ -2216,6 +2216,34 @@ body {
   position: relative;
 }
 
+.ts-now-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  pointer-events: none;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  background: transparent;
+}
+
+.ts-now-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #dc2626;
+  flex-shrink: 0;
+  margin-left: 70px;
+}
+
+.ts-now-indicator::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background-color: #dc2626;
+}
+
 .ts-time-header {
   background: white;
   border-right: 1px solid #e5e7eb;
