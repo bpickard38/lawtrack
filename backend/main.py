@@ -380,15 +380,17 @@ def agent_key_from_login(payload: AgentKeyLoginRequest, db: Session = Depends(ge
     Creates a key if the attorney doesn't have one. The agent stores it locally; user never sees it.
     """
     user = db.query(User).filter(User.email == payload.email).first()
-    if not user or not verify_password(payload.password, user.hashed_password):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+    if not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Account is inactive")
     if user.role != UserRole.ATTORNEY.value:
-        raise HTTPException(status_code=400, detail="Only attorney accounts can use the desktop agent")
+        raise HTTPException(status_code=400, detail=f"Only attorney accounts can use the desktop agent. Your account role is: {user.role}")
     attorney = db.query(Attorney).filter(Attorney.user_id == user.id).first()
     if not attorney:
-        raise HTTPException(status_code=400, detail="Attorney profile not found")
+        raise HTTPException(status_code=400, detail="Attorney profile not found. Please contact support.")
 
     # Get or replace key (we only store hash, so if they already have one we issue a new one)
     row = db.query(AgentApiKey).filter(AgentApiKey.attorney_id == attorney.id).first()

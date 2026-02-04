@@ -123,17 +123,17 @@ def run_login_gui() -> bool:
     root.minsize(420, 480)
     root.configure(bg=_BG)
 
-    # Center window on screen; tall enough for all content
-    w, h = 420, 500
+    # Center window on screen; tall enough for all content including buttons
+    w, h = 420, 550
     root.geometry(f"{w}x{h}")
     root.update_idletasks()
     x = (root.winfo_screenwidth() // 2) - (w // 2)
     y = max(0, (root.winfo_screenheight() // 2) - (h // 2))
     root.geometry(f"{w}x{h}+{x}+{y}")
 
-    # Card container - enough height so password field and buttons are visible
+    # Card container - fixed size but tall enough for all content
     card = tk.Frame(root, bg=_CARD_BG, padx=40, pady=32)
-    card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=380, height=440)
+    card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=380, height=480)
 
     # Header
     title = tk.Label(
@@ -150,10 +150,16 @@ def run_login_gui() -> bool:
     subtitle.pack(anchor=tk.W, pady=(4, 8))
     
     # Show API URL being used (helpful for debugging)
+    # Check if it's the placeholder/default
+    api_url_display = API_URL
+    if "your-backend" in API_URL.lower() or API_URL == "http://localhost:8000":
+        api_url_display = f"{API_URL} (⚠️ Edit .env file!)"
     api_url_label = tk.Label(
-        card, text=f"Connecting to: {API_URL}",
+        card, text=f"Connecting to: {api_url_display}",
         font=("Segoe UI", 9),
-        fg=_TEXT_MUTED, bg=_CARD_BG,
+        fg="#dc2626" if "⚠️" in api_url_display else _TEXT_MUTED,
+        bg=_CARD_BG,
+        wraplength=300,
     )
     api_url_label.pack(anchor=tk.W, pady=(0, 24))
 
@@ -184,7 +190,7 @@ def run_login_gui() -> bool:
 
     # Buttons - ensure they're always visible
     btn_frame = tk.Frame(card, bg=_CARD_BG)
-    btn_frame.pack(fill=tk.X, pady=(8, 0))
+    btn_frame.pack(fill=tk.X, pady=(16, 0))
     signin_btn = tk.Button(
         btn_frame,
         text="Sign in",

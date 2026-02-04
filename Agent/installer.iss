@@ -59,7 +59,7 @@ begin
     if not FileExists(EnvPath) then
     begin
       EnvContent := '# LawTrack Agent config - edit with your API URL and key' + #13#10 +
-        'LAWTRACK_API_URL=https://your-backend.up.railway.app' + #13#10 +
+        'LAWTRACK_API_URL=https://lawtrack-production.up.railway.app' + #13#10 +
         'LAWTRACK_API_KEY=' + #13#10 +
         'LAWTRACK_MIN_SECONDS=60' + #13#10;
       SaveStringToFile(EnvPath, EnvContent, False);
