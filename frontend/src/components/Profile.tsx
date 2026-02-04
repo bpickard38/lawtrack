@@ -3,8 +3,7 @@ import { useAuth } from '../AuthContext';
 import { getAgentKeyStatus, createAgentKey, revokeAgentKey } from '../api';
 
 export default function Profile({ onBack }: { onBack: () => void }) {
-  const { user, attorney, updateProfile, changePassword, deleteAccount, logout } = useAuth();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, attorney, updateProfile, changePassword, deleteAccount } = useAuth();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -137,36 +136,6 @@ export default function Profile({ onBack }: { onBack: () => void }) {
       <header className="app-header">
         <div className="header-content">
           <h1>Profile</h1>
-          <div className="attorney-info">
-            {attorney && (
-              <button
-                type="button"
-                className="user-menu-btn"
-                onClick={() => setUserMenuOpen((v) => !v)}
-              >
-                <span className="attorney-name">{attorney.name}</span>
-                <span className="user-menu-caret">▾</span>
-              </button>
-            )}
-            {userMenuOpen && (
-              <div className="user-menu-dropdown" role="menu">
-                <button
-                  type="button"
-                  className="user-menu-item"
-                  onClick={() => { setUserMenuOpen(false); onBack(); }}
-                >
-                  Back to app
-                </button>
-                <button
-                  type="button"
-                  className="user-menu-item danger"
-                  onClick={() => { setUserMenuOpen(false); logout(); }}
-                >
-                  Sign out
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </header>
 
