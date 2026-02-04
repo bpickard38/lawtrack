@@ -140,6 +140,12 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
     const oldCaseId = editingActivity?.case_id ?? null;
     const newCaseId = updated.case_id;
 
+    // Update activities in state
+    if (oldCaseId == null && newCaseId != null) {
+      // Moving from unassigned to a case
+      setUnassignedActivities(prev => prev.filter(a => a.id !== updated.id));
+    }
+    
     setActivitiesByCase(prev => {
       const next = { ...prev };
       if (oldCaseId != null && oldCaseId !== newCaseId) {
@@ -155,7 +161,105 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
       }
       return next;
     });
-    loadSummaries();
+
+    // Update summaries locally without reloading
+    if (oldCaseId !== newCaseId) {
+      // Activity moved between cases or to/from unassigned
+      if (oldCaseId != null) {
+        // Removing from old case
+        setSummaries(prev => {
+          const oldSummary = prev[oldCaseId];
+          if (oldSummary) {
+            const newSummary = { ...oldSummary };
+            newSummary.total_minutes -= updated.duration_minutes;
+            newSummary.total_hours = newSummary.total_minutes / 60;
+            newSummary.activity_count -= 1;
+            if (updated.type === 'document') newSummary.document_minutes -= updated.duration_minutes;
+            else if (updated.type === 'email') newSummary.email_minutes -= updated.duration_minutes;
+            else if (updated.type === 'call') newSummary.call_minutes -= updated.duration_minutes;
+            return { ...prev, [oldCaseId]: newSummary };
+          }
+          return prev;
+        });
+      } else {
+        // Removing from unassigned
+        setUnassignedSummary(prev => ({
+          ...prev,
+          total_minutes: prev.total_minutes - updated.duration_minutes,
+          total_hours: (prev.total_minutes - updated.duration_minutes) / 60,
+          activity_count: prev.activity_count - 1,
+          document_minutes: updated.type === 'document' ? prev.document_minutes - updated.duration_minutes : prev.document_minutes,
+          email_minutes: updated.type === 'email' ? prev.email_minutes - updated.duration_minutes : prev.email_minutes,
+          call_minutes: updated.type === 'call' ? prev.call_minutes - updated.duration_minutes : prev.call_minutes,
+        }));
+      }
+      
+      if (newCaseId != null) {
+        // Adding to new case
+        setSummaries(prev => {
+          const newSummary = prev[newCaseId];
+          if (newSummary) {
+            const updatedSummary = { ...newSummary };
+            updatedSummary.total_minutes += updated.duration_minutes;
+            updatedSummary.total_hours = updatedSummary.total_minutes / 60;
+            updatedSummary.activity_count += 1;
+            if (updated.type === 'document') updatedSummary.document_minutes += updated.duration_minutes;
+            else if (updated.type === 'email') updatedSummary.email_minutes += updated.duration_minutes;
+            else if (updated.type === 'call') updatedSummary.call_minutes += updated.duration_minutes;
+            return { ...prev, [newCaseId]: updatedSummary };
+          }
+          return prev;
+        });
+      } else {
+        // Moved to unassigned
+        setUnassignedSummary(prev => ({
+          ...prev,
+          total_minutes: prev.total_minutes + updated.duration_minutes,
+          total_hours: (prev.total_minutes + updated.duration_minutes) / 60,
+          activity_count: prev.activity_count + 1,
+          document_minutes: updated.type === 'document' ? prev.document_minutes + updated.duration_minutes : prev.document_minutes,
+          email_minutes: updated.type === 'email' ? prev.email_minutes + updated.duration_minutes : prev.email_minutes,
+          call_minutes: updated.type === 'call' ? prev.call_minutes + updated.duration_minutes : prev.call_minutes,
+        }));
+        setUnassignedActivities(prev => [...prev, updated]);
+      }
+    } else if (newCaseId != null) {
+      // Activity updated within same case - update summary
+      setSummaries(prev => {
+        const summary = prev[newCaseId];
+        if (summary) {
+          // Find old activity to calculate difference
+          const oldActivity = activitiesByCase[newCaseId]?.find(a => a.id === updated.id);
+          if (oldActivity) {
+            const durationDiff = updated.duration_minutes - oldActivity.duration_minutes;
+            const typeChanged = oldActivity.type !== updated.type;
+            
+            const newSummary = { ...summary };
+            newSummary.total_minutes += durationDiff;
+            newSummary.total_hours = newSummary.total_minutes / 60;
+            
+            if (typeChanged) {
+              // Remove old type minutes, add new type minutes
+              if (oldActivity.type === 'document') newSummary.document_minutes -= oldActivity.duration_minutes;
+              else if (oldActivity.type === 'email') newSummary.email_minutes -= oldActivity.duration_minutes;
+              else if (oldActivity.type === 'call') newSummary.call_minutes -= oldActivity.duration_minutes;
+              
+              if (updated.type === 'document') newSummary.document_minutes += updated.duration_minutes;
+              else if (updated.type === 'email') newSummary.email_minutes += updated.duration_minutes;
+              else if (updated.type === 'call') newSummary.call_minutes += updated.duration_minutes;
+            } else {
+              // Same type, just update minutes
+              if (updated.type === 'document') newSummary.document_minutes += durationDiff;
+              else if (updated.type === 'email') newSummary.email_minutes += durationDiff;
+              else if (updated.type === 'call') newSummary.call_minutes += durationDiff;
+            }
+            
+            return { ...prev, [newCaseId]: newSummary };
+          }
+        }
+        return prev;
+      });
+    }
   }
 
   function handleDeleteClick(a: Activity) {
@@ -168,16 +272,45 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
     setDeleteConfirm(null);
     try {
       await deleteActivity(a.id);
+      
+      // Update activities in state
       if (a.case_id) {
         setActivitiesByCase(prev => {
           const list = (prev[a.case_id!] || []).filter(x => x.id !== a.id);
           return { ...prev, [a.case_id!]: list };
         });
+        
+        // Update summary locally
+        setSummaries(prev => {
+          const summary = prev[a.case_id!];
+          if (summary) {
+            const newSummary = { ...summary };
+            newSummary.total_minutes -= a.duration_minutes;
+            newSummary.total_hours = newSummary.total_minutes / 60;
+            newSummary.activity_count -= 1;
+            if (a.type === 'document') newSummary.document_minutes -= a.duration_minutes;
+            else if (a.type === 'email') newSummary.email_minutes -= a.duration_minutes;
+            else if (a.type === 'call') newSummary.call_minutes -= a.duration_minutes;
+            return { ...prev, [a.case_id!]: newSummary };
+          }
+          return prev;
+        });
       } else {
         setUnassignedActivities(prev => prev.filter(x => x.id !== a.id));
+        
+        // Update unassigned summary locally
+        setUnassignedSummary(prev => ({
+          ...prev,
+          total_minutes: prev.total_minutes - a.duration_minutes,
+          total_hours: (prev.total_minutes - a.duration_minutes) / 60,
+          activity_count: prev.activity_count - 1,
+          document_minutes: a.type === 'document' ? prev.document_minutes - a.duration_minutes : prev.document_minutes,
+          email_minutes: a.type === 'email' ? prev.email_minutes - a.duration_minutes : prev.email_minutes,
+          call_minutes: a.type === 'call' ? prev.call_minutes - a.duration_minutes : prev.call_minutes,
+        }));
       }
+      
       if (editingActivity?.id === a.id) setEditingActivity(null);
-      loadSummaries();
     } catch (err) {
       alert('Error deleting: ' + (err as Error).message);
     }
@@ -207,7 +340,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
       if (onCaseAdded) {
         onCaseAdded();
       }
-      // Reload summaries to include the new case
+      // Reload summaries to include the new case (only when creating a new case)
       loadSummaries();
     } catch (err) {
       alert('Error creating case: ' + (err as Error).message);
@@ -300,111 +433,6 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
         )}
       </div>
       <div className="case-reports-grid">
-        {/* Unassigned Activities Card */}
-        <div className="case-report-card">
-            <div className="case-report-header">
-              <div>
-                <h3>Unassigned</h3>
-                <p className="client-name" style={{ color: '#f59e0b' }}>Activities not assigned to a case</p>
-              </div>
-              <div className="total-time">
-                <div className="time-value">{unassignedSummary.total_hours > 0 ? formatHours(unassignedSummary.total_hours) : '0.0'}</div>
-                <div className="time-label">hours</div>
-              </div>
-            </div>
-
-            <div className="time-breakdown">
-              <BreakdownSection
-                type="document"
-                icon="📄"
-                label="Documents"
-                minutes={unassignedSummary.document_minutes}
-                totalMinutes={unassignedSummary.total_minutes}
-                expanded={expandedUnassigned === 'document'}
-                onToggle={() => toggleExpandUnassigned('document')}
-                loading={loadingUnassigned}
-                activities={unassignedActivities.filter(a => a.type === 'document')}
-                getActivityName={getActivityName}
-                getActivityIcon={getActivityIcon}
-                onEdit={setEditingActivity}
-                onDelete={handleDeleteClick}
-                cases={cases}
-                onAssign={async (activity, caseId) => {
-                  try {
-                    const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
-                    setUnassignedActivities(prev => prev.filter(a => a.id !== activity.id));
-                    handleActivityUpdated(updated);
-                    loadSummaries();
-                  } catch (err) {
-                    alert('Error assigning: ' + (err as Error).message);
-                  }
-                }}
-                isUnassigned={true}
-              />
-              <BreakdownSection
-                type="email"
-                icon="📧"
-                label="Emails"
-                minutes={unassignedSummary.email_minutes}
-                totalMinutes={unassignedSummary.total_minutes}
-                expanded={expandedUnassigned === 'email'}
-                onToggle={() => toggleExpandUnassigned('email')}
-                loading={loadingUnassigned}
-                activities={unassignedActivities.filter(a => a.type === 'email')}
-                getActivityName={getActivityName}
-                getActivityIcon={getActivityIcon}
-                onEdit={setEditingActivity}
-                onDelete={handleDeleteClick}
-                cases={cases}
-                onAssign={async (activity, caseId) => {
-                  try {
-                    const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
-                    setUnassignedActivities(prev => prev.filter(a => a.id !== activity.id));
-                    handleActivityUpdated(updated);
-                    loadSummaries();
-                  } catch (err) {
-                    alert('Error assigning: ' + (err as Error).message);
-                  }
-                }}
-                isUnassigned={true}
-              />
-              <BreakdownSection
-                type="call"
-                icon="📞"
-                label="Calls"
-                minutes={unassignedSummary.call_minutes}
-                totalMinutes={unassignedSummary.total_minutes}
-                expanded={expandedUnassigned === 'call'}
-                onToggle={() => toggleExpandUnassigned('call')}
-                loading={loadingUnassigned}
-                activities={unassignedActivities.filter(a => a.type === 'call')}
-                getActivityName={getActivityName}
-                getActivityIcon={getActivityIcon}
-                onEdit={setEditingActivity}
-                onDelete={handleDeleteClick}
-                cases={cases}
-                onAssign={async (activity, caseId) => {
-                  try {
-                    const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
-                    setUnassignedActivities(prev => prev.filter(a => a.id !== activity.id));
-                    handleActivityUpdated(updated);
-                    loadSummaries();
-                  } catch (err) {
-                    alert('Error assigning: ' + (err as Error).message);
-                  }
-                }}
-                isUnassigned={true}
-              />
-            </div>
-
-            <div className="case-stats">
-              <div className="stat">
-                <span className="stat-label">Total Activities</span>
-                <span className="stat-value">{unassignedSummary.activity_count}</span>
-              </div>
-            </div>
-          </div>
-
         {/* Case Cards */}
         {cases.map((c) => {
         const summary = summaries[c.id] || {
@@ -492,6 +520,108 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
           </div>
         );
         })}
+
+        {/* Unassigned Activities Card */}
+        <div className="case-report-card">
+          <div className="case-report-header">
+            <div>
+              <h3>Unassigned</h3>
+              <p className="client-name" style={{ color: '#f59e0b' }}>Activities not assigned to a case</p>
+            </div>
+            <div className="total-time">
+              <div className="time-value">{unassignedSummary.total_hours > 0 ? formatHours(unassignedSummary.total_hours) : '0.0'}</div>
+              <div className="time-label">hours</div>
+            </div>
+          </div>
+
+          <div className="time-breakdown">
+            <BreakdownSection
+              type="document"
+              icon="📄"
+              label="Documents"
+              minutes={unassignedSummary.document_minutes}
+              totalMinutes={unassignedSummary.total_minutes}
+              expanded={expandedUnassigned === 'document'}
+              onToggle={() => toggleExpandUnassigned('document')}
+              loading={loadingUnassigned}
+              activities={unassignedActivities.filter(a => a.type === 'document')}
+              getActivityName={getActivityName}
+              getActivityIcon={getActivityIcon}
+              onEdit={setEditingActivity}
+              onDelete={handleDeleteClick}
+              cases={cases}
+              onAssign={async (activity, caseId) => {
+                try {
+                  const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
+                  setUnassignedActivities(prev => prev.filter(a => a.id !== activity.id));
+                  handleActivityUpdated(updated);
+                } catch (err) {
+                  alert('Error assigning: ' + (err as Error).message);
+                }
+              }}
+              isUnassigned={true}
+            />
+            <BreakdownSection
+              type="email"
+              icon="📧"
+              label="Emails"
+              minutes={unassignedSummary.email_minutes}
+              totalMinutes={unassignedSummary.total_minutes}
+              expanded={expandedUnassigned === 'email'}
+              onToggle={() => toggleExpandUnassigned('email')}
+              loading={loadingUnassigned}
+              activities={unassignedActivities.filter(a => a.type === 'email')}
+              getActivityName={getActivityName}
+              getActivityIcon={getActivityIcon}
+              onEdit={setEditingActivity}
+              onDelete={handleDeleteClick}
+              cases={cases}
+              onAssign={async (activity, caseId) => {
+                try {
+                  const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
+                  setUnassignedActivities(prev => prev.filter(a => a.id !== activity.id));
+                  handleActivityUpdated(updated);
+                } catch (err) {
+                  alert('Error assigning: ' + (err as Error).message);
+                }
+              }}
+              isUnassigned={true}
+            />
+            <BreakdownSection
+              type="call"
+              icon="📞"
+              label="Calls"
+              minutes={unassignedSummary.call_minutes}
+              totalMinutes={unassignedSummary.total_minutes}
+              expanded={expandedUnassigned === 'call'}
+              onToggle={() => toggleExpandUnassigned('call')}
+              loading={loadingUnassigned}
+              activities={unassignedActivities.filter(a => a.type === 'call')}
+              getActivityName={getActivityName}
+              getActivityIcon={getActivityIcon}
+              onEdit={setEditingActivity}
+              onDelete={handleDeleteClick}
+              cases={cases}
+              onAssign={async (activity, caseId) => {
+                try {
+                  const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
+                  setUnassignedActivities(prev => prev.filter(a => a.id !== activity.id));
+                  handleActivityUpdated(updated);
+                } catch (err) {
+                  alert('Error assigning: ' + (err as Error).message);
+                }
+              }}
+              isUnassigned={true}
+            />
+          </div>
+
+          <div className="case-stats">
+            <div className="stat">
+              <span className="stat-label">Total Activities</span>
+              <span className="stat-value">{unassignedSummary.activity_count}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {deleteConfirm && (
@@ -513,13 +643,46 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
           }}
           onDeleted={() => {
             if (!editingActivity) return;
-            const cid = editingActivity.case_id;
-            setActivitiesByCase((prev) => {
-              const list = (prev[cid!] || []).filter((x) => x.id !== editingActivity.id);
-              return { ...prev, [cid!]: list };
-            });
+            const a = editingActivity;
+            const cid = a.case_id;
+            
+            // Update activities in state
+            if (cid) {
+              setActivitiesByCase((prev) => {
+                const list = (prev[cid] || []).filter((x) => x.id !== a.id);
+                return { ...prev, [cid]: list };
+              });
+              
+              // Update summary locally
+              setSummaries(prev => {
+                const summary = prev[cid];
+                if (summary) {
+                  const newSummary = { ...summary };
+                  newSummary.total_minutes -= a.duration_minutes;
+                  newSummary.total_hours = newSummary.total_minutes / 60;
+                  newSummary.activity_count -= 1;
+                  if (a.type === 'document') newSummary.document_minutes -= a.duration_minutes;
+                  else if (a.type === 'email') newSummary.email_minutes -= a.duration_minutes;
+                  else if (a.type === 'call') newSummary.call_minutes -= a.duration_minutes;
+                  return { ...prev, [cid]: newSummary };
+                }
+                return prev;
+              });
+            } else {
+              // Unassigned activity
+              setUnassignedActivities(prev => prev.filter(x => x.id !== a.id));
+              setUnassignedSummary(prev => ({
+                ...prev,
+                total_minutes: prev.total_minutes - a.duration_minutes,
+                total_hours: (prev.total_minutes - a.duration_minutes) / 60,
+                activity_count: prev.activity_count - 1,
+                document_minutes: a.type === 'document' ? prev.document_minutes - a.duration_minutes : prev.document_minutes,
+                email_minutes: a.type === 'email' ? prev.email_minutes - a.duration_minutes : prev.email_minutes,
+                call_minutes: a.type === 'call' ? prev.call_minutes - a.duration_minutes : prev.call_minutes,
+              }));
+            }
+            
             setEditingActivity(null);
-            loadSummaries();
           }}
         />
       )}
