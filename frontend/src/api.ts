@@ -252,3 +252,14 @@ export async function revokeAgentKey(): Promise<void> {
   });
   if (!response.ok) throw new Error('Failed to revoke agent key');
 }
+
+export async function deleteAccount(): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/auth/me`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to delete account');
+  }
+}

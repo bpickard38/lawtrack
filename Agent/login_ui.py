@@ -31,9 +31,13 @@ def _write_env_file(api_key: str) -> None:
     LOG.info("Saved API key to %s", env_path)
 
 
-def _login_request(email: str, password: str) -> str | None:
-    """POST to agent-key/from-login; returns api_key or None on failure."""
+def _login_request(email: str, password: str) -> tuple[str | None, str | None]:
+    """
+    POST to agent-key/from-login; returns (api_key, error_message).
+    If api_key is None, error_message contains the reason.
+    """
     url = f"{API_URL.rstrip('/')}/api/auth/agent-key/from-login"
+    LOG.info("Attempting login to: %s", url)
     try:
         r = requests.post(
             url,
@@ -42,13 +46,32 @@ def _login_request(email: str, password: str) -> str | None:
             timeout=15,
         )
         if not r.ok:
-            LOG.warning("Login failed: %s %s", r.status_code, r.text)
-            return None
+            try:
+                error_data = r.json()
+                error_msg = error_data.get("detail", f"Login failed ({r.status_code})")
+            except:
+                error_msg = f"Login failed ({r.status_code})"
+            
+            # Add helpful context if connecting to localhost
+            if "localhost" in API_URL.lower() or "127.0.0.1" in API_URL:
+                error_msg += f"\n\nNote: Connecting to {API_URL}. If your backend is deployed (e.g. Railway), set LAWTRACK_API_URL in .env to your backend URL."
+            
+            LOG.warning("Login failed: %s %s", r.status_code, error_msg)
+            return None, error_msg
         data = r.json()
-        return data.get("api_key")
+        return data.get("api_key"), None
+    except requests.exceptions.ConnectionError as e:
+        error_msg = f"Cannot connect to {API_URL}.\n\n"
+        if "localhost" in API_URL.lower() or "127.0.0.1" in API_URL:
+            error_msg += "The agent is trying to connect to localhost. If your backend is deployed (e.g. Railway), edit the .env file in the agent folder and set:\nLAWTRACK_API_URL=https://your-backend.up.railway.app"
+        else:
+            error_msg += f"Check that {API_URL} is correct and the backend is running."
+        LOG.warning("Connection failed: %s", e)
+        return None, error_msg
     except requests.RequestException as e:
+        error_msg = f"Network error: {str(e)}"
         LOG.warning("Request failed: %s", e)
-        return None
+        return None, error_msg
 
 
 # UI colors (match LawTrack branding)
@@ -85,14 +108,14 @@ def run_login_gui() -> bool:
         err_label.config(text="")
         signin_btn.config(state=tk.DISABLED, text="Signing in…")
         root.update()
-        key = _login_request(email, password)
+        key, error_msg = _login_request(email, password)
         if key:
             _write_env_file(key)
             result.append(True)
             root.quit()
         else:
             signin_btn.config(state=tk.NORMAL, text="Sign in")
-            err_label.config(text="Invalid email or password, or not an attorney account.")
+            err_label.config(text=error_msg or "Invalid email or password, or not an attorney account.")
 
     root = tk.Tk()
     root.title("LawTrack")
@@ -124,7 +147,15 @@ def run_login_gui() -> bool:
         font=("Segoe UI", 11),
         fg=_TEXT_MUTED, bg=_CARD_BG,
     )
-    subtitle.pack(anchor=tk.W, pady=(4, 24))
+    subtitle.pack(anchor=tk.W, pady=(4, 8))
+    
+    # Show API URL being used (helpful for debugging)
+    api_url_label = tk.Label(
+        card, text=f"Connecting to: {API_URL}",
+        font=("Segoe UI", 9),
+        fg=_TEXT_MUTED, bg=_CARD_BG,
+    )
+    api_url_label.pack(anchor=tk.W, pady=(0, 24))
 
     # Email
     email_var = tk.StringVar()
@@ -202,9 +233,9 @@ def run_login_console() -> bool:
         return False
     if not email or not password:
         return False
-    key = _login_request(email, password)
+    key, error_msg = _login_request(email, password)
     if not key:
-        print("Login failed. Check email, password, and that your account is an attorney.")
+        print(f"Login failed: {error_msg or 'Check email, password, and that your account is an attorney.'}")
         return False
     _write_env_file(key)
     print("Signed in. Restart the agent to start tracking.")

@@ -305,6 +305,32 @@ def change_password(payload: PasswordChange, current_user: User = Depends(get_cu
 
     return {"message": "Password updated"}
 
+@app.delete("/api/auth/me")
+def delete_account(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete the current user's account and all associated data."""
+    # Delete attorney profile if exists (cascades to activities, cases, rules, agent keys)
+    if current_user.role == UserRole.ATTORNEY.value:
+        attorney = db.query(Attorney).filter(Attorney.user_id == current_user.id).first()
+        if attorney:
+            # Unassign activities from cases (don't delete activities, just unassign)
+            db.query(Activity).filter(Activity.attorney_id == attorney.id).update({"case_id": None})
+            # Delete cases (activities already unassigned)
+            db.query(Case).filter(Case.attorney_id == attorney.id).delete()
+            # Delete rules
+            db.query(CaseRule).filter(CaseRule.attorney_id == attorney.id).delete()
+            # Delete agent keys
+            db.query(AgentApiKey).filter(AgentApiKey.attorney_id == attorney.id).delete()
+            # Delete activities
+            db.query(Activity).filter(Activity.attorney_id == attorney.id).delete()
+            # Delete attorney
+            db.delete(attorney)
+    
+    # Delete user (this will cascade to any other foreign keys)
+    db.delete(current_user)
+    db.commit()
+    
+    return {"message": "Account deleted"}
+
 @app.get("/api/auth/attorney", response_model=AttorneyResponse)
 def get_my_attorney(attorney: Attorney = Depends(get_current_attorney)):
     """Get current user's attorney profile"""

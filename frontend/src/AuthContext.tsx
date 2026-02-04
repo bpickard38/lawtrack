@@ -32,6 +32,7 @@ interface AuthContextType {
   }) => Promise<void>;
   updateProfile: (args: { email?: string; fullName?: string }) => Promise<void>;
   changePassword: (args: { currentPassword: string; newPassword: string }) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -205,6 +206,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function deleteAccount() {
+    if (!token) throw new Error('Not authenticated');
+
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error(data?.detail || 'Failed to delete account');
+    }
+
+    // Account deleted, log out
+    logout();
+  }
+
   function logout() {
     localStorage.removeItem('auth_token');
     setToken(null);
@@ -213,7 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, attorney, token, login, register, updateProfile, changePassword, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, attorney, token, login, register, updateProfile, changePassword, deleteAccount, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

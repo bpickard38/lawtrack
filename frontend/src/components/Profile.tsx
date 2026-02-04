@@ -3,7 +3,7 @@ import { useAuth } from '../AuthContext';
 import { getAgentKeyStatus, createAgentKey, revokeAgentKey } from '../api';
 
 export default function Profile({ onBack }: { onBack: () => void }) {
-  const { user, attorney, updateProfile, changePassword } = useAuth();
+  const { user, attorney, updateProfile, changePassword, deleteAccount } = useAuth();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -110,6 +110,24 @@ export default function Profile({ onBack }: { onBack: () => void }) {
       navigator.clipboard.writeText(agentKeyJustCreated);
       setMessage('API key copied to clipboard.');
       setTimeout(() => setMessage(null), 3000);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (!confirm('Are you sure you want to delete your account? This action cannot be undone. All your cases, activities, and data will be permanently deleted.')) {
+      return;
+    }
+    if (!confirm('This will permanently delete your account and all associated data. Are you absolutely sure?')) {
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    try {
+      await deleteAccount();
+      // Account deleted, user will be logged out automatically
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete account');
+      setSaving(false);
     }
   }
 
@@ -245,6 +263,22 @@ export default function Profile({ onBack }: { onBack: () => void }) {
               )}
             </>
           )}
+
+          <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+
+          <h2 style={{ marginBottom: 12 }}>Danger zone</h2>
+          <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
+            Permanently delete your account and all associated data. This action cannot be undone.
+          </p>
+          <button
+            type="button"
+            onClick={handleDeleteAccount}
+            disabled={saving}
+            className="logout-btn"
+            style={{ backgroundColor: '#dc2626', color: 'white', border: 'none' }}
+          >
+            {saving ? 'Deleting...' : 'Delete account'}
+          </button>
         </div>
       </main>
     </div>
