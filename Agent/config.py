@@ -2,13 +2,25 @@ import os
 import sys
 from pathlib import Path
 
-# When running as PyInstaller exe, load .env from the folder containing the exe
+# Where the agent stores its config (.env).
+#
+# For the installed exe:
+# - Read defaults (like LAWTRACK_API_URL) from the install folder .env
+# - Store per-user secrets (LAWTRACK_API_KEY) in %LOCALAPPDATA%\LawTrackAgent\.env
 if getattr(sys, "frozen", False):
-    _AGENT_DIR = Path(sys.executable).parent
+    _INSTALL_DIR = Path(sys.executable).parent
+    base = os.getenv("LOCALAPPDATA") or str(Path.home())
+    _AGENT_DIR = Path(base) / "LawTrackAgent"
+    _AGENT_DIR.mkdir(parents=True, exist_ok=True)
 else:
-    _AGENT_DIR = Path(__file__).resolve().parent
+    _INSTALL_DIR = Path(__file__).resolve().parent
+    _AGENT_DIR = _INSTALL_DIR
+
 try:
     from dotenv import load_dotenv
+    # Load install-time defaults first (e.g. LAWTRACK_API_URL from installer .env)
+    load_dotenv(_INSTALL_DIR / ".env")
+    # Then load per-user overrides (e.g. LAWTRACK_API_KEY written by login)
     load_dotenv(_AGENT_DIR / ".env")
 except ImportError:
     pass
