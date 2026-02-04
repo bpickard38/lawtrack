@@ -40,6 +40,7 @@ function App() {
     }
   });
   const [showQuitInstructions, setShowQuitInstructions] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   const LAWTRACK_LAUNCH_URL = 'lawtrack://launch';
 
@@ -47,11 +48,20 @@ function App() {
     if (agentIndicatorActive) {
       setShowQuitInstructions(true);
     } else {
+      // Try to launch the agent
+      const launchWindow = window.open(LAWTRACK_LAUNCH_URL, '_blank', 'noopener,noreferrer');
+      
+      // If protocol handler isn't registered, browser may open blank page
+      // Show install prompt after a short delay (user can close it if agent launched)
+      setTimeout(() => {
+        setShowInstallPrompt(true);
+      }, 500);
+      
+      // Mark as active optimistically (user can mark inactive if agent didn't start)
       setAgentIndicatorActive(true);
       try {
         localStorage.setItem(AGENT_INDICATOR_STORAGE_KEY, 'true');
       } catch {}
-      window.open(LAWTRACK_LAUNCH_URL, '_blank', 'noopener,noreferrer');
     }
   }
 
@@ -299,6 +309,31 @@ function App() {
               <button type="button" className="agent-quit-gotit-btn" onClick={() => setShowQuitInstructions(false)}>
                 Got it
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showInstallPrompt && (
+        <div className="agent-quit-modal-overlay" onClick={() => setShowInstallPrompt(false)} role="presentation">
+          <div className="agent-quit-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="agent-install-title">
+            <h3 id="agent-install-title">Install the auto tracker</h3>
+            <p>
+              If the agent didn&apos;t launch, you need to install it first. Download the installer, run it, and sign in with your LawTrack email and password.
+            </p>
+            <div className="agent-quit-modal-actions">
+              <button type="button" className="agent-quit-done-btn" onClick={() => setShowInstallPrompt(false)}>
+                Cancel
+              </button>
+              <a
+                href={AGENT_INSTALLER_URL}
+                download
+                className="agent-quit-gotit-btn"
+                style={{ textDecoration: 'none', display: 'inline-block', textAlign: 'center' }}
+                onClick={() => setShowInstallPrompt(false)}
+              >
+                Download installer
+              </a>
             </div>
           </div>
         </div>
