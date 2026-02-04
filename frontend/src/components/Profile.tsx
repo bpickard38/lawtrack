@@ -137,8 +137,6 @@ export default function Profile({ onBack }: { onBack: () => void }) {
         {error && <div className="error-message">{error}</div>}
         {message && <div className="success-message">{message}</div>}
 
-        <h1 style={{ textAlign: 'center', marginBottom: 24 }}>Profile</h1>
-
         <div style={{ marginBottom: 16 }}>
           <div><strong>Role:</strong> {user?.role || 'attorney'}</div>
           <div><strong>Firm ID:</strong> {user?.firm_id ?? '—'}</div>
