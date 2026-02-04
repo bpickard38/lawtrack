@@ -130,7 +130,7 @@ def run_login_gui() -> bool:
     root.configure(bg=_BG)
 
     # Center window on screen; tall enough for all content including buttons
-    w, h = 420, 550
+    w, h = 420, 580
     root.geometry(f"{w}x{h}")
     root.update_idletasks()
     x = (root.winfo_screenwidth() // 2) - (w // 2)
@@ -139,7 +139,7 @@ def run_login_gui() -> bool:
 
     # Card container - fixed size but tall enough for all content
     card = tk.Frame(root, bg=_CARD_BG, padx=40, pady=32)
-    card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=380, height=480)
+    card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=380, height=520)
 
     # Header
     title = tk.Label(
@@ -198,12 +198,12 @@ def run_login_gui() -> bool:
     btn_frame = tk.Frame(card, bg=_CARD_BG)
     btn_frame.pack(fill=tk.X, pady=(16, 0))
     
-    # Sign in button - styled for Windows compatibility
+    # Sign in button - taller and more visible
     signin_btn = tk.Button(
         btn_frame,
         text="Sign in",
         command=do_login,
-        font=("Segoe UI", 11, "bold"),
+        font=("Segoe UI", 12, "bold"),
         fg="white",
         bg=_ACCENT,
         activeforeground="white",
@@ -211,17 +211,18 @@ def run_login_gui() -> bool:
         relief=tk.RAISED,
         borderwidth=2,
         cursor="hand2",
-        padx=28,
-        pady=12,
+        padx=32,
+        pady=14,
+        height=2,
     )
     signin_btn.pack(side=tk.LEFT, padx=(0, 12))
     
-    # Cancel button - styled as secondary
+    # Cancel button - taller and more visible
     cancel_btn = tk.Button(
         btn_frame,
         text="Cancel",
         command=root.quit,
-        font=("Segoe UI", 11),
+        font=("Segoe UI", 12),
         fg=_TEXT,
         bg=_ENTRY_BG,
         activeforeground=_TEXT,
@@ -229,8 +230,9 @@ def run_login_gui() -> bool:
         relief=tk.RAISED,
         borderwidth=1,
         cursor="hand2",
-        padx=28,
-        pady=12,
+        padx=32,
+        pady=14,
+        height=2,
     )
     cancel_btn.pack(side=tk.LEFT)
 
