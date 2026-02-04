@@ -4,6 +4,7 @@ User enters LawTrack email and password; we get an API key and save it to .env.
 """
 import logging
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -14,9 +15,18 @@ from config import API_URL, _AGENT_DIR
 LOG = logging.getLogger("lawtrack.login")
 
 
-def _write_env_file(api_key: str) -> None:
-    """Write or update .env so LAWTRACK_API_KEY is set. Preserves other vars."""
-    env_path = _AGENT_DIR / ".env"
+def _user_env_path() -> Path:
+    """Path to the per-user .env (where we save the API key). Same place config loads from when frozen."""
+    if getattr(sys, "frozen", False):
+        base = os.environ.get("LOCALAPPDATA") or str(Path.home())
+        return Path(base) / "LawTrackAgent" / ".env"
+    return _AGENT_DIR / ".env"
+
+
+def _write_env_file(api_key: str) -> bool:
+    """Write or update .env so LAWTRACK_API_KEY is set. Preserves other vars. Returns True if written and verified."""
+    env_path = _user_env_path()
+    env_path.parent.mkdir(parents=True, exist_ok=True)
     lines: list[str] = []
     key_line = f'LAWTRACK_API_KEY={api_key}\n'
     if env_path.exists():
@@ -28,7 +38,16 @@ def _write_env_file(api_key: str) -> None:
     if not any(l.strip().startswith("LAWTRACK_API_KEY=") for l in lines):
         lines.append(key_line.strip())
     env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    LOG.info("Saved API key to %s", env_path)
+    # Verify it was written so we know the next run will see it
+    try:
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("LAWTRACK_API_KEY=") and line.strip() != "LAWTRACK_API_KEY=":
+                LOG.info("Saved API key to %s", env_path)
+                return True
+    except Exception as e:
+        LOG.warning("Could not verify .env write: %s", e)
+    LOG.error("API key may not have been saved to %s", env_path)
+    return False
 
 
 def _login_request(email: str, password: str) -> tuple[str | None, str | None]:
@@ -112,9 +131,12 @@ def run_login_gui() -> bool:
             root.update()
             key, error_msg = _login_request(email, password)
             if key:
-                _write_env_file(key)
-                result.append(True)
-                root.quit()
+                if _write_env_file(key):
+                    result.append(True)
+                    root.quit()
+                else:
+                    err_label.config(text="Signed in but could not save the key to your config. Try running the agent as yourself (not as administrator).")
+                    signin_btn.config(state=tk.NORMAL, text="Sign in", bg=_ACCENT)
             else:
                 signin_btn.config(state=tk.NORMAL, text="Sign in", bg=_ACCENT)
                 err_label.config(text=error_msg or "Invalid email or password, or not an attorney account.")
@@ -286,8 +308,18 @@ def ensure_api_key() -> bool:
 def restart_self() -> None:
     """Restart this process so the new run loads .env with the saved API key."""
     executable = sys.executable
-    argv = [executable] + sys.argv
+    argv = [executable] + sys.argv[1:]
     if getattr(sys, "frozen", False):
-        executable = sys.executable
-        argv = [sys.executable] + sys.argv
-    os.execv(executable, argv)
+        argv = [executable] + sys.argv[1:]
+    # On Windows os.execv doesn't work; start new process and exit so it loads the new .env
+    if sys.platform == "win32":
+        try:
+            kwargs = {}
+            if getattr(subprocess, "CREATE_NO_WINDOW", 0):
+                kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+            subprocess.Popen(argv, **kwargs)
+        except Exception as e:
+            LOG.warning("Could not restart agent: %s. Please start the agent again from the Start menu.", e)
+        sys.exit(0)
+    else:
+        os.execv(executable, [executable] + sys.argv[1:])
