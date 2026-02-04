@@ -383,7 +383,8 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
           onClose={() => setAddAt(null)}
           onSaved={(created) => {
             setAddAt(null);
-            setActivities(prev => [created, ...prev]);
+            // Reload activities to ensure we have the latest data from server
+            loadActivities();
           }}
         />
       )}
@@ -398,7 +399,8 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
           onClose={() => setEditActivity(null)}
           onSaved={(updated) => {
             setEditActivity(null);
-            setActivities(prev => prev.map(a => a.id === updated.id ? updated : a));
+            // Reload activities to ensure we have the latest data from server
+            loadActivities();
           }}
           onDeleted={(deletedId) => {
             setEditActivity(null);
