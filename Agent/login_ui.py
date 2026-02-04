@@ -100,22 +100,28 @@ def run_login_gui() -> bool:
     result: list[bool] = []
 
     def do_login():
-        email = email_var.get().strip()
-        password = password_var.get()
-        if not email or not password:
-            err_label.config(text="Please enter your email and password.")
-            return
-        err_label.config(text="")
-        signin_btn.config(state=tk.DISABLED, text="Signing in…")
-        root.update()
-        key, error_msg = _login_request(email, password)
-        if key:
-            _write_env_file(key)
-            result.append(True)
-            root.quit()
-        else:
-            signin_btn.config(state=tk.NORMAL, text="Sign in")
-            err_label.config(text=error_msg or "Invalid email or password, or not an attorney account.")
+        try:
+            email = email_var.get().strip()
+            password = password_var.get()
+            if not email or not password:
+                err_label.config(text="Please enter your email and password.")
+                return
+            err_label.config(text="")
+            signin_btn.config(state=tk.DISABLED, text="Signing in…", bg="#94a3b8")
+            root.update_idletasks()
+            root.update()
+            key, error_msg = _login_request(email, password)
+            if key:
+                _write_env_file(key)
+                result.append(True)
+                root.quit()
+            else:
+                signin_btn.config(state=tk.NORMAL, text="Sign in", bg=_ACCENT)
+                err_label.config(text=error_msg or "Invalid email or password, or not an attorney account.")
+        except Exception as e:
+            LOG.error("Login error: %s", e, exc_info=True)
+            signin_btn.config(state=tk.NORMAL, text="Sign in", bg=_ACCENT)
+            err_label.config(text=f"Error: {str(e)}")
 
     root = tk.Tk()
     root.title("LawTrack")
@@ -188,9 +194,11 @@ def run_login_gui() -> bool:
     err_label = tk.Label(card, text="", font=("Segoe UI", 10), fg=_ERR, bg=_CARD_BG)
     err_label.pack(anchor=tk.W, pady=(0, 16))
 
-    # Buttons - ensure they're always visible
+    # Buttons - ensure they're always visible and properly styled
     btn_frame = tk.Frame(card, bg=_CARD_BG)
     btn_frame.pack(fill=tk.X, pady=(16, 0))
+    
+    # Sign in button - styled for Windows compatibility
     signin_btn = tk.Button(
         btn_frame,
         text="Sign in",
@@ -200,26 +208,31 @@ def run_login_gui() -> bool:
         bg=_ACCENT,
         activeforeground="white",
         activebackground=_ACCENT_HOVER,
-        relief=tk.FLAT,
+        relief=tk.RAISED,
+        borderwidth=2,
         cursor="hand2",
-        padx=24,
-        pady=10,
+        padx=28,
+        pady=12,
     )
     signin_btn.pack(side=tk.LEFT, padx=(0, 12))
-    tk.Button(
+    
+    # Cancel button - styled as secondary
+    cancel_btn = tk.Button(
         btn_frame,
         text="Cancel",
         command=root.quit,
         font=("Segoe UI", 11),
-        fg=_TEXT_MUTED,
-        bg=_CARD_BG,
+        fg=_TEXT,
+        bg=_ENTRY_BG,
         activeforeground=_TEXT,
-        activebackground=_ENTRY_BG,
-        relief=tk.FLAT,
+        activebackground="#e2e8f0",
+        relief=tk.RAISED,
+        borderwidth=1,
         cursor="hand2",
-        padx=24,
-        pady=10,
-    ).pack(side=tk.LEFT)
+        padx=28,
+        pady=12,
+    )
+    cancel_btn.pack(side=tk.LEFT)
 
     # Bind Enter to sign in
     root.bind("<Return>", lambda e: do_login())
