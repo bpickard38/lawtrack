@@ -68,6 +68,15 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
       });
     } catch (error) {
       console.error('Failed to load unassigned activities:', error);
+      // Set empty summary on error so card doesn't show
+      setUnassignedSummary({
+        total_minutes: 0,
+        total_hours: 0,
+        document_minutes: 0,
+        email_minutes: 0,
+        call_minutes: 0,
+        activity_count: 0,
+      });
     }
     
     setLoading(false);
@@ -182,7 +191,7 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
     <div className="case-reports">
       <div className="case-reports-grid">
         {/* Unassigned Activities Card */}
-        {unassignedSummary && unassignedSummary.total_minutes > 0 && (
+        {unassignedSummary && unassignedSummary.activity_count > 0 && (
           <div className="case-report-card">
             <div className="case-report-header">
               <div>
@@ -190,7 +199,7 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
                 <p className="client-name" style={{ color: '#f59e0b' }}>Activities not assigned to a case</p>
               </div>
               <div className="total-time">
-                <div className="time-value">{formatHours(unassignedSummary.total_hours)}</div>
+                <div className="time-value">{unassignedSummary.total_hours > 0 ? formatHours(unassignedSummary.total_hours) : '0.0'}</div>
                 <div className="time-label">hours</div>
               </div>
             </div>
