@@ -22,6 +22,7 @@ interface CaseReportsProps {
 type ExpandKey = { caseId: number; type: 'document' | 'email' | 'call' };
 
 export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
+  const [activeTab, setActiveTab] = useState<'cases' | 'unassigned'>('cases');
   const [summaries, setSummaries] = useState<Record<number, CaseTimeSummary>>({});
   const [loading, setLoading] = useState(true);
   const [activitiesByCase, setActivitiesByCase] = useState<Record<number, Activity[]>>({});
@@ -136,7 +137,37 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
 
   return (
     <div className="case-reports">
-      {cases.map((c) => {
+      <div className="reports-tabs" style={{ marginBottom: 24 }}>
+        <button
+          className={`reports-tab ${activeTab === 'cases' ? 'active' : ''}`}
+          onClick={() => setActiveTab('cases')}
+        >
+          Case Reports
+        </button>
+        <button
+          className={`reports-tab ${activeTab === 'unassigned' ? 'active' : ''}`}
+          onClick={() => setActiveTab('unassigned')}
+        >
+          Unassigned
+        </button>
+      </div>
+
+      {activeTab === 'unassigned' ? (
+        <UnassignedActivities
+          key="unassigned"
+          attorneyId={attorneyId}
+          cases={cases}
+          onActivityAssigned={(updated) => {
+            handleActivityUpdated(updated);
+            setActiveTab('cases');
+            loadSummaries();
+          }}
+          onEdit={setEditingActivity}
+          onDelete={handleDeleteActivity}
+        />
+      ) : (
+        <div className="case-reports-grid">
+          {cases.map((c) => {
         const summary = summaries[c.id];
         if (!summary || summary.total_minutes === 0) return null;
 
@@ -215,7 +246,9 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
             </div>
           </div>
         );
-      })}
+          })}
+        </div>
+      )}
 
       {editingActivity && (
         <ActivityEditModal
@@ -476,5 +509,175 @@ function ActivityEditModal({ activity, cases, onClose, onSaved, onDeleted }: Act
         </form>
       </div>
     </div>
+  );
+}
+
+interface UnassignedActivitiesProps {
+  attorneyId: number;
+  cases: Case[];
+  onActivityAssigned: (activity: Activity) => void;
+  onEdit: (activity: Activity) => void;
+  onDelete: (activity: Activity) => void;
+}
+
+function UnassignedActivities({ attorneyId, cases, onActivityAssigned, onEdit, onDelete }: UnassignedActivitiesProps) {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [assigningId, setAssigningId] = useState<number | null>(null);
+
+  useEffect(() => {
+    loadUnassigned();
+  }, []);
+
+  async function loadUnassigned() {
+    setLoading(true);
+    try {
+      const list = await fetchActivities({ attorney_id: attorneyId, unassigned: true });
+      setActivities(list);
+    } catch (error) {
+      console.error('Failed to load unassigned activities:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAssign(activity: Activity, caseId: number) {
+    setAssigningId(activity.id);
+    try {
+      const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
+      setActivities(prev => prev.filter(a => a.id !== activity.id));
+      onActivityAssigned(updated);
+    } catch (err) {
+      alert('Error assigning: ' + (err as Error).message);
+    } finally {
+      setAssigningId(null);
+    }
+  }
+
+  function getActivityName(a: Activity) {
+    return a.document_name || a.email_subject || a.contact_name || a.description || 'Activity';
+  }
+
+  function getActivityIcon(t: string) {
+    switch (t) {
+      case 'document': return '📄';
+      case 'email': return '📧';
+      case 'call': return '📞';
+      default: return '📋';
+    }
+  }
+
+  if (loading) {
+    return <div className="loading">Loading unassigned activities...</div>;
+  }
+
+  if (activities.length === 0) {
+    return (
+      <div className="empty-state">
+        <p>No unassigned activities.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="unassigned-activities">
+      <div style={{ marginBottom: 16, padding: 16, background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: 8 }}>
+        <strong>Unassigned Activities ({activities.length})</strong>
+        <p style={{ margin: '8px 0 0 0', fontSize: 14, color: '#92400e' }}>
+          Assign these activities to cases to track time properly.
+        </p>
+      </div>
+
+      <ul className="breakdown-activity-list">
+        {activities.map((a) => (
+          <UnassignedActivityItem
+            key={a.id}
+            activity={a}
+            cases={cases}
+            assigningId={assigningId}
+            onAssign={handleAssign}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            getActivityName={getActivityName}
+            getActivityIcon={getActivityIcon}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+interface UnassignedActivityItemProps {
+  activity: Activity;
+  cases: Case[];
+  assigningId: number | null;
+  onAssign: (activity: Activity, caseId: number) => void;
+  onEdit: (activity: Activity) => void;
+  onDelete: (activity: Activity) => void;
+  getActivityName: (a: Activity) => string;
+  getActivityIcon: (t: string) => string;
+}
+
+function UnassignedActivityItem({
+  activity,
+  cases,
+  assigningId,
+  onAssign,
+  onEdit,
+  onDelete,
+  getActivityName,
+  getActivityIcon,
+}: UnassignedActivityItemProps) {
+  const [selectedCaseId, setSelectedCaseId] = useState<string>('');
+  const start = new Date(activity.start_time);
+  const end = new Date(activity.end_time);
+
+  return (
+    <li className="breakdown-activity-item">
+      <span className="breakdown-act-icon">{getActivityIcon(activity.type)}</span>
+      <div className="breakdown-act-main" style={{ flex: 1 }}>
+        <span className="breakdown-act-name">{getActivityName(activity)}</span>
+        <span className="breakdown-act-time">
+          {start.toLocaleDateString()}{' '}
+          {start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} –{' '}
+          {end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} ({activity.duration_minutes}m)
+        </span>
+        {activity.description && (
+          <span style={{ display: 'block', fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+            {activity.description}
+          </span>
+        )}
+      </div>
+      <div className="breakdown-act-actions" style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
+        <select
+          value={selectedCaseId}
+          onChange={(e) => setSelectedCaseId(e.target.value)}
+          style={{ padding: '6px 12px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 13 }}
+          disabled={assigningId === activity.id}
+        >
+          <option value="">Select case...</option>
+          {cases.map((c) => (
+            <option key={c.id} value={c.id.toString()}>{c.name}</option>
+          ))}
+        </select>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button
+            type="button"
+            className="breakdown-btn-edit"
+            onClick={() => onAssign(activity, parseInt(selectedCaseId, 10))}
+            disabled={!selectedCaseId || assigningId === activity.id}
+            style={{ fontSize: 12, padding: '4px 8px' }}
+          >
+            {assigningId === activity.id ? 'Assigning...' : 'Assign'}
+          </button>
+          <button type="button" className="breakdown-btn-edit" onClick={() => onEdit(activity)} style={{ fontSize: 12, padding: '4px 8px' }}>
+            Edit
+          </button>
+          <button type="button" className="breakdown-btn-delete" onClick={() => onDelete(activity)} style={{ fontSize: 12, padding: '4px 8px' }}>
+            Delete
+          </button>
+        </div>
+      </div>
+    </li>
   );
 }
