@@ -138,38 +138,33 @@ export default function Profile({ onBack }: { onBack: () => void }) {
         <div className="header-content">
           <h1>Profile</h1>
           <div className="attorney-info">
-            <button onClick={onBack} className="logout-btn">
-              Back
-            </button>
             {attorney && (
-              <>
+              <button
+                type="button"
+                className="user-menu-btn"
+                onClick={() => setUserMenuOpen((v) => !v)}
+              >
+                <span className="attorney-name">{attorney.name}</span>
+                <span className="user-menu-caret">▾</span>
+              </button>
+            )}
+            {userMenuOpen && (
+              <div className="user-menu-dropdown" role="menu">
                 <button
                   type="button"
-                  className="user-menu-btn"
-                  onClick={() => setUserMenuOpen((v) => !v)}
+                  className="user-menu-item"
+                  onClick={() => { setUserMenuOpen(false); onBack(); }}
                 >
-                  <span className="attorney-name">{attorney.name}</span>
-                  <span className="user-menu-caret">▾</span>
+                  Back to app
                 </button>
-                {userMenuOpen && (
-                  <div className="user-menu-dropdown" role="menu">
-                    <button
-                      type="button"
-                      className="user-menu-item"
-                      onClick={() => { setUserMenuOpen(false); onBack(); }}
-                    >
-                      Back to app
-                    </button>
-                    <button
-                      type="button"
-                      className="user-menu-item danger"
-                      onClick={() => { setUserMenuOpen(false); logout(); }}
-                    >
-                      Sign out
-                    </button>
-                  </div>
-                )}
-              </>
+                <button
+                  type="button"
+                  className="user-menu-item danger"
+                  onClick={() => { setUserMenuOpen(false); logout(); }}
+                >
+                  Sign out
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -232,9 +227,6 @@ export default function Profile({ onBack }: { onBack: () => void }) {
                 The desktop app tracks documents, email, and calls and sends activities to LawTrack. Install it, then
                 open the app and sign in with your LawTrack email and password — no API key needed.
               </p>
-              <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 16, fontStyle: 'italic' }}>
-                API keys are created automatically when you sign in. You only need to manage keys manually if troubleshooting or using the API directly.
-              </p>
               <p style={{ marginBottom: 16 }}>
                 <a
                   href={(import.meta.env.VITE_AGENT_INSTALLER_URL as string) || 'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe'}
@@ -247,53 +239,10 @@ export default function Profile({ onBack }: { onBack: () => void }) {
                 </a>
                 {' '}(Windows)
               </p>
-              {agentKeyJustCreated ? (
-                <div className="agent-key-reveal">
-                  <p><strong>Store this key securely; it won&apos;t be shown again.</strong></p>
-                  <code>{agentKeyJustCreated}</code>
-                  <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                    <button type="button" onClick={copyAgentKey} className="auth-submit-btn">Copy</button>
-                    <button type="button" onClick={() => setAgentKeyJustCreated(null)} className="logout-btn">
-                      Done
-                    </button>
-                  </div>
-                </div>
-              ) : agentKeyStatus?.has_key ? (
-                <div className="agent-key-status">
-                  <p>Key active <code>{agentKeyStatus.key_prefix}…</code></p>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      onClick={handleCreateAgentKey}
-                      disabled={agentKeyLoading}
-                      className="auth-submit-btn"
-                    >
-                      {agentKeyLoading ? 'Creating…' : 'Create new key'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRevokeAgentKey}
-                      disabled={agentKeyLoading}
-                      className="logout-btn"
-                    >
-                      {agentKeyLoading ? 'Revoking…' : 'Revoke key'}
-                    </button>
-                  </div>
-                  <p style={{ fontSize: 12, color: '#6b7280', marginTop: 8 }}>
-                    Creating a new key revokes the current one. Store the new key securely.
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <button
-                    type="button"
-                    onClick={handleCreateAgentKey}
-                    disabled={agentKeyLoading}
-                    className="auth-submit-btn"
-                  >
-                    {agentKeyLoading ? 'Creating…' : 'Create API key'}
-                  </button>
-                </div>
+              {agentKeyStatus?.has_key && (
+                <p style={{ color: '#6b7280', fontSize: 13, marginTop: 8 }}>
+                  API key: <code>{agentKeyStatus.key_prefix}…</code>
+                </p>
               )}
             </>
           )}
