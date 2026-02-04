@@ -48,18 +48,13 @@ function App() {
     if (agentIndicatorActive) {
       setShowQuitInstructions(true);
     } else {
-      // Launch agent via custom protocol. Use a temporary link + click so the browser
-      // hands off to the OS (window.open often opens a blank tab instead).
+      // Launch agent via custom protocol (link click so browser hands off to OS).
       const a = document.createElement('a');
       a.href = LAWTRACK_LAUNCH_URL;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-
-      setTimeout(() => {
-        setShowInstallPrompt(true);
-      }, 500);
 
       setAgentIndicatorActive(true);
       try {
@@ -285,18 +280,29 @@ function App() {
       </main>
 
       {/* Agent status: "Start auto tracker" (click → launch) or "Active" (click → quit instructions) */}
-      <button
-        type="button"
-        className={`agent-status-pill ${agentIndicatorActive ? 'agent-status-active' : 'agent-status-start'}`}
-        onClick={handleAgentPillClick}
-        title={agentIndicatorActive ? 'Click for how to quit' : 'Click to start the auto tracker'}
-        aria-label={agentIndicatorActive ? 'Auto tracker active (click for quit instructions)' : 'Start auto tracker'}
-      >
-        {agentIndicatorActive && <span className="agent-status-dot" aria-hidden />}
-        <span className="agent-status-label">
-          {agentIndicatorActive ? 'Active' : 'Start auto tracker'}
-        </span>
-      </button>
+      <div className="agent-status-wrap">
+        <button
+          type="button"
+          className={`agent-status-pill ${agentIndicatorActive ? 'agent-status-active' : 'agent-status-start'}`}
+          onClick={handleAgentPillClick}
+          title={agentIndicatorActive ? 'Click for how to quit' : 'Click to start the auto tracker'}
+          aria-label={agentIndicatorActive ? 'Auto tracker active (click for quit instructions)' : 'Start auto tracker'}
+        >
+          {agentIndicatorActive && <span className="agent-status-dot" aria-hidden />}
+          <span className="agent-status-label">
+            {agentIndicatorActive ? 'Active' : 'Start auto tracker'}
+          </span>
+        </button>
+        {!agentIndicatorActive && (
+          <button
+            type="button"
+            className="agent-status-install-link"
+            onClick={(e) => { e.stopPropagation(); setShowInstallPrompt(true); }}
+          >
+            Get installer
+          </button>
+        )}
+      </div>
 
       {showQuitInstructions && (
         <div className="agent-quit-modal-overlay" onClick={() => setShowQuitInstructions(false)} role="presentation">

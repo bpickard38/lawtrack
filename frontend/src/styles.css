@@ -431,12 +431,18 @@ body {
   color: white;
 }
 
-/* Agent status pill: bottom-right, Active (green) / Inactive (red), click to toggle */
-.agent-status-pill {
+/* Agent status: bottom-right pill + optional "Get installer" link */
+.agent-status-wrap {
   position: fixed;
   bottom: 16px;
   right: 16px;
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agent-status-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -448,6 +454,20 @@ body {
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.agent-status-install-link {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.agent-status-install-link:hover {
+  color: #374151;
 }
 
 .agent-status-pill:hover {
