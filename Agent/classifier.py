@@ -1,19 +1,40 @@
 import re
 
-# Websites we want to track in browsers
+# Websites we explicitly want to track in browsers (work-related)
 TRACKED_WEBSITES = [
     # Email sites
-    'gmail', 'mail.google.com', 'outlook', 'mail.yahoo.com', 
-    'protonmail', 'mail', 'inbox',
-    
-    # Legal research sites (add any you use)
-    'westlaw', 'lexisnexis', 'fastcase', 'casetext',
-    
-    # Document sites
-    'docs.google.com', 'drive.google.com', 'onedrive', 'dropbox',
-    
-    # Add more sites here as needed
+    'gmail', 'mail.google.com', 'outlook', 'office365', 'mail.yahoo.com',
+    'protonmail', 'inbox',
+
+    # Legal research / dockets
+    'westlaw', 'lexisnexis', 'fastcase', 'casetext', 'bloomberglaw',
+    'pacer', 'courtlistener',
+
+    # Document / file storage
+    'docs.google.com', 'drive.google.com', 'onedrive', 'sharepoint',
+    'dropbox', 'box.com',
+
+    # Practice management (if you open client files in a browser)
+    'clio', 'mycase',
 ]
+
+# Websites we never want to track (clear non-work noise)
+DO_NOT_TRACK_WEBSITES = [
+    'facebook', 'instagram', 'twitter', 'x.com', 'tiktok', 'snapchat',
+    'youtube', 'netflix', 'hulu', 'disneyplus', 'primevideo',
+    'espn', 'reddit', 'pinterest', 'spotify', 'pandora',
+]
+
+# Desktop apps we DO want to track.
+# Keep this list tight so random apps are ignored.
+ALLOWED_EMAIL_APPS = ("outlook",)  # add others like 'thunderbird' if you want
+ALLOWED_DOC_APPS = (
+    "winword", "word",          # Microsoft Word
+    "excel",                    # Excel (if you want to track spreadsheets)
+    "powerpnt", "powerpoint",   # PowerPoint
+    "acrobat", "acrord32",      # Adobe Acrobat / Reader
+)
+ALLOWED_MEETING_APPS = ("zoom", "teams", "skype", "webex", "meet")
 
 def should_track_website(window_title: str) -> bool:
     """
@@ -48,37 +69,42 @@ def classify(app_name: str, window_title: str = "") -> str:
 
     # Check if it's a browser
     is_browser = any(browser in name_no_ext for browser in ['chrome', 'msedge', 'firefox', 'safari', 'brave'])
-    
+
     if is_browser:
-        # Only track specific websites
+        title_lower = (window_title or "").lower()
+
+        # 1) Never track obvious non-work / personal sites
+        for bad in DO_NOT_TRACK_WEBSITES:
+            if bad in title_lower:
+                return None
+
+        # 2) Only track specific work-related websites
         if not should_track_website(window_title):
             return None  # Skip this activity
-        
-        # Classify based on site type
-        title_lower = window_title.lower()
-        
+
+        # 3) Classify based on site type
         # Email sites
         if any(mail in title_lower for mail in ['gmail', 'inbox', 'outlook', 'mail']):
             return "email"
-        
-        # Document sites
-        if any(doc in title_lower for doc in ['docs.google', 'drive.google', 'onedrive', 'dropbox']):
+
+        # Document / file sites
+        if any(doc in title_lower for doc in ['docs.google', 'drive.google', 'onedrive', 'sharepoint', 'dropbox', 'box.com']):
             return "document"
-        
+
         # Default for tracked sites
         return "document"
 
-    # Desktop email clients
-    if any(k in name_no_ext for k in ("outlook", "thunderbird")):
+    # Desktop email clients – only track explicit allowed apps
+    if any(k in name_no_ext for k in ALLOWED_EMAIL_APPS):
         return "email"
 
-    # Desktop document apps
-    if any(k in name_no_ext for k in ("word", "excel", "powerpoint", "acrobat", "notepad", "sublime", "code", "pages", "writer")):
+    # Desktop document apps – Word, Excel, PowerPoint, Acrobat, etc.
+    if any(k in name_no_ext for k in ALLOWED_DOC_APPS):
         return "document"
 
-    # Meeting apps
-    if any(k in name_no_ext for k in ("zoom", "teams", "skype", "webex", "meet")):
+    # Meeting apps – Zoom/Teams/etc.
+    if any(k in name_no_ext for k in ALLOWED_MEETING_APPS):
         return "meeting"
 
-    # Default fallback - track it
-    return "document"
+    # Anything else (editors, random apps, etc.) is ignored
+    return None

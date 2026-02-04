@@ -96,20 +96,21 @@ def run_login_gui() -> bool:
 
     root = tk.Tk()
     root.title("LawTrack")
-    root.resizable(False, False)
-    root.geometry("420x380")
+    root.resizable(True, True)
+    root.minsize(420, 480)
     root.configure(bg=_BG)
 
-    # Center window on screen
+    # Center window on screen; tall enough for all content
+    w, h = 420, 500
+    root.geometry(f"{w}x{h}")
     root.update_idletasks()
-    w, h = 420, 380
     x = (root.winfo_screenwidth() // 2) - (w // 2)
-    y = (root.winfo_screenheight() // 2) - (h // 2)
+    y = max(0, (root.winfo_screenheight() // 2) - (h // 2))
     root.geometry(f"{w}x{h}+{x}+{y}")
 
-    # Card container
-    card = tk.Frame(root, bg=_CARD_BG, padx=40, pady=36)
-    card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=380, height=320)
+    # Card container - enough height so password field and buttons are visible
+    card = tk.Frame(root, bg=_CARD_BG, padx=40, pady=32)
+    card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=380, height=440)
 
     # Header
     title = tk.Label(
@@ -130,29 +131,29 @@ def run_login_gui() -> bool:
     tk.Label(card, text="Email", font=("Segoe UI", 10, "bold"), fg=_TEXT, bg=_CARD_BG).pack(anchor=tk.W, pady=(0, 6))
     email_entry = tk.Entry(
         card, textvariable=email_var, font=("Segoe UI", 11),
-        width=36, relief=tk.FLAT, bg=_ENTRY_BG, fg=_TEXT,
+        width=38, relief=tk.FLAT, bg=_ENTRY_BG, fg=_TEXT,
         insertbackground=_TEXT,
     )
-    email_entry.pack(fill=tk.X, ipady=10, ipadx=12, pady=(0, 16))
+    email_entry.pack(fill=tk.X, ipady=12, ipadx=14, pady=(0, 20))
     email_entry.focus_set()
 
-    # Password
+    # Password - same visible size as email so it doesn't look truncated
     password_var = tk.StringVar()
     tk.Label(card, text="Password", font=("Segoe UI", 10, "bold"), fg=_TEXT, bg=_CARD_BG).pack(anchor=tk.W, pady=(0, 6))
     password_entry = tk.Entry(
         card, textvariable=password_var, show="*", font=("Segoe UI", 11),
-        width=36, relief=tk.FLAT, bg=_ENTRY_BG, fg=_TEXT,
+        width=38, relief=tk.FLAT, bg=_ENTRY_BG, fg=_TEXT,
         insertbackground=_TEXT,
     )
-    password_entry.pack(fill=tk.X, ipady=10, ipadx=12, pady=(0, 24))
+    password_entry.pack(fill=tk.X, ipady=12, ipadx=14, pady=(0, 28))
 
     # Error message
     err_label = tk.Label(card, text="", font=("Segoe UI", 10), fg=_ERR, bg=_CARD_BG)
-    err_label.pack(anchor=tk.W, pady=(0, 12))
+    err_label.pack(anchor=tk.W, pady=(0, 16))
 
-    # Buttons
+    # Buttons - ensure they're always visible
     btn_frame = tk.Frame(card, bg=_CARD_BG)
-    btn_frame.pack(fill=tk.X)
+    btn_frame.pack(fill=tk.X, pady=(8, 0))
     signin_btn = tk.Button(
         btn_frame,
         text="Sign in",
