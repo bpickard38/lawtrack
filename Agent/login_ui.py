@@ -225,7 +225,11 @@ def run_login_gui() -> bool:
     root.bind("<Return>", lambda e: do_login())
 
     root.mainloop()
-    root.destroy()
+    # Safely destroy window (may already be destroyed if user closed it)
+    try:
+        root.destroy()
+    except tk.TclError:
+        pass  # Window already destroyed, ignore
     return bool(result)
 
 
