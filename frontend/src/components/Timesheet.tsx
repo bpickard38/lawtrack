@@ -212,8 +212,16 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
   const getCaseName = (caseId: number | null) =>
     caseId ? cases.find(c => c.id === caseId)?.name ?? '—' : '—';
 
-  const getActivityName = (a: Activity) =>
-    a.document_name || a.email_subject || a.contact_name || a.description || 'Activity';
+  const getActivityName = (a: Activity) => {
+    if (a.type === 'document') {
+      return a.document_name || 'Document';
+    } else if (a.type === 'email') {
+      return a.email_from || a.email_subject || 'Email';
+    } else if (a.type === 'call') {
+      return a.contact_name || 'Call';
+    }
+    return a.description || 'Activity';
+  };
 
   const getActivityIcon = (t: string) => {
     switch (t) {
@@ -327,11 +335,12 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
                           style={{ top, height }}
                           onPointerDown={e => handleBlockPointerDown(e, a)}
                         >
-                          <span className="ts-block-icon">{getActivityIcon(a.type)}</span>
                           <span className="ts-block-time">
                             {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – {end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                           </span>
-                          <span className="ts-block-name">{getActivityName(a)}</span>
+                          <span className="ts-block-name">
+                            {getActivityIcon(a.type)} {getActivityName(a)}
+                          </span>
                           {a.case_id && <span className="ts-block-case">{getCaseName(a.case_id)}</span>}
                         </div>
                       );

@@ -22,13 +22,17 @@ interface CaseReportsProps {
 type ExpandKey = { caseId: number; type: 'document' | 'email' | 'call' };
 
 export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
-  const [activeTab, setActiveTab] = useState<'cases' | 'unassigned'>('cases');
   const [summaries, setSummaries] = useState<Record<number, CaseTimeSummary>>({});
+  const [unassignedSummary, setUnassignedSummary] = useState<CaseTimeSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [activitiesByCase, setActivitiesByCase] = useState<Record<number, Activity[]>>({});
+  const [unassignedActivities, setUnassignedActivities] = useState<Activity[]>([]);
   const [loadingActivities, setLoadingActivities] = useState<Record<number, boolean>>({});
+  const [loadingUnassigned, setLoadingUnassigned] = useState(false);
   const [expanded, setExpanded] = useState<ExpandKey | null>(null);
+  const [expandedUnassigned, setExpandedUnassigned] = useState<'document' | 'email' | 'call' | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<Activity | null>(null);
 
   const loadSummaries = useCallback(async () => {
     setLoading(true);
@@ -42,8 +46,32 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
       }
     }
     setSummaries(summaryMap);
+    
+    // Load unassigned activities summary
+    try {
+      const unassigned = await fetchActivities({ attorney_id: attorneyId, unassigned: true });
+      setUnassignedActivities(unassigned);
+      
+      // Calculate summary for unassigned
+      const totalMinutes = unassigned.reduce((sum, a) => sum + a.duration_minutes, 0);
+      const documentMinutes = unassigned.filter(a => a.type === 'document').reduce((sum, a) => sum + a.duration_minutes, 0);
+      const emailMinutes = unassigned.filter(a => a.type === 'email').reduce((sum, a) => sum + a.duration_minutes, 0);
+      const callMinutes = unassigned.filter(a => a.type === 'call').reduce((sum, a) => sum + a.duration_minutes, 0);
+      
+      setUnassignedSummary({
+        total_minutes: totalMinutes,
+        total_hours: totalMinutes / 60,
+        document_minutes,
+        email_minutes,
+        call_minutes,
+        activity_count: unassigned.length,
+      });
+    } catch (error) {
+      console.error('Failed to load unassigned activities:', error);
+    }
+    
     setLoading(false);
-  }, [cases]);
+  }, [cases, attorneyId]);
 
   useEffect(() => {
     loadSummaries();
@@ -108,19 +136,34 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
     loadSummaries();
   }
 
-  async function handleDeleteActivity(a: Activity) {
-    if (!confirm('Delete this activity?')) return;
+  function handleDeleteClick(a: Activity) {
+    setDeleteConfirm(a);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteConfirm) return;
+    const a = deleteConfirm;
+    setDeleteConfirm(null);
     try {
       await deleteActivity(a.id);
-      setActivitiesByCase(prev => {
-        const list = (prev[a.case_id!] || []).filter(x => x.id !== a.id);
-        return { ...prev, [a.case_id!]: list };
-      });
+      if (a.case_id) {
+        setActivitiesByCase(prev => {
+          const list = (prev[a.case_id!] || []).filter(x => x.id !== a.id);
+          return { ...prev, [a.case_id!]: list };
+        });
+      } else {
+        setUnassignedActivities(prev => prev.filter(x => x.id !== a.id));
+      }
       if (editingActivity?.id === a.id) setEditingActivity(null);
       loadSummaries();
     } catch (err) {
       alert('Error deleting: ' + (err as Error).message);
     }
+  }
+
+  function toggleExpandUnassigned(type: 'document' | 'email' | 'call') {
+    const isSame = expandedUnassigned === type;
+    setExpandedUnassigned(isSame ? null : type);
   }
 
   if (loading) {
@@ -137,37 +180,116 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
 
   return (
     <div className="case-reports">
-      <div className="reports-tabs" style={{ marginBottom: 24 }}>
-        <button
-          className={`reports-tab ${activeTab === 'cases' ? 'active' : ''}`}
-          onClick={() => setActiveTab('cases')}
-        >
-          Case Reports
-        </button>
-        <button
-          className={`reports-tab ${activeTab === 'unassigned' ? 'active' : ''}`}
-          onClick={() => setActiveTab('unassigned')}
-        >
-          Unassigned
-        </button>
-      </div>
+      <div className="case-reports-grid">
+        {/* Unassigned Activities Card */}
+        {unassignedSummary && unassignedSummary.total_minutes > 0 && (
+          <div className="case-report-card">
+            <div className="case-report-header">
+              <div>
+                <h3>Unassigned</h3>
+                <p className="client-name" style={{ color: '#f59e0b' }}>Activities not assigned to a case</p>
+              </div>
+              <div className="total-time">
+                <div className="time-value">{formatHours(unassignedSummary.total_hours)}</div>
+                <div className="time-label">hours</div>
+              </div>
+            </div>
 
-      {activeTab === 'unassigned' ? (
-        <UnassignedActivities
-          key="unassigned"
-          attorneyId={attorneyId}
-          cases={cases}
-          onActivityAssigned={(updated) => {
-            handleActivityUpdated(updated);
-            setActiveTab('cases');
-            loadSummaries();
-          }}
-          onEdit={setEditingActivity}
-          onDelete={handleDeleteActivity}
-        />
-      ) : (
-        <div className="case-reports-grid">
-          {cases.map((c) => {
+            <div className="time-breakdown">
+              <BreakdownSection
+                type="document"
+                icon="📄"
+                label="Documents"
+                minutes={unassignedSummary.document_minutes}
+                totalMinutes={unassignedSummary.total_minutes}
+                expanded={expandedUnassigned === 'document'}
+                onToggle={() => toggleExpandUnassigned('document')}
+                loading={loadingUnassigned}
+                activities={unassignedActivities.filter(a => a.type === 'document')}
+                getActivityName={getActivityName}
+                getActivityIcon={getActivityIcon}
+                onEdit={setEditingActivity}
+                onDelete={handleDeleteClick}
+                cases={cases}
+                onAssign={async (activity, caseId) => {
+                  try {
+                    const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
+                    setUnassignedActivities(prev => prev.filter(a => a.id !== activity.id));
+                    handleActivityUpdated(updated);
+                    loadSummaries();
+                  } catch (err) {
+                    alert('Error assigning: ' + (err as Error).message);
+                  }
+                }}
+                isUnassigned={true}
+              />
+              <BreakdownSection
+                type="email"
+                icon="📧"
+                label="Emails"
+                minutes={unassignedSummary.email_minutes}
+                totalMinutes={unassignedSummary.total_minutes}
+                expanded={expandedUnassigned === 'email'}
+                onToggle={() => toggleExpandUnassigned('email')}
+                loading={loadingUnassigned}
+                activities={unassignedActivities.filter(a => a.type === 'email')}
+                getActivityName={getActivityName}
+                getActivityIcon={getActivityIcon}
+                onEdit={setEditingActivity}
+                onDelete={handleDeleteClick}
+                cases={cases}
+                onAssign={async (activity, caseId) => {
+                  try {
+                    const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
+                    setUnassignedActivities(prev => prev.filter(a => a.id !== activity.id));
+                    handleActivityUpdated(updated);
+                    loadSummaries();
+                  } catch (err) {
+                    alert('Error assigning: ' + (err as Error).message);
+                  }
+                }}
+                isUnassigned={true}
+              />
+              <BreakdownSection
+                type="call"
+                icon="📞"
+                label="Calls"
+                minutes={unassignedSummary.call_minutes}
+                totalMinutes={unassignedSummary.total_minutes}
+                expanded={expandedUnassigned === 'call'}
+                onToggle={() => toggleExpandUnassigned('call')}
+                loading={loadingUnassigned}
+                activities={unassignedActivities.filter(a => a.type === 'call')}
+                getActivityName={getActivityName}
+                getActivityIcon={getActivityIcon}
+                onEdit={setEditingActivity}
+                onDelete={handleDeleteClick}
+                cases={cases}
+                onAssign={async (activity, caseId) => {
+                  try {
+                    const updated = await updateActivity(activity.id, { case_id: caseId, status: 'edited' });
+                    setUnassignedActivities(prev => prev.filter(a => a.id !== activity.id));
+                    handleActivityUpdated(updated);
+                    loadSummaries();
+                  } catch (err) {
+                    alert('Error assigning: ' + (err as Error).message);
+                  }
+                }}
+                isUnassigned={true}
+              />
+            </div>
+
+            <div className="case-stats">
+              <div className="stat">
+                <span className="stat-label">Total Activities</span>
+                <span className="stat-value">{unassignedSummary.activity_count}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Case Cards */}
+        {cases.map((c) => {
         const summary = summaries[c.id];
         if (!summary || summary.total_minutes === 0) return null;
 
@@ -204,7 +326,7 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
                 getActivityName={getActivityName}
                 getActivityIcon={getActivityIcon}
                 onEdit={setEditingActivity}
-                onDelete={handleDeleteActivity}
+                onDelete={handleDeleteClick}
               />
               <BreakdownSection
                 type="email"
@@ -219,7 +341,7 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
                 getActivityName={getActivityName}
                 getActivityIcon={getActivityIcon}
                 onEdit={setEditingActivity}
-                onDelete={handleDeleteActivity}
+                onDelete={handleDeleteClick}
               />
               <BreakdownSection
                 type="call"
@@ -234,7 +356,7 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
                 getActivityName={getActivityName}
                 getActivityIcon={getActivityIcon}
                 onEdit={setEditingActivity}
-                onDelete={handleDeleteActivity}
+                onDelete={handleDeleteClick}
               />
             </div>
 
@@ -246,8 +368,15 @@ export default function CaseReports({ attorneyId, cases }: CaseReportsProps) {
             </div>
           </div>
         );
-          })}
-        </div>
+        })}
+      </div>
+
+      {deleteConfirm && (
+        <DeleteConfirmModal
+          activity={deleteConfirm}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteConfirm(null)}
+        />
       )}
 
       {editingActivity && (
@@ -289,6 +418,9 @@ interface BreakdownSectionProps {
   getActivityIcon: (t: string) => string;
   onEdit: (a: Activity) => void;
   onDelete: (a: Activity) => void;
+  cases?: Case[];
+  onAssign?: (activity: Activity, caseId: number) => void;
+  isUnassigned?: boolean;
 }
 
 function BreakdownSection({
@@ -305,9 +437,23 @@ function BreakdownSection({
   getActivityIcon,
   onEdit,
   onDelete,
+  cases,
+  onAssign,
+  isUnassigned,
 }: BreakdownSectionProps) {
+  const [assigningId, setAssigningId] = useState<number | null>(null);
   const pct = totalMinutes === 0 ? 0 : Math.round((minutes / totalMinutes) * 100);
   const fillClass = type === 'document' ? 'document' : type === 'email' ? 'email' : 'call';
+
+  async function handleAssign(activity: Activity, caseId: number) {
+    if (!onAssign) return;
+    setAssigningId(activity.id);
+    try {
+      await onAssign(activity, caseId);
+    } finally {
+      setAssigningId(null);
+    }
+  }
 
   return (
     <div className="breakdown-item">
@@ -351,6 +497,22 @@ function BreakdownSection({
                       </span>
                     </div>
                     <div className="breakdown-act-actions">
+                      {isUnassigned && cases && cases.length > 0 && (
+                        <select
+                          onChange={(e) => {
+                            const caseId = parseInt(e.target.value, 10);
+                            if (caseId) handleAssign(a, caseId);
+                          }}
+                          disabled={assigningId === a.id}
+                          style={{ padding: '4px 8px', fontSize: 12, marginRight: 8, border: '1px solid #e5e7eb', borderRadius: 4 }}
+                          defaultValue=""
+                        >
+                          <option value="">Assign to...</option>
+                          {cases.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      )}
                       <button type="button" className="breakdown-btn-edit" onClick={() => onEdit(a)}>
                         Edit
                       </button>
@@ -394,7 +556,7 @@ function ActivityEditModal({ activity, cases, onClose, onSaved, onDeleted }: Act
   const [description, setDescription] = useState(activity.description ?? '');
   const [caseId, setCaseId] = useState(activity.case_id?.toString() ?? '');
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   function parseLocalDT(dateStr: string, timeStr: string): Date {
     const [y, mo, d] = dateStr.split('-').map(Number);
@@ -433,16 +595,13 @@ function ActivityEditModal({ activity, cases, onClose, onSaved, onDeleted }: Act
     }
   }
 
-  async function handleDelete() {
-    if (!confirm('Delete this activity?')) return;
-    setDeleting(true);
+  async function handleDeleteConfirm() {
     try {
       await deleteActivity(activity.id);
+      setShowDeleteConfirm(false);
       onDeleted();
     } catch (err) {
       alert('Error deleting: ' + (err as Error).message);
-    } finally {
-      setDeleting(false);
     }
   }
 
@@ -496,8 +655,8 @@ function ActivityEditModal({ activity, cases, onClose, onSaved, onDeleted }: Act
             </select>
           </div>
           <div className="ts-form-actions">
-            <button type="button" className="ts-btn-delete" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Deleting…' : 'Delete'}
+            <button type="button" className="ts-btn-delete" onClick={() => setShowDeleteConfirm(true)}>
+              Delete
             </button>
             <div className="ts-form-actions-right">
               <button type="button" className="ts-btn-cancel" onClick={onClose}>Cancel</button>
@@ -507,6 +666,44 @@ function ActivityEditModal({ activity, cases, onClose, onSaved, onDeleted }: Act
             </div>
           </div>
         </form>
+        {showDeleteConfirm && (
+          <DeleteConfirmModal
+            activity={activity}
+            onConfirm={handleDeleteConfirm}
+            onCancel={() => setShowDeleteConfirm(false)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface DeleteConfirmModalProps {
+  activity: Activity;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function DeleteConfirmModal({ activity, onConfirm, onCancel }: DeleteConfirmModalProps) {
+  function getActivityName(a: Activity) {
+    return a.document_name || a.email_subject || a.contact_name || a.description || 'Activity';
+  }
+
+  return (
+    <div className="ts-modal-overlay" onClick={onCancel} style={{ zIndex: 1001 }}>
+      <div className="ts-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+        <h3 style={{ marginBottom: 16 }}>Delete Activity?</h3>
+        <p style={{ marginBottom: 24, color: '#6b7280' }}>
+          Are you sure you want to delete "{getActivityName(activity)}"? This action cannot be undone.
+        </p>
+        <div className="ts-form-actions">
+          <button type="button" className="ts-btn-cancel" onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className="ts-btn-delete" onClick={onConfirm}>
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );
