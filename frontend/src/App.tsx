@@ -15,8 +15,6 @@ const AGENT_INSTALLER_URL =
   (import.meta.env.VITE_AGENT_INSTALLER_URL as string) ||
   'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe';
 
-const AGENT_INDICATOR_STORAGE_KEY = 'lawtrack_agent_indicator_active';
-
 type View = 'timesheet' | 'reports' | 'rules' | 'profile';
 type PublicView = 'home' | 'auth';
 
@@ -29,47 +27,6 @@ function App() {
   const [publicView, setPublicView] = useState<PublicView>('home');
   const [showHomepage, setShowHomepage] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-
-  // Agent status: "Start auto tracker" (click → launch) or "Active" (click → show quit instructions)
-  const [agentIndicatorActive, setAgentIndicatorActive] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem(AGENT_INDICATOR_STORAGE_KEY);
-      return stored === 'true';
-    } catch {
-      return false;
-    }
-  });
-  const [showQuitInstructions, setShowQuitInstructions] = useState(false);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-
-  const LAWTRACK_LAUNCH_URL = 'lawtrack://launch';
-
-  function handleAgentPillClick() {
-    if (agentIndicatorActive) {
-      setShowQuitInstructions(true);
-    } else {
-      // Launch agent via custom protocol (link click so browser hands off to OS).
-      const a = document.createElement('a');
-      a.href = LAWTRACK_LAUNCH_URL;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
-      setAgentIndicatorActive(true);
-      try {
-        localStorage.setItem(AGENT_INDICATOR_STORAGE_KEY, 'true');
-      } catch {}
-    }
-  }
-
-  function markAgentQuit() {
-    setAgentIndicatorActive(false);
-    setShowQuitInstructions(false);
-    try {
-      localStorage.setItem(AGENT_INDICATOR_STORAGE_KEY, 'false');
-    } catch {}
-  }
 
   useEffect(() => {
     if (attorney) loadCases();
@@ -278,75 +235,6 @@ function App() {
           </div>
         )}
       </main>
-
-      {/* Agent status: "Start auto tracker" (click → launch) or "Active" (click → quit instructions) */}
-      <div className="agent-status-wrap">
-        <button
-          type="button"
-          className={`agent-status-pill ${agentIndicatorActive ? 'agent-status-active' : 'agent-status-start'}`}
-          onClick={handleAgentPillClick}
-          title={agentIndicatorActive ? 'Click for how to quit' : 'Click to start the auto tracker'}
-          aria-label={agentIndicatorActive ? 'Auto tracker active (click for quit instructions)' : 'Start auto tracker'}
-        >
-          {agentIndicatorActive && <span className="agent-status-dot" aria-hidden />}
-          <span className="agent-status-label">
-            {agentIndicatorActive ? 'Active' : 'Start auto tracker'}
-          </span>
-        </button>
-        {!agentIndicatorActive && (
-          <button
-            type="button"
-            className="agent-status-install-link"
-            onClick={(e) => { e.stopPropagation(); setShowInstallPrompt(true); }}
-          >
-            Get installer
-          </button>
-        )}
-      </div>
-
-      {showQuitInstructions && (
-        <div className="agent-quit-modal-overlay" onClick={() => setShowQuitInstructions(false)} role="presentation">
-          <div className="agent-quit-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="agent-quit-title">
-            <h3 id="agent-quit-title">Quit the auto tracker</h3>
-            <p>
-              In the system tray (bottom-right of your taskbar), right-click the <strong>LawTrack (L)</strong> icon and choose <strong>Quit</strong>.
-            </p>
-            <div className="agent-quit-modal-actions">
-              <button type="button" className="agent-quit-done-btn" onClick={markAgentQuit}>
-                I&apos;ve quit
-              </button>
-              <button type="button" className="agent-quit-gotit-btn" onClick={() => setShowQuitInstructions(false)}>
-                Got it
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showInstallPrompt && (
-        <div className="agent-quit-modal-overlay" onClick={() => setShowInstallPrompt(false)} role="presentation">
-          <div className="agent-quit-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="agent-install-title">
-            <h3 id="agent-install-title">Install the auto tracker</h3>
-            <p>
-              If the agent didn&apos;t launch, you need to install it first. Download the installer, run it, and sign in with your LawTrack email and password.
-            </p>
-            <div className="agent-quit-modal-actions">
-              <button type="button" className="agent-quit-done-btn" onClick={() => setShowInstallPrompt(false)}>
-                Cancel
-              </button>
-              <a
-                href={AGENT_INSTALLER_URL}
-                download
-                className="agent-quit-gotit-btn"
-                style={{ textDecoration: 'none', display: 'inline-block', textAlign: 'center' }}
-                onClick={() => setShowInstallPrompt(false)}
-              >
-                Download installer
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
