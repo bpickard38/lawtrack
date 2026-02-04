@@ -181,13 +181,23 @@ function App() {
             </button>
             {userMenuOpen && (
               <div className="user-menu-dropdown" role="menu">
-                <button
-                  type="button"
-                  className="user-menu-item"
-                  onClick={() => { setUserMenuOpen(false); setCurrentView('profile'); }}
-                >
-                  Profile
-                </button>
+                {currentView === 'profile' ? (
+                  <button
+                    type="button"
+                    className="user-menu-item"
+                    onClick={() => { setUserMenuOpen(false); setCurrentView('timesheet'); }}
+                  >
+                    Back to app
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="user-menu-item"
+                    onClick={() => { setUserMenuOpen(false); setCurrentView('profile'); }}
+                  >
+                    Profile
+                  </button>
+                )}
                 <button
                   type="button"
                   className="user-menu-item danger"

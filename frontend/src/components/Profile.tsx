@@ -132,25 +132,20 @@ export default function Profile({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="header-content">
-          <h1>Profile</h1>
+    <main className="app-main">
+      <div className="auth-card" style={{ maxWidth: 720, margin: '24px auto' }}>
+        {error && <div className="error-message">{error}</div>}
+        {message && <div className="success-message">{message}</div>}
+
+        <h1 style={{ textAlign: 'center', marginBottom: 24 }}>Profile</h1>
+
+        <div style={{ marginBottom: 16 }}>
+          <div><strong>Role:</strong> {user?.role || 'attorney'}</div>
+          <div><strong>Firm ID:</strong> {user?.firm_id ?? '—'}</div>
+          {attorney && (
+            <div><strong>Billable rate:</strong> ${attorney.billable_rate}/hr</div>
+          )}
         </div>
-      </header>
-
-      <main className="app-main">
-        <div className="auth-card" style={{ maxWidth: 720, margin: '24px auto' }}>
-          {error && <div className="error-message">{error}</div>}
-          {message && <div className="success-message">{message}</div>}
-
-          <div style={{ marginBottom: 16 }}>
-            <div><strong>Role:</strong> {user?.role || 'attorney'}</div>
-            <div><strong>Firm ID:</strong> {user?.firm_id ?? '—'}</div>
-            {attorney && (
-              <div><strong>Billable rate:</strong> ${attorney.billable_rate}/hr</div>
-            )}
-          </div>
 
           <h2 style={{ marginBottom: 12 }}>Account details</h2>
           <form onSubmit={handleSaveProfile}>
@@ -232,8 +227,8 @@ export default function Profile({ onBack }: { onBack: () => void }) {
             {saving ? 'Deleting...' : 'Delete account'}
           </button>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
 
