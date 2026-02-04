@@ -521,7 +521,13 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
         );
         })}
 
-        {/* Unassigned Activities Card */}
+        {/* Unassigned Activities Card - total derived from category counts so it always matches Documents + Emails + Calls */}
+        {(() => {
+          const unassignedDocCount = unassignedActivities.filter(a => a.type === 'document').length;
+          const unassignedEmailCount = unassignedActivities.filter(a => a.type === 'email').length;
+          const unassignedCallCount = unassignedActivities.filter(a => a.type === 'call').length;
+          const unassignedTotalCount = unassignedDocCount + unassignedEmailCount + unassignedCallCount;
+          return (
         <div className="case-report-card">
           <div className="case-report-header">
             <div>
@@ -529,7 +535,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               <p className="client-name" style={{ color: '#f59e0b' }}>Activities not assigned to a case</p>
             </div>
             <div className="total-time">
-              <div className="time-value">{unassignedSummary.activity_count}</div>
+              <div className="time-value">{unassignedTotalCount}</div>
               <div className="time-label">unassigned</div>
             </div>
           </div>
@@ -560,7 +566,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                 }
               }}
               isUnassigned={true}
-              displayCount={unassignedActivities.filter(a => a.type === 'document').length}
+              displayCount={unassignedDocCount}
             />
             <BreakdownSection
               type="email"
@@ -587,7 +593,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                 }
               }}
               isUnassigned={true}
-              displayCount={unassignedActivities.filter(a => a.type === 'email').length}
+              displayCount={unassignedEmailCount}
             />
             <BreakdownSection
               type="call"
@@ -614,17 +620,19 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                 }
               }}
               isUnassigned={true}
-              displayCount={unassignedActivities.filter(a => a.type === 'call').length}
+              displayCount={unassignedCallCount}
             />
           </div>
 
           <div className="case-stats">
             <div className="stat">
               <span className="stat-label">Total Activities</span>
-              <span className="stat-value">{unassignedSummary.activity_count}</span>
+              <span className="stat-value">{unassignedTotalCount}</span>
             </div>
           </div>
         </div>
+          );
+        })()}
       </div>
 
       {deleteConfirm && (
