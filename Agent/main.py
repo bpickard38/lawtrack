@@ -13,12 +13,13 @@ logging.basicConfig(
 )
 LOG = logging.getLogger("lawtrack.main")
 
-def on_activity_finished(app_name: str, document_name: str, seconds: float) -> None:
+def on_activity_finished(app_name: str, document_name: str, seconds: float, window_title: str = "") -> None:
     if seconds < MIN_SECONDS:
         LOG.debug("Ignoring short activity for %s: %.1fs", app_name, seconds)
         return
 
-    activity_type = classify(app_name, document_name)
+    # Use full window_title for classification (contains URL/site info), document_name for display
+    activity_type = classify(app_name, window_title or document_name)
     if activity_type is None:
         LOG.info("Skipping filtered activity: %s - %s", app_name, document_name)
         return

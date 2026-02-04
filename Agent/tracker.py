@@ -158,7 +158,14 @@ def track_activity(
                         document_name = extract_filename_from_title(window_title, process_name)
                         LOG.info("Activity finished: %s - %s (%.1fs)", process_name, document_name, elapsed)
                         try:
-                            on_activity_finished(process_name, document_name, elapsed)
+                            # Pass both document_name and window_title for classification
+                            on_activity_finished(process_name, document_name, elapsed, window_title)
+                        except TypeError:
+                            # Fallback for old callback signature
+                            try:
+                                on_activity_finished(process_name, document_name, elapsed)
+                            except Exception:
+                                LOG.exception("Error in on_activity_finished callback")
                         except Exception:
                             LOG.exception("Error in on_activity_finished callback")
 

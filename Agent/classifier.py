@@ -51,6 +51,21 @@ def should_track_website(window_title: str) -> bool:
         if site in title_lower:
             return True
     
+    # Also check for common email page titles that might not include the site name
+    # Gmail often shows "Inbox", "Sent", "Drafts", etc. without "gmail" in title
+    # Outlook often shows "Mail", "Inbox", etc. without "outlook" in title
+    # But we need to be careful - only match if it's clearly an email interface
+    email_page_indicators = ['inbox', 'sent mail', 'drafts', 'compose mail', 'new message']
+    # Check if it looks like an email page AND doesn't match blocked sites
+    if any(indicator in title_lower for indicator in email_page_indicators):
+        # Check if it's NOT a blocked site (to avoid false positives)
+        for blocked in DO_NOT_TRACK_WEBSITES:
+            if blocked in title_lower:
+                return False
+        # If it has email page indicators and isn't blocked, it's likely an email site
+        # This handles cases like "Inbox - Gmail" where "gmail" might be cut off
+        return True
+    
     return False
 
 def classify(app_name: str, window_title: str = "") -> str:
@@ -83,9 +98,29 @@ def classify(app_name: str, window_title: str = "") -> str:
             return None  # Skip this activity
 
         # 3) Classify based on site type
-        # Email sites
-        if any(mail in title_lower for mail in ['gmail', 'inbox', 'outlook', 'mail']):
+        # Email sites - check for email-related keywords and sites
+        email_sites = ['gmail', 'mail.google.com', 'outlook', 'office365', 'mail.yahoo.com', 'protonmail', 'outlook.live.com', 'outlook.office.com']
+        email_keywords_strong = ['gmail', 'outlook', 'office365', 'protonmail']  # Strong indicators
+        email_keywords_weak = ['inbox', 'mail']  # Weak indicators - need context
+        
+        # First check if this is explicitly an email site from TRACKED_WEBSITES
+        for site in email_sites:
+            if site in title_lower:
+                return "email"
+        
+        # Then check for strong email keywords
+        if any(keyword in title_lower for keyword in email_keywords_strong):
             return "email"
+        
+        # For weak keywords like "inbox" or "mail", check if it's in TRACKED_WEBSITES
+        # (which means we explicitly want to track this email site)
+        if any(keyword in title_lower for keyword in email_keywords_weak):
+            # Check if any email site from TRACKED_WEBSITES is present
+            tracked_email_sites = ['gmail', 'mail.google.com', 'outlook', 'office365', 'mail.yahoo.com', 'protonmail', 'inbox']
+            if any(site in title_lower for site in tracked_email_sites):
+                # Double-check it's not a document site
+                if not any(doc in title_lower for doc in ['docs.google', 'drive.google', 'onedrive', 'sharepoint', 'dropbox', 'box.com']):
+                    return "email"
 
         # Document / file sites
         if any(doc in title_lower for doc in ['docs.google', 'drive.google', 'onedrive', 'sharepoint', 'dropbox', 'box.com']):
