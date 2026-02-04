@@ -3,7 +3,8 @@ import { useAuth } from '../AuthContext';
 import { getAgentKeyStatus, createAgentKey, revokeAgentKey } from '../api';
 
 export default function Profile({ onBack }: { onBack: () => void }) {
-  const { user, attorney, updateProfile, changePassword, deleteAccount } = useAuth();
+  const { user, attorney, updateProfile, changePassword, deleteAccount, logout } = useAuth();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -140,6 +141,36 @@ export default function Profile({ onBack }: { onBack: () => void }) {
             <button onClick={onBack} className="logout-btn">
               Back
             </button>
+            {attorney && (
+              <>
+                <button
+                  type="button"
+                  className="user-menu-btn"
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                >
+                  <span className="attorney-name">{attorney.name}</span>
+                  <span className="user-menu-caret">▾</span>
+                </button>
+                {userMenuOpen && (
+                  <div className="user-menu-dropdown" role="menu">
+                    <button
+                      type="button"
+                      className="user-menu-item"
+                      onClick={() => { setUserMenuOpen(false); onBack(); }}
+                    >
+                      Back to app
+                    </button>
+                    <button
+                      type="button"
+                      className="user-menu-item danger"
+                      onClick={() => { setUserMenuOpen(false); logout(); }}
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -199,7 +230,10 @@ export default function Profile({ onBack }: { onBack: () => void }) {
               <h2 style={{ marginBottom: 12 }}>Auto-tracking agent</h2>
               <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
                 The desktop app tracks documents, email, and calls and sends activities to LawTrack. Install it, then
-                open the app and sign in with your LawTrack email and password — no API key to copy.
+                open the app and sign in with your LawTrack email and password — no API key needed.
+              </p>
+              <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 16, fontStyle: 'italic' }}>
+                API keys are created automatically when you sign in. You only need to manage keys manually if troubleshooting or using the API directly.
               </p>
               <p style={{ marginBottom: 16 }}>
                 <a
