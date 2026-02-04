@@ -22,14 +22,15 @@ a = Analysis(
         'psutil',
         'requests',
         'dotenv',
-        'pkg_resources',
-        'pkg_resources.py2_warn',
-        'setuptools',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['matplotlib', 'numpy', 'pandas', 'scipy', 'IPython', 'jupyter'],
+    # Exclude setuptools/pkg_resources to avoid pyi_rth_pkgres and missing Lorem ipsum.txt
+    excludes=[
+        'matplotlib', 'numpy', 'pandas', 'scipy', 'IPython', 'jupyter',
+        'pkg_resources', 'setuptools', 'setuptools_scm',
+    ],
     noarchive=False,
     optimize=0,
 )
