@@ -5,6 +5,16 @@ if (-not (Test-Path $iscc)) {
     Write-Host "Install from https://jrsoftware.org/isinfo.php or edit the path in build_installer.ps1"
     exit 1
 }
+
+# Build icon if it doesn't exist
+if (-not (Test-Path "lawtrack.ico")) {
+    Write-Host "Building icon (lawtrack.ico)..."
+    & python build_icon.py
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Warning: Failed to build icon. Continuing anyway..."
+    }
+}
+
 Write-Host "Building onedir (folder) exe..."
 & pyinstaller --clean lawtrack_agent_onedir.spec
 if ($LASTEXITCODE -ne 0) { exit 1 }
