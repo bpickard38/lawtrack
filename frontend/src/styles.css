@@ -2228,6 +2228,10 @@ body {
   background: transparent;
 }
 
+.ts-day-col .ts-now-dot {
+  margin-left: 0;
+}
+
 .ts-now-dot {
   width: 10px;
   height: 10px;
