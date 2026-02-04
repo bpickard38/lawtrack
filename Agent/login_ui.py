@@ -18,7 +18,11 @@ LOG = logging.getLogger("lawtrack.login")
 def _user_env_path() -> Path:
     """Path to the per-user .env (where we save the API key). Same place config loads from when frozen."""
     if getattr(sys, "frozen", False):
-        base = os.environ.get("LOCALAPPDATA") or str(Path.home())
+        # Match config._local_appdata() so read and write use same path (Windows: AppData\\Local)
+        if sys.platform == "win32":
+            base = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+        else:
+            base = os.environ.get("LOCALAPPDATA") or str(Path.home())
         return Path(base) / "LawTrackAgent" / ".env"
     return _AGENT_DIR / ".env"
 

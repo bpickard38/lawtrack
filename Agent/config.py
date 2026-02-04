@@ -7,10 +7,15 @@ from pathlib import Path
 # For the installed exe:
 # - Read defaults (like LAWTRACK_API_URL) from the install folder .env
 # - Store per-user secrets (LAWTRACK_API_KEY) in %LOCALAPPDATA%\LawTrackAgent\.env
+# Use real Local AppData path so read/write match even when LOCALAPPDATA env is unset (e.g. installer launch)
+def _local_appdata() -> Path:
+    if sys.platform == "win32":
+        return Path(os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local"))
+    return Path(os.environ.get("LOCALAPPDATA") or str(Path.home()))
+
 if getattr(sys, "frozen", False):
     _INSTALL_DIR = Path(sys.executable).parent
-    base = os.getenv("LOCALAPPDATA") or str(Path.home())
-    _AGENT_DIR = Path(base) / "LawTrackAgent"
+    _AGENT_DIR = _local_appdata() / "LawTrackAgent"
     _AGENT_DIR.mkdir(parents=True, exist_ok=True)
 else:
     _INSTALL_DIR = Path(__file__).resolve().parent
