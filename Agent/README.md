@@ -63,6 +63,21 @@ The website can launch or control the desktop app via custom URLs: `lawtrack://o
    - Rebuild/reinstall the app so the OS associates `lawtrack://` with your app. When the user clicks a `lawtrack://` link, macOS will pass the URL as an argument to the app (e.g. in `application:openURL:options:` or as a process argument).
 3. In the desktop app, handle the URL (e.g. parse `open` / `pause` / `resume` and, if another instance is running, send the command via IPC; otherwise run the command in this process).
 
+### Verification
+
+**Windows**
+
+1. Install the agent (or run `register_protocol.ps1` after install if the installer didn’t register the protocol).
+2. In the browser, go to the LawTrack app and click **Open LawTrack Desktop**. The first time, Windows may ask “Open LawTrack Agent?” — choose **Open**.
+3. If the agent is already running: the existing process receives the URL and opens the web app in your browser (no second window). If not running: the agent starts and shows the tray icon.
+4. If nothing happens: run `reg query HKCU\Software\Classes\lawtrack\shell\open\command` and confirm the default value is `"C:\Program Files\LawTrack Agent\LawTrackAgent.exe" "%1"` (path may differ). If missing, run `.\register_protocol.ps1`.
+
+**macOS**
+
+1. Build the app with `CFBundleURLTypes` and scheme `lawtrack` in `Info.plist`.
+2. In Safari (or another browser), click a link to `lawtrack://open`. The first time, you may be prompted to allow the app to open.
+3. If nothing happens: in Terminal run `open "lawtrack://open"` and confirm the agent opens or receives the URL.
+
 ---
 
 ## Building the installer (for you)

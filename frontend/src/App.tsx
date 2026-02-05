@@ -215,22 +215,16 @@ function App() {
           </nav>
 
           <div className="desktop-app-cta">
-            <button
-              type="button"
+            <a
+              href="lawtrack://open"
               className="open-desktop-btn"
               onClick={() => {
-                const a = document.createElement('a');
-                a.href = 'lawtrack://open';
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
                 if (openDesktopTimeoutRef.current) window.clearTimeout(openDesktopTimeoutRef.current);
                 openDesktopTimeoutRef.current = window.setTimeout(() => setShowDesktopDownloadFallback(true), 1500);
               }}
             >
               Open LawTrack Desktop
-            </button>
+            </a>
             {showDesktopDownloadFallback && (
               <a
                 href={AGENT_INSTALLER_URL}
@@ -239,7 +233,7 @@ function App() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Download desktop app
+                App not installed? Download here
               </a>
             )}
           </div>

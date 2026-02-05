@@ -42,7 +42,8 @@ Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesub
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Comment: "Start time tracking for LawTrack"
 Name: "{autostartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: startup; Comment: "LawTrack time tracking"
 
-; Register lawtrack:// URL protocol so the website can launch the agent (e.g. lawtrack://launch)
+; Register lawtrack:// so the website "Open LawTrack Desktop" link works (lawtrack://open, etc.).
+; Browser passes full URL as %1 to the exe. HKCU = per-user, no admin needed for registration.
 [Registry]
 Root: HKCU; Subkey: "Software\Classes\lawtrack"; ValueType: string; ValueName: ""; ValueData: "URL:LawTrack Agent Protocol"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\lawtrack\URL Protocol"; ValueType: string; ValueName: ""; ValueData: ""; Flags: uninsdeletekey
