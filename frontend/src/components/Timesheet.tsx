@@ -17,6 +17,8 @@ interface TimesheetProps {
   attorneyId: number;
   cases: Case[];
   onCaseAdded: () => void;
+  onNavigateToRules?: () => void;
+  installAppUrl?: string;
 }
 
 type AddActivityPayload = { day: Date; slotIndex: number } | null;
@@ -49,7 +51,7 @@ function parseUTC(s: string): Date {
 }
 
 
-export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetProps) {
+export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateToRules, installAppUrl }: TimesheetProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -270,6 +272,32 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
 
   return (
     <div className="timesheet-calendar">
+      {loading && (
+        <div className="ts-loading" aria-live="polite">Loading timesheet…</div>
+      )}
+      {!loading && activities.length === 0 && (
+        <div className="ts-empty-state">
+          <h3 className="ts-empty-title">No activity yet</h3>
+          <p className="ts-empty-desc">Get started in a few steps:</p>
+          <ul className="ts-empty-steps">
+            {installAppUrl && (
+              <li>
+                <a href={installAppUrl} target="_blank" rel="noopener noreferrer" className="ts-empty-link">Install the desktop agent</a>
+                <span className="ts-empty-step-desc"> — tracks documents, email, and calls in the background</span>
+              </li>
+            )}
+            {onNavigateToRules && (
+              <li>
+                <button type="button" className="ts-empty-link ts-empty-btn" onClick={onNavigateToRules}>Create a rule</button>
+                <span className="ts-empty-step-desc"> — auto-assign time to cases by pattern</span>
+              </li>
+            )}
+            <li>
+              <span className="ts-empty-step-desc">Click any time slot below to add an entry manually</span>
+            </li>
+          </ul>
+        </div>
+      )}
       {!loading && (
         <div className="ts-grid-outer">
           <div className="ts-grid-head-wrapper">
@@ -277,13 +305,23 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded }: TimesheetP
               type="button"
               className="ts-header-arrow left"
               onClick={() => setWeekOffset(o => o - 1)}
+              aria-label="Previous week"
             >
               ←
             </button>
             <button
               type="button"
+              className="ts-today-btn"
+              onClick={() => setWeekOffset(0)}
+              aria-label="Go to today"
+            >
+              Today
+            </button>
+            <button
+              type="button"
               className="ts-header-arrow right"
               onClick={() => setWeekOffset(o => o + 1)}
+              aria-label="Next week"
             >
               →
             </button>

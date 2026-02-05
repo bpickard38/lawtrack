@@ -6,10 +6,12 @@ export default function LandingPage({
   initialTab = 'home',
   rightCta,
   onLogoClick,
+  onGetStarted,
 }: {
   initialTab?: Tab;
   rightCta: React.ReactNode;
   onLogoClick?: () => void;
+  onGetStarted?: () => void;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
 
@@ -19,12 +21,11 @@ export default function LandingPage({
         name: 'Starter',
         price: '$39',
         per: 'per user / month',
-        blurb: 'For solo attorneys getting set up.',
-        items: [
-          'Manual time entry',
-          'Basic case assignment',
-          'Weekly calendar timesheet',
-          'Reports by case',
+        blurb: 'Best for solo attorneys who prefer to log time manually.',
+        benefits: [
+          'Log time your way with a simple calendar timesheet',
+          'Assign entries to cases and run reports by matter',
+          'One place for all your matter time — no spreadsheets',
         ],
       },
       {
@@ -32,25 +33,50 @@ export default function LandingPage({
         price: '$49.99',
         per: 'per user / month',
         highlight: true,
-        blurb: 'For small firms that want automation.',
-        items: [
-          'Auto-tracking agent (documents / email / calls)',
-          'Case mapping rules',
-          'Timesheet review workflow',
-          'Export-ready reports',
+        popular: true,
+        blurb: 'For small firms ready to capture time automatically.',
+        benefits: [
+          'Desktop agent tracks documents, email, and calls in the background',
+          'Rules auto-assign time to the right matters',
+          'Review, edit, and export reports — ready for billing',
         ],
       },
       {
         name: 'Firm',
-        price: "Let’s talk",
+        price: "Let's talk",
         per: 'custom',
-        blurb: 'For mid-size firms with rollout needs.',
-        items: [
-          'Firm onboarding + best practices',
-          'Admin controls and reporting',
-          'Priority support',
-          'Custom integrations (optional)',
+        blurb: 'For growing firms that want rollout and support.',
+        benefits: [
+          'Dedicated onboarding and best practices',
+          'Admin controls and firm-wide reporting',
+          'Priority support and optional custom integrations',
         ],
+      },
+    ],
+    [],
+  );
+
+  const faqs = useMemo(
+    () => [
+      {
+        q: 'What data does LawTrack collect?',
+        a: 'We only capture activity titles and duration (e.g. "Document – draft.docx", "Email – Re: Smith matter", "Zoom call"). We do not read, store, or transmit the content of your documents, emails, or calls.',
+      },
+      {
+        q: 'Where is my data stored?',
+        a: 'Your data is stored in secure cloud infrastructure. You can choose the region at signup. We do not sell or share your data with third parties for marketing.',
+      },
+      {
+        q: 'Can I turn off automatic tracking?',
+        a: 'Yes. You can quit the desktop agent anytime from the system tray. You can also use manual time entry only (Starter plan) or pause tracking when working on sensitive matters.',
+      },
+      {
+        q: 'How do you handle client confidentiality?',
+        a: 'We use titles-only tracking and template descriptions on exports (e.g. "Client correspondence") so invoices stay professional and never expose sensitive content. No email or document content is ever sent to our servers.',
+      },
+      {
+        q: 'Is LawTrack compliant with bar rules?',
+        a: 'LawTrack is designed to support accurate timekeeping and client communication. We recommend reviewing your jurisdiction’s rules on technology and confidentiality; we can provide a short security and privacy overview for your firm.',
       },
     ],
     [],
@@ -62,11 +88,10 @@ export default function LandingPage({
         <button className="lp-logo" type="button" onClick={onLogoClick}>
           ⚖️ <span>LawTrack</span>
         </button>
-
         <div className="lp-topbar-right">{rightCta}</div>
       </header>
 
-      <div className="lp-tabs">
+      <nav className="lp-tabs" aria-label="Marketing">
         <button
           type="button"
           className={`lp-tab ${tab === 'home' ? 'active' : ''}`}
@@ -81,22 +106,25 @@ export default function LandingPage({
         >
           Pricing
         </button>
-      </div>
+      </nav>
 
       {tab === 'home' ? (
         <main className="lp-main">
-          <section className="lp-hero">
+          <section className="lp-hero" aria-labelledby="lp-hero-heading">
             <div className="lp-hero-left">
-              <h1>Automatic time tracking for lawyers.</h1>
-              <p>
-                LawTrack captures your work across documents, email, and calls — then helps you
-                assign time to cases and keep timesheets clean, fast, and billable.
+              <h1 id="lp-hero-heading">Automatic time tracking for lawyers.</h1>
+              <p className="lp-hero-subhead">
+                Capture work as it happens. Assign time to cases. Keep timesheets clean and billable — without the busywork.
               </p>
               <div className="lp-hero-cta">
-                <div className="lp-pill">Calendar timesheet</div>
-                <div className="lp-pill">Case rules</div>
-                <div className="lp-pill">Reports</div>
-                <div className="lp-pill">Auto-tracking agent</div>
+                {onGetStarted && (
+                  <button type="button" className="lp-cta-primary" onClick={onGetStarted}>
+                    Get started
+                  </button>
+                )}
+                <button type="button" className="lp-cta-secondary" onClick={() => setTab('pricing')}>
+                  See pricing
+                </button>
               </div>
             </div>
             <div className="lp-hero-right">
@@ -106,41 +134,96 @@ export default function LandingPage({
                   <li>Tracks work in the background (desktop first)</li>
                   <li>Turns activity into clean, editable time entries</li>
                   <li>Auto-assigns time to cases using mapping rules</li>
-                  <li>Gives you a Google Calendar-style timesheet</li>
+                  <li>Gives you a Google Calendar–style timesheet</li>
                 </ul>
               </div>
             </div>
           </section>
 
-          <section className="lp-features">
+          <section className="lp-features" aria-labelledby="lp-features-heading">
+            <h2 id="lp-features-heading" className="lp-visually-hidden">Benefits</h2>
             <div className="lp-feature">
               <div className="lp-feature-title">Less admin time</div>
-              <div className="lp-feature-body">
-                Capture work while it happens so you don’t reconstruct your day later.
-              </div>
+              <div className="lp-feature-body">Capture work while it happens so you don’t reconstruct your day later.</div>
             </div>
             <div className="lp-feature">
               <div className="lp-feature-title">More billable time</div>
-              <div className="lp-feature-body">
-                Find and recover time that slips through the cracks.
-              </div>
+              <div className="lp-feature-body">Find and recover time that slips through the cracks.</div>
             </div>
             <div className="lp-feature">
               <div className="lp-feature-title">Cleaner narratives</div>
-              <div className="lp-feature-body">
-                Edit and approve entries quickly with consistent descriptions.
+              <div className="lp-feature-body">Edit and approve entries quickly with consistent descriptions.</div>
+            </div>
+          </section>
+
+          <section className="lp-screenshot" aria-labelledby="lp-screenshot-heading">
+            <h2 id="lp-screenshot-heading" className="lp-section-title">Your timesheet, one place</h2>
+            <p className="lp-section-sub">Calendar view, case assignment, and export-ready reports.</p>
+            <div className="lp-screenshot-placeholder">
+              <div className="lp-screenshot-inner">
+                <span className="lp-screenshot-label">App screenshot</span>
+                <div className="lp-screenshot-mock">
+                  <div className="lp-mock-bar" />
+                  <div className="lp-mock-grid">
+                    <div className="lp-mock-row" /><div className="lp-mock-row" /><div className="lp-mock-row" />
+                    <div className="lp-mock-row" /><div className="lp-mock-row" /><div className="lp-mock-row" />
+                  </div>
+                </div>
               </div>
             </div>
+          </section>
+
+          <section className="lp-trust" aria-labelledby="lp-trust-heading">
+            <h2 id="lp-trust-heading" className="lp-section-title">Trusted & privacy-first</h2>
+            <ul className="lp-trust-list">
+              <li><strong>Titles only.</strong> We track activity names and duration — never the content of documents, emails, or calls.</li>
+              <li><strong>You stay in control.</strong> Review, edit, or delete any entry. Export uses template descriptions (e.g. “Client correspondence”) so nothing sensitive appears on invoices.</li>
+              <li><strong>Built for law.</strong> Designed so you can keep time accurately and stay within confidentiality and technology rules.</li>
+            </ul>
+          </section>
+
+          <section className="lp-integrations" aria-labelledby="lp-integrations-heading">
+            <h2 id="lp-integrations-heading" className="lp-section-title">Works with how you work</h2>
+            <div className="lp-integrations-row">
+              <span className="lp-integration-item">Gmail</span>
+              <span className="lp-integration-item">Outlook</span>
+              <span className="lp-integration-item">Word</span>
+              <span className="lp-integration-item">Zoom</span>
+              <span className="lp-integration-item">Dropbox</span>
+            </div>
+            <p className="lp-integrations-note">Desktop agent detects these and similar apps; we only record app/window title and duration.</p>
+          </section>
+
+          <section className="lp-how" aria-labelledby="lp-how-heading">
+            <h2 id="lp-how-heading" className="lp-section-title">How it works</h2>
+            <ol className="lp-how-steps">
+              <li>
+                <span className="lp-how-num">1</span>
+                <span className="lp-how-title">Install the agent</span>
+                <span className="lp-how-desc">Run the desktop app and sign in. It runs in the background and records which apps you use and for how long.</span>
+              </li>
+              <li>
+                <span className="lp-how-num">2</span>
+                <span className="lp-how-title">Set rules & review</span>
+                <span className="lp-how-desc">Define rules to auto-assign time to cases. Review and edit entries on your timesheet before they become billable.</span>
+              </li>
+              <li>
+                <span className="lp-how-num">3</span>
+                <span className="lp-how-title">Export & bill</span>
+                <span className="lp-how-desc">Run reports by case and date. Export to PDF for invoices — clean descriptions, no sensitive content.</span>
+              </li>
+            </ol>
           </section>
         </main>
       ) : (
         <main className="lp-main">
-          <section className="lp-pricing">
-            <h2>Pricing</h2>
+          <section className="lp-pricing" aria-labelledby="lp-pricing-heading">
+            <h2 id="lp-pricing-heading">Pricing</h2>
             <p className="lp-subtitle">Simple plans that scale from solo to firm.</p>
             <div className="lp-pricing-grid">
-              {pricing.map(p => (
+              {pricing.map((p) => (
                 <div key={p.name} className={`lp-price-card ${p.highlight ? 'highlight' : ''}`}>
+                  {p.popular && <div className="lp-price-badge">Most popular</div>}
                   <div className="lp-price-name">{p.name}</div>
                   <div className="lp-price">
                     <span className="lp-price-amount">{p.price}</span>
@@ -148,19 +231,43 @@ export default function LandingPage({
                   </div>
                   <div className="lp-price-blurb">{p.blurb}</div>
                   <ul className="lp-list">
-                    {p.items.map(i => <li key={i}>{i}</li>)}
+                    {p.benefits.map((i) => (
+                      <li key={i}>{i}</li>
+                    ))}
                   </ul>
+                  {onGetStarted && (
+                    <button type="button" className={p.highlight ? 'lp-cta-primary lp-price-cta' : 'lp-cta-secondary lp-price-cta'} onClick={onGetStarted}>
+                      Get started
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="lp-faq" aria-labelledby="lp-faq-heading">
+            <h2 id="lp-faq-heading" className="lp-section-title">Frequently asked questions</h2>
+            <dl className="lp-faq-list">
+              {faqs.map((faq) => (
+                <div key={faq.q} className="lp-faq-item">
+                  <dt className="lp-faq-q">{faq.q}</dt>
+                  <dd className="lp-faq-a">{faq.a}</dd>
+                </div>
+              ))}
+            </dl>
           </section>
         </main>
       )}
 
       <footer className="lp-footer">
-        <span>© {new Date().getFullYear()} LawTrack</span>
+        <div className="lp-footer-inner">
+          <span>© {new Date().getFullYear()} LawTrack</span>
+          <div className="lp-footer-links">
+            <a href="#" className="lp-footer-link">Privacy</a>
+            <a href="#" className="lp-footer-link">Terms</a>
+          </div>
+        </div>
       </footer>
     </div>
   );
 }
-

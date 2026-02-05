@@ -155,7 +155,7 @@ export default function CaseRules({ cases, onRulesChanged }: CaseRulesProps) {
       <div className="rules-header">
         <h3>Case Assignment Rules</h3>
         <p className="rules-description">
-          Rules automatically assign new activities to cases based on patterns. Higher priority rules are checked first.
+          Rules automatically assign new activities to cases based on patterns. Priority: higher number = checked first.
         </p>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="add-rule-btn">
           + Add Rule
@@ -182,7 +182,8 @@ export default function CaseRules({ cases, onRulesChanged }: CaseRulesProps) {
       {/* Rules list */}
       {rules.length === 0 ? (
         <div className="no-rules">
-          No rules yet. Create a rule to auto-assign activities to cases.
+          <p className="no-rules-message">No rules yet. Create a rule to auto-assign activities to cases.</p>
+          <p className="no-rules-examples">Example patterns: client or matter name (e.g. <em>Smith</em>, <em>contract</em>), or email domain (e.g. <em>@client.com</em>).</p>
         </div>
       ) : (
         <div className="rules-list">
@@ -257,7 +258,7 @@ export default function CaseRules({ cases, onRulesChanged }: CaseRulesProps) {
                     min={0}
                     max={100}
                   />
-                  <small>Higher = checked first</small>
+                  <small>Higher number = checked first when multiple rules could match.</small>
                 </div>
 
                 <div className="form-group">

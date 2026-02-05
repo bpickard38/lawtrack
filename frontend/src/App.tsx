@@ -27,6 +27,7 @@ function App() {
   const [publicView, setPublicView] = useState<PublicView>('home');
   const [showHomepage, setShowHomepage] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [marketingMenuOpen, setMarketingMenuOpen] = useState(false);
 
   useEffect(() => {
     if (attorney) loadCases();
@@ -83,11 +84,12 @@ function App() {
     return (
       <LandingPage
         rightCta={
-          <button className="lp-signin-btn" type="button" onClick={() => setPublicView('auth')}>
-            Sign In
+          <button type="button" className="btn-primary" onClick={() => setPublicView('auth')}>
+            Sign in
           </button>
         }
         onLogoClick={() => setPublicView('home')}
+        onGetStarted={() => setPublicView('auth')}
       />
     );
   }
@@ -119,15 +121,47 @@ function App() {
       <LandingPage
         rightCta={
           <div className="lp-cta-row">
-            <button className="lp-signin-btn" type="button" onClick={() => setShowHomepage(false)}>
-              Go to app
+            <button type="button" className="btn-primary" onClick={() => setShowHomepage(false)}>
+              Open app
             </button>
-            <button onClick={logout} className="logout-btn" type="button">
-              Sign Out
-            </button>
+            <div className="attorney-info" style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="user-menu-btn"
+                onClick={() => setMarketingMenuOpen((v) => !v)}
+                aria-expanded={marketingMenuOpen}
+                aria-haspopup="menu"
+              >
+                <span className="attorney-name">{attorney.name}</span>
+                <span className="user-menu-caret">▾</span>
+              </button>
+              {marketingMenuOpen && (
+                <div className="user-menu-dropdown" role="menu">
+                  <button
+                    type="button"
+                    className="user-menu-item"
+                    onClick={() => {
+                      setMarketingMenuOpen(false);
+                      setShowHomepage(false);
+                      setCurrentView('profile');
+                    }}
+                  >
+                    Profile
+                  </button>
+                  <button
+                    type="button"
+                    className="user-menu-item danger"
+                    onClick={() => { setMarketingMenuOpen(false); logout(); }}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         }
         onLogoClick={() => setShowHomepage(true)}
+        onGetStarted={() => setShowHomepage(false)}
       />
     );
   }
@@ -220,6 +254,8 @@ function App() {
               attorneyId={attorney.id}
               cases={cases}
               onCaseAdded={handleCaseAdded}
+              onNavigateToRules={() => setCurrentView('rules')}
+              installAppUrl={AGENT_INSTALLER_URL}
             />
           </div>
         ) : currentView === 'rules' ? (

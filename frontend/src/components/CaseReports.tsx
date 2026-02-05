@@ -462,7 +462,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
             </button>
           </form>
           )}
-          <button type="button" onClick={() => setShowExportModal(true)} className="add-case-btn" style={{ marginLeft: 0 }}>
+          <button type="button" onClick={() => setShowExportModal(true)} className="btn-secondary reports-export-btn">
             Export Invoice PDF
           </button>
         </div>
@@ -551,6 +551,9 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                 <span className="stat-label">Total Activities</span>
                 <span className="stat-value">{summary.activity_count}</span>
               </div>
+              {summary.activity_count === 0 && (
+                <p className="case-card-empty-hint">No time logged yet for this case.</p>
+              )}
             </div>
           </div>
         );
@@ -664,6 +667,9 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               <span className="stat-label">Total Activities</span>
               <span className="stat-value">{unassignedTotalCount}</span>
             </div>
+            {unassignedTotalCount === 0 && (
+              <p className="case-card-empty-hint">No unassigned activities.</p>
+            )}
           </div>
         </div>
           );
