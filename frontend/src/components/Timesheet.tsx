@@ -65,6 +65,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
   const dragRef = useRef<{ activity: Activity; startX: number; startY: number; didMove: boolean } | null>(null);
   const dropTargetRef = useRef<{ dayIndex: number; slotIndex: number } | null>(null);
   const gridBodyWrapRef = useRef<HTMLDivElement>(null);
+  const hasInitialized = useRef(false);
   const [now, setNow] = useState(() => new Date());
 
   const { weekStart, weekEnd, days, slotCount } = useMemo(() => {
@@ -102,6 +103,11 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
   useEffect(() => {
     loadActivities();
   }, [loadActivities]);
+
+  // Only show "No activity yet" on initial page load when empty; not when navigating weeks
+  useEffect(() => {
+    if (!loading) hasInitialized.current = true;
+  }, [loading]);
 
   // Update current time every minute for the red "now" bar
   useEffect(() => {
@@ -275,7 +281,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
       {loading && (
         <div className="ts-loading" aria-live="polite">Loading timesheet…</div>
       )}
-      {!loading && activities.length === 0 && (
+      {!loading && activities.length === 0 && !hasInitialized.current && (
         <div className="ts-empty-state">
           <h3 className="ts-empty-title">No activity yet</h3>
           <p className="ts-empty-desc">Get started in a few steps:</p>
