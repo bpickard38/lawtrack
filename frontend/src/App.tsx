@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Case } from './types';
 import { fetchCases } from './api';
 import { useAuth } from './AuthContext';
@@ -29,10 +29,18 @@ function App() {
   const [showHomepage, setShowHomepage] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [marketingMenuOpen, setMarketingMenuOpen] = useState(false);
+  const [showDesktopDownloadFallback, setShowDesktopDownloadFallback] = useState(false);
+  const openDesktopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (attorney) loadCases();
   }, [attorney]);
+
+  useEffect(() => {
+    return () => {
+      if (openDesktopTimeoutRef.current) window.clearTimeout(openDesktopTimeoutRef.current);
+    };
+  }, []);
 
   async function loadCases() {
     if (!attorney) return;
@@ -206,15 +214,35 @@ function App() {
             </button>
           </nav>
 
-          <a
-            href={AGENT_INSTALLER_URL}
-            className="install-app-link"
-            download
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Install app
-          </a>
+          <div className="desktop-app-cta">
+            <button
+              type="button"
+              className="open-desktop-btn"
+              onClick={() => {
+                const a = document.createElement('a');
+                a.href = 'lawtrack://open';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                if (openDesktopTimeoutRef.current) window.clearTimeout(openDesktopTimeoutRef.current);
+                openDesktopTimeoutRef.current = window.setTimeout(() => setShowDesktopDownloadFallback(true), 1500);
+              }}
+            >
+              Open LawTrack Desktop
+            </button>
+            {showDesktopDownloadFallback && (
+              <a
+                href={AGENT_INSTALLER_URL}
+                className="install-app-link desktop-download-fallback"
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Download desktop app
+              </a>
+            )}
+          </div>
 
           <div className="attorney-info">
             <button

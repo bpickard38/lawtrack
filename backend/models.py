@@ -59,6 +59,7 @@ class Attorney(Base):
     name = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     billable_rate = Column(DECIMAL(10, 2), default=300.00)
+    tracking_enabled = Column(Boolean, default=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
 class Case(Base):

@@ -253,6 +253,25 @@ export async function revokeAgentKey(): Promise<void> {
   if (!response.ok) throw new Error('Failed to revoke agent key');
 }
 
+// Settings (tracking toggle)
+export async function getSettings(): Promise<{ tracking_enabled: boolean }> {
+  const response = await fetch(`${API_BASE}/api/settings`, {
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to fetch settings');
+  return response.json();
+}
+
+export async function updateTrackingEnabled(enabled: boolean): Promise<{ tracking_enabled: boolean }> {
+  const response = await fetch(`${API_BASE}/api/settings/tracking`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ enabled })
+  });
+  if (!response.ok) throw new Error('Failed to update tracking setting');
+  return response.json();
+}
+
 export async function deleteAccount(): Promise<void> {
   const response = await fetch(`${API_BASE}/api/auth/me`, {
     method: 'DELETE',

@@ -135,7 +135,8 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
       });
       buildAndDownloadInvoicePdf(c, activities, exportStartDate, exportEndDate);
       try {
-        localStorage.setItem('lawtrack_hasExported', 'true');
+        localStorage.setItem('lawtrack_onboarding_hasExported', 'true');
+        window.dispatchEvent(new Event('lawtrack:onboarding-updated'));
       } catch {}
       setShowExportModal(false);
     } catch (err) {

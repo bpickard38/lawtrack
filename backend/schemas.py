@@ -106,6 +106,15 @@ class AttorneyResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class SettingsResponse(BaseModel):
+    tracking_enabled: bool
+
+
+class TrackingSettingUpdate(BaseModel):
+    enabled: bool
+
+
 # ============================================================================
 # CASE SCHEMAS
 # ============================================================================

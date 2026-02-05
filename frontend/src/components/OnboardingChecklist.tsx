@@ -4,7 +4,7 @@ import { fetchCaseRules } from '../api';
 const STORAGE_KEYS = {
   dismissed: 'lawtrack_onboardingDismissed',
   hasFirstActivity: 'lawtrack_hasFirstActivity',
-  hasExported: 'lawtrack_hasExported',
+  hasExported: 'lawtrack_onboarding_hasExported',
   hasClickedInstall: 'lawtrack_hasClickedInstall',
 } as const;
 
@@ -81,6 +81,12 @@ export default function OnboardingChecklist({
   const hasFirstActivity = hasFirstActivityProp === true || hasFirstActivityStored;
   const [hasExported, setHasExported] = useState(() => getStored('hasExported'));
   const [hasClickedInstall, setHasClickedInstall] = useState(() => getStored('hasClickedInstall'));
+
+  useEffect(() => {
+    const onUpdated = () => setHasExported(getStored('hasExported'));
+    window.addEventListener('lawtrack:onboarding-updated', onUpdated);
+    return () => window.removeEventListener('lawtrack:onboarding-updated', onUpdated);
+  }, []);
 
   useEffect(() => {
     if (dismissed) return;

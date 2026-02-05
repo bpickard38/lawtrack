@@ -1,4 +1,30 @@
+import { useState, useEffect } from 'react';
+import { getSettings, updateTrackingEnabled, getAgentKeyStatus } from '../api';
+
 export default function Privacy({ onOpenProfile }: { onOpenProfile: () => void }) {
+  const [trackingEnabled, setTrackingEnabled] = useState<boolean>(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [trackingSaving, setTrackingSaving] = useState(false);
+  const [agentKeyStatus, setAgentKeyStatus] = useState<{ has_key: boolean; key_prefix: string | null } | null>(null);
+
+  useEffect(() => {
+    getSettings()
+      .then((s) => setTrackingEnabled(s.tracking_enabled))
+      .catch(() => {})
+      .finally(() => setSettingsLoading(false));
+    getAgentKeyStatus()
+      .then(setAgentKeyStatus)
+      .catch(() => setAgentKeyStatus({ has_key: false, key_prefix: null }));
+  }, []);
+
+  function handleTrackingToggle(enabled: boolean) {
+    setTrackingSaving(true);
+    updateTrackingEnabled(enabled)
+      .then((s) => setTrackingEnabled(s.tracking_enabled))
+      .catch(() => {})
+      .finally(() => setTrackingSaving(false));
+  }
+
   return (
     <div className="privacy-view">
       <div className="view-header">
@@ -43,14 +69,38 @@ export default function Privacy({ onOpenProfile }: { onOpenProfile: () => void }
 
       <section className="privacy-section">
         <h3 className="privacy-section-title">Controls</h3>
+        <div className="privacy-control-row">
+          <label className="privacy-toggle-label">
+            <span className="privacy-toggle-text">Tracking enabled</span>
+            <input
+              type="checkbox"
+              checked={trackingEnabled}
+              disabled={settingsLoading || trackingSaving}
+              onChange={(e) => handleTrackingToggle(e.target.checked)}
+              className="privacy-toggle-input"
+            />
+            <span className="privacy-toggle-switch" aria-hidden />
+          </label>
+          {settingsLoading && <span className="privacy-control-meta">Loading…</span>}
+          {trackingSaving && <span className="privacy-control-meta">Saving…</span>}
+        </div>
+        <p className="privacy-section-p privacy-control-desc">
+          When off, the desktop agent stops capturing and sending new activities until you turn it back on.
+        </p>
+        {agentKeyStatus !== null && (
+          <p className="privacy-section-p privacy-agent-status">
+            Agent: {agentKeyStatus.has_key ? (
+              <>Connected (key {agentKeyStatus.key_prefix}…)</>
+            ) : (
+              <>No API key. Create one in Profile to use the desktop agent.</>
+            )}
+          </p>
+        )}
         <p className="privacy-section-p">
           <button type="button" className="privacy-link-btn" onClick={onOpenProfile}>
             Manage desktop agent (create or revoke API key)
           </button>
           — available in Profile.
-        </p>
-        <p className="privacy-section-p privacy-coming-soon">
-          Pause tracking from this app — Coming soon.
         </p>
       </section>
     </div>

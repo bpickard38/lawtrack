@@ -15,6 +15,7 @@ from schemas import (
     UserCreate, UserLogin, UserResponse, Token, UserUpdate, PasswordChange, UserUpdateResponse,
     RegisterResponse, AgentKeyLoginRequest,
     AttorneyCreate, AttorneyResponse,
+    SettingsResponse, TrackingSettingUpdate,
     CaseCreate, CaseResponse,
     ActivityCreate, ActivityUpdate, ActivityResponse, AgentActivityCreate,
     CaseTimeSummary, ActivityType,
@@ -54,6 +55,7 @@ def _ensure_schema() -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) NOT NULL DEFAULT 'attorney';"))
 
             conn.execute(text("ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
+            conn.execute(text("ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS tracking_enabled BOOLEAN DEFAULT TRUE;"))
             conn.execute(text("ALTER TABLE cases ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
             conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
 
@@ -415,6 +417,37 @@ def get_agent_key_status(
     if not row:
         return {"has_key": False, "key_prefix": None}
     return {"has_key": True, "key_prefix": row.key_prefix}
+
+
+# ============================================================================
+# SETTINGS (JWT-protected for web; agent uses /api/agent/settings with API key)
+# ============================================================================
+
+@app.get("/api/settings", response_model=SettingsResponse)
+def get_settings(current_attorney: Attorney = Depends(get_current_attorney)):
+    """Get current user's settings (e.g. tracking_enabled). Auth: Bearer JWT."""
+    return SettingsResponse(tracking_enabled=current_attorney.tracking_enabled)
+
+
+@app.post("/api/settings/tracking", response_model=SettingsResponse)
+def update_tracking_setting(
+    payload: TrackingSettingUpdate,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db),
+):
+    """Set tracking_enabled. Auth: Bearer JWT."""
+    current_attorney.tracking_enabled = payload.enabled
+    db.add(current_attorney)
+    db.commit()
+    db.refresh(current_attorney)
+    return SettingsResponse(tracking_enabled=current_attorney.tracking_enabled)
+
+
+@app.get("/api/agent/settings", response_model=SettingsResponse)
+def get_agent_settings(attorney: Attorney = Depends(get_attorney_from_api_key)):
+    """Get tracking_enabled for the desktop agent. Auth: X-API-Key."""
+    return SettingsResponse(tracking_enabled=attorney.tracking_enabled)
+
 
 # ============================================================================
 # ATTORNEYS (Protected)

@@ -63,3 +63,23 @@ def send_activity(app_name: str, document_name: str, seconds: float, activity_ty
     except requests.RequestException as e:
         LOG.error("Network error while sending activity: %s", e, exc_info=False)
         return False
+
+
+def fetch_tracking_enabled() -> bool | None:
+    """
+    GET /api/agent/settings (X-API-Key). Returns tracking_enabled (True/False) or None if request failed.
+    Safe when offline: returns None so caller keeps last known state.
+    """
+    if not config.API_KEY:
+        return True
+    url = f"{config.API_URL.rstrip('/')}/api/agent/settings"
+    headers = {"X-API-Key": config.API_KEY}
+    try:
+        resp = requests.get(url, headers=headers, timeout=8)
+        if resp.ok:
+            data = resp.json()
+            return bool(data.get("tracking_enabled", True))
+        return None
+    except requests.RequestException as e:
+        LOG.debug("Settings fetch failed (offline?): %s", e)
+        return None
