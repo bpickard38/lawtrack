@@ -7,6 +7,7 @@ import {
   deleteActivity,
   createCase,
 } from '../api';
+import { buildAndDownloadInvoicePdf } from '../utils/invoicePdf';
 
 function toYMD(d: Date) {
   const y = d.getFullYear();
@@ -46,6 +47,11 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
   const [newCaseName, setNewCaseName] = useState('');
   const [newClientName, setNewClientName] = useState('');
   const [creatingCase, setCreatingCase] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportCaseId, setExportCaseId] = useState<number | ''>('');
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
+  const [exportLoading, setExportLoading] = useState(false);
 
   const loadSummaries = useCallback(async () => {
     setLoading(true);
@@ -109,6 +115,30 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
       console.error(`Failed to load activities for case ${caseId}:`, error);
     } finally {
       setLoadingActivities(prev => ({ ...prev, [caseId]: false }));
+    }
+  }
+
+  async function handleExportInvoicePdf() {
+    if (exportCaseId === '' || !exportStartDate || !exportEndDate) {
+      alert('Please select a case and date range.');
+      return;
+    }
+    const c = cases.find(x => x.id === exportCaseId);
+    if (!c) return;
+    setExportLoading(true);
+    try {
+      const activities = await fetchActivities({
+        attorney_id: attorneyId,
+        case_id: exportCaseId as number,
+        start_date: exportStartDate,
+        end_date: exportEndDate,
+      });
+      buildAndDownloadInvoicePdf(c, activities, exportStartDate, exportEndDate);
+      setShowExportModal(false);
+    } catch (err) {
+      alert('Failed to load activities: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setExportLoading(false);
     }
   }
 
@@ -401,12 +431,13 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
 
   return (
     <div className="case-reports">
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {!showAddCase ? (
-          <button onClick={() => setShowAddCase(true)} className="add-case-btn" style={{ marginLeft: 0 }}>
-            + Add Case
-          </button>
-        ) : (
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {!showAddCase ? (
+            <button onClick={() => setShowAddCase(true)} className="add-case-btn" style={{ marginLeft: 0 }}>
+              + Add Case
+            </button>
+          ) : (
           <form onSubmit={handleCreateCase} style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1, maxWidth: 600 }}>
             <input
               type="text"
@@ -430,7 +461,11 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               Cancel
             </button>
           </form>
-        )}
+          )}
+          <button type="button" onClick={() => setShowExportModal(true)} className="add-case-btn" style={{ marginLeft: 0 }}>
+            Export Invoice PDF
+          </button>
+        </div>
       </div>
       <div className="case-reports-grid">
         {/* Case Cards */}
@@ -641,6 +676,56 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteConfirm(null)}
         />
+      )}
+
+      {showExportModal && (
+        <div className="agent-quit-modal-overlay" onClick={() => setShowExportModal(false)} role="presentation">
+          <div className="agent-quit-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="export-invoice-title">
+            <h3 id="export-invoice-title">Export Invoice PDF</h3>
+            <p style={{ marginBottom: 16 }}>Select a case and date range. The PDF will list activities with template descriptions only (no content).</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span>Case</span>
+                <select
+                  value={exportCaseId}
+                  onChange={(e) => setExportCaseId(e.target.value === '' ? '' : Number(e.target.value))}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6 }}
+                >
+                  <option value="">Select case</option>
+                  {cases.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}{c.client_name ? ` (${c.client_name})` : ''}</option>
+                  ))}
+                </select>
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span>Start date</span>
+                <input
+                  type="date"
+                  value={exportStartDate}
+                  onChange={(e) => setExportStartDate(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6 }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span>End date</span>
+                <input
+                  type="date"
+                  value={exportEndDate}
+                  onChange={(e) => setExportEndDate(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6 }}
+                />
+              </label>
+            </div>
+            <div className="agent-quit-modal-actions">
+              <button type="button" className="agent-quit-done-btn" onClick={() => setShowExportModal(false)}>
+                Cancel
+              </button>
+              <button type="button" className="agent-quit-gotit-btn" onClick={handleExportInvoicePdf} disabled={exportLoading}>
+                {exportLoading ? 'Loading…' : 'Download PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {editingActivity && (
