@@ -8,6 +8,7 @@ import Profile from './components/Profile';
 import CaseReports from './components/CaseReports';
 import Timesheet from './components/Timesheet';
 import CaseRules from './components/CaseRules';
+import Privacy from './components/Privacy';
 import LandingPage from './components/LandingPage';
 import './styles.css';
 
@@ -15,7 +16,7 @@ const AGENT_INSTALLER_URL =
   (import.meta.env.VITE_AGENT_INSTALLER_URL as string) ||
   'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe';
 
-type View = 'timesheet' | 'reports' | 'rules' | 'profile';
+type View = 'timesheet' | 'reports' | 'rules' | 'profile' | 'privacy';
 type PublicView = 'home' | 'auth';
 
 function App() {
@@ -197,6 +198,12 @@ function App() {
             >
               🔗 Rules
             </button>
+            <button 
+              className={`nav-tab ${currentView === 'privacy' ? 'active' : ''}`}
+              onClick={() => setCurrentView('privacy')}
+            >
+              Privacy
+            </button>
           </nav>
 
           <a
@@ -220,7 +227,7 @@ function App() {
             </button>
             {userMenuOpen && (
               <div className="user-menu-dropdown" role="menu">
-                {currentView === 'profile' ? (
+                {(currentView === 'profile' || currentView === 'privacy') ? (
                   <button
                     type="button"
                     className="user-menu-item"
@@ -253,6 +260,8 @@ function App() {
       <main className="app-main">
         {currentView === 'profile' ? (
           <Profile onBack={() => setCurrentView('timesheet')} />
+        ) : currentView === 'privacy' ? (
+          <Privacy onOpenProfile={() => setCurrentView('profile')} />
         ) : currentView === 'timesheet' ? (
           <div className="timesheet-view">
             <Timesheet
@@ -260,6 +269,7 @@ function App() {
               cases={cases}
               onCaseAdded={handleCaseAdded}
               onNavigateToRules={() => setCurrentView('rules')}
+              onNavigateToReports={() => setCurrentView('reports')}
               installAppUrl={AGENT_INSTALLER_URL}
             />
           </div>

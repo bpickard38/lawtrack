@@ -6,6 +6,7 @@ import {
   updateActivity,
   deleteActivity,
 } from '../api';
+import OnboardingChecklist from './OnboardingChecklist';
 
 const SLOT_MINUTES = 30;
 const GRID_START_HOUR = 6;
@@ -18,6 +19,7 @@ interface TimesheetProps {
   cases: Case[];
   onCaseAdded: () => void;
   onNavigateToRules?: () => void;
+  onNavigateToReports?: () => void;
   installAppUrl?: string;
 }
 
@@ -51,7 +53,7 @@ function parseUTC(s: string): Date {
 }
 
 
-export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateToRules, installAppUrl }: TimesheetProps) {
+export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateToRules, onNavigateToReports, installAppUrl }: TimesheetProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,14 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
   useEffect(() => {
     if (!loading) hasInitialized.current = true;
   }, [loading]);
+
+  // Mark "capture first activity" complete for onboarding (persisted so it doesn't flip when navigating weeks)
+  useEffect(() => {
+    if (loading || activities.length === 0) return;
+    try {
+      localStorage.setItem('lawtrack_hasFirstActivity', 'true');
+    } catch {}
+  }, [loading, activities.length]);
 
   // Update current time every minute for the red "now" bar
   useEffect(() => {
@@ -278,6 +288,16 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
 
   return (
     <div className="timesheet-calendar">
+      {onNavigateToReports && (
+        <OnboardingChecklist
+          casesCount={cases.length}
+          hasFirstActivity={activities.length > 0}
+          installAppUrl={installAppUrl}
+          onNavigateToReports={onNavigateToReports}
+          onNavigateToRules={onNavigateToRules ?? (() => {})}
+          onDismiss={() => {}}
+        />
+      )}
       {loading && (
         <div className="ts-loading" aria-live="polite">Loading timesheet…</div>
       )}

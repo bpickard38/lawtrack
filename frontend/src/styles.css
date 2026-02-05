@@ -991,6 +991,69 @@ body {
   color: #1a1a1a;
 }
 
+/* Privacy & Controls page */
+.privacy-view {
+  max-width: 640px;
+}
+
+.privacy-section {
+  margin-bottom: 28px;
+}
+
+.privacy-section-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 10px 0;
+}
+
+.privacy-section-p {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.55;
+  margin: 0 0 12px 0;
+}
+
+.privacy-section-p:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-list {
+  margin: 0 0 12px 0;
+  padding-left: 22px;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.55;
+}
+
+.privacy-list li {
+  margin-bottom: 6px;
+}
+
+.privacy-list li:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #4f46e5;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+.privacy-link-btn:hover {
+  color: #4338ca;
+}
+
+.privacy-coming-soon {
+  color: #6b7280;
+  font-style: italic;
+}
+
 .header-actions {
   display: flex;
   gap: 16px;
@@ -1358,6 +1421,103 @@ body {
   max-width: 40ch;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Onboarding checklist (Timesheet) */
+.onboarding-checklist {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.onboarding-checklist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.onboarding-checklist-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.onboarding-checklist-dismiss {
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.onboarding-checklist-dismiss:hover {
+  color: #111827;
+}
+
+.onboarding-checklist-steps {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.onboarding-step {
+  margin-bottom: 6px;
+}
+
+.onboarding-step:last-child {
+  margin-bottom: 0;
+}
+
+.onboarding-step.done .onboarding-step-label {
+  color: #6b7280;
+}
+
+.onboarding-step-label {
+  display: inline;
+}
+
+.onboarding-step-link,
+.onboarding-step-btn {
+  color: #4f46e5;
+  font-weight: 500;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.onboarding-step-link:hover,
+.onboarding-step-btn:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .onboarding-checklist {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .onboarding-checklist-title {
+    font-size: 15px;
+  }
+  .onboarding-checklist-steps {
+    font-size: 13px;
+    padding-left: 18px;
+  }
+  .privacy-section {
+    margin-bottom: 22px;
+  }
+  .privacy-section-title {
+    font-size: 16px;
+  }
 }
 
 .reports-tabs {
