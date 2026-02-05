@@ -10,7 +10,7 @@ import type { Case, Activity } from '../types';
 const FIRM_NAME_PLACEHOLDER = '[Firm Name]';
 
 /** Map activity to invoice line description (template only, no content). */
-export function getNarrativeDescription(activity: Activity): string {
+function getNarrativeDescription(activity: Activity): string {
   const type = activity.type;
   const docName = (activity.document_name || '').toLowerCase();
   const desc = (activity.description || '').toLowerCase();
@@ -30,15 +30,14 @@ function minutesToHHMM(minutes: number): string {
   return `${h}:${m.toString().padStart(2, '0')}`;
 }
 
-export interface InvoiceLine {
-  date: string;       // YYYY-MM-DD
+interface InvoiceLine {
+  date: string;
   description: string;
   durationMinutes: number;
   durationHHMM: string;
 }
 
-/** Group activities by day and map to invoice lines (date, description, duration). */
-export function activitiesToInvoiceLines(activities: Activity[]): InvoiceLine[] {
+function activitiesToInvoiceLines(activities: Activity[]): InvoiceLine[] {
   return activities
     .filter(a => a.duration_minutes > 0)
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
