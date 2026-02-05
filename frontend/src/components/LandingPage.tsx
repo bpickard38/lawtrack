@@ -21,11 +21,11 @@ export default function LandingPage({
         name: 'Starter',
         price: '$39',
         per: 'per user / month',
-        blurb: 'Best for solo attorneys who prefer to log time manually.',
+        blurb: 'Spend less time on timesheets — one calendar, all your matters.',
         benefits: [
-          'Log time your way with a simple calendar timesheet',
+          'Capture time your way with a simple calendar',
           'Assign entries to cases and run reports by matter',
-          'One place for all your matter time — no spreadsheets',
+          'Stop chasing time in spreadsheets; get a single source of truth',
         ],
       },
       {
@@ -34,20 +34,20 @@ export default function LandingPage({
         per: 'per user / month',
         highlight: true,
         popular: true,
-        blurb: 'For small firms ready to capture time automatically.',
+        blurb: 'Capture more billable hours without the admin headache.',
         benefits: [
           'Desktop agent tracks documents, email, and calls in the background',
-          'Rules auto-assign time to the right matters',
-          'Review, edit, and export reports — ready for billing',
+          'Rules auto-assign time to the right matters so you bill accurately',
+          'Review, edit, and export — reports ready for billing in one place',
         ],
       },
       {
         name: 'Firm',
         price: "Let's talk",
         per: 'custom',
-        blurb: 'For growing firms that want rollout and support.',
+        blurb: 'Get your whole firm tracking time the right way.',
         benefits: [
-          'Dedicated onboarding and best practices',
+          'Dedicated onboarding so everyone adopts best practices',
           'Admin controls and firm-wide reporting',
           'Priority support and optional custom integrations',
         ],
@@ -112,7 +112,7 @@ export default function LandingPage({
         <main className="lp-main">
           <section className="lp-hero" aria-labelledby="lp-hero-heading">
             <div className="lp-hero-left">
-              <h1 id="lp-hero-heading">Automatic time tracking for lawyers.</h1>
+              <h1 id="lp-hero-heading" className="lp-hero-title">Automatic time tracking for lawyers.</h1>
               <p className="lp-hero-subhead">
                 Capture work as it happens. Assign time to cases. Keep timesheets clean and billable — without the busywork.
               </p>
@@ -138,6 +138,27 @@ export default function LandingPage({
                 </ul>
               </div>
             </div>
+          </section>
+
+          <section className="lp-how" aria-labelledby="lp-how-heading">
+            <h2 id="lp-how-heading" className="lp-section-title">How it works</h2>
+            <ol className="lp-how-steps">
+              <li>
+                <span className="lp-how-num">1</span>
+                <span className="lp-how-title">Install the agent</span>
+                <span className="lp-how-desc">Run the desktop app and sign in. It runs in the background and records which apps you use and for how long.</span>
+              </li>
+              <li>
+                <span className="lp-how-num">2</span>
+                <span className="lp-how-title">Set rules & review</span>
+                <span className="lp-how-desc">Define rules to auto-assign time to cases. Review and edit entries on your timesheet before they become billable.</span>
+              </li>
+              <li>
+                <span className="lp-how-num">3</span>
+                <span className="lp-how-title">Export & bill</span>
+                <span className="lp-how-desc">Run reports by case and date. Export to PDF for invoices — clean descriptions, no sensitive content.</span>
+              </li>
+            </ol>
           </section>
 
           <section className="lp-features" aria-labelledby="lp-features-heading">
@@ -173,11 +194,12 @@ export default function LandingPage({
             </div>
           </section>
 
-          <section className="lp-trust" aria-labelledby="lp-trust-heading">
-            <h2 id="lp-trust-heading" className="lp-section-title">Trusted & privacy-first</h2>
+          <section className="lp-privacy" aria-labelledby="lp-privacy-heading">
+            <h2 id="lp-privacy-heading" className="lp-section-title">Privacy-first</h2>
+            <p className="lp-privacy-lead">We only capture titles and duration — never the body of emails, documents, or calls.</p>
             <ul className="lp-trust-list">
-              <li><strong>Titles only.</strong> We track activity names and duration — never the content of documents, emails, or calls.</li>
-              <li><strong>You stay in control.</strong> Review, edit, or delete any entry. Export uses template descriptions (e.g. “Client correspondence”) so nothing sensitive appears on invoices.</li>
+              <li><strong>Titles only.</strong> Activity names and how long you spent (e.g. "Email – Re: Smith matter", "draft.docx"). No content is read, stored, or sent to our servers.</li>
+              <li><strong>You stay in control.</strong> Review, edit, or delete any entry. Exports use template descriptions (e.g. “Client correspondence”) so nothing sensitive appears on invoices.</li>
               <li><strong>Built for law.</strong> Designed so you can keep time accurately and stay within confidentiality and technology rules.</li>
             </ul>
           </section>
@@ -185,34 +207,13 @@ export default function LandingPage({
           <section className="lp-integrations" aria-labelledby="lp-integrations-heading">
             <h2 id="lp-integrations-heading" className="lp-section-title">Works with how you work</h2>
             <div className="lp-integrations-row">
-              <span className="lp-integration-item">Gmail</span>
-              <span className="lp-integration-item">Outlook</span>
-              <span className="lp-integration-item">Word</span>
-              <span className="lp-integration-item">Zoom</span>
-              <span className="lp-integration-item">Dropbox</span>
+              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📧</span> Gmail</span>
+              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📬</span> Outlook</span>
+              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📄</span> Word</span>
+              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>🎥</span> Zoom</span>
+              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📁</span> Dropbox</span>
             </div>
             <p className="lp-integrations-note">Desktop agent detects these and similar apps; we only record app/window title and duration.</p>
-          </section>
-
-          <section className="lp-how" aria-labelledby="lp-how-heading">
-            <h2 id="lp-how-heading" className="lp-section-title">How it works</h2>
-            <ol className="lp-how-steps">
-              <li>
-                <span className="lp-how-num">1</span>
-                <span className="lp-how-title">Install the agent</span>
-                <span className="lp-how-desc">Run the desktop app and sign in. It runs in the background and records which apps you use and for how long.</span>
-              </li>
-              <li>
-                <span className="lp-how-num">2</span>
-                <span className="lp-how-title">Set rules & review</span>
-                <span className="lp-how-desc">Define rules to auto-assign time to cases. Review and edit entries on your timesheet before they become billable.</span>
-              </li>
-              <li>
-                <span className="lp-how-num">3</span>
-                <span className="lp-how-title">Export & bill</span>
-                <span className="lp-how-desc">Run reports by case and date. Export to PDF for invoices — clean descriptions, no sensitive content.</span>
-              </li>
-            </ol>
           </section>
         </main>
       ) : (

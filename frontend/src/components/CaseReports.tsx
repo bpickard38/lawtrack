@@ -422,19 +422,26 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
             </button>
           </form>
         </div>
-        <div className="empty-state">
-          <p>No cases yet. Create your first case above.</p>
+        <div className="reports-empty-state">
+          <p className="reports-empty-title">No cases yet</p>
+          <p className="reports-empty-desc">Create a case above or add time on the Timesheet to see reports here.</p>
         </div>
       </div>
     );
   }
 
+  const totalActivityCount = cases.reduce((sum, c) => sum + (summaries[c.id]?.activity_count ?? 0), 0) + unassignedSummary.activity_count;
+  const showNoTimeHint = cases.length > 0 && totalActivityCount === 0 && !loading;
+
   return (
     <div className="case-reports">
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div className="reports-toolbar">
+        {showNoTimeHint && (
+          <p className="reports-no-time-hint">No time logged yet. Add time on the Timesheet or create rules to auto-assign.</p>
+        )}
+        <div className="reports-toolbar-actions">
           {!showAddCase ? (
-            <button onClick={() => setShowAddCase(true)} className="add-case-btn" style={{ marginLeft: 0 }}>
+            <button onClick={() => setShowAddCase(true)} className="add-case-btn">
               + Add Case
             </button>
           ) : (

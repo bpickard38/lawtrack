@@ -84,9 +84,14 @@ function App() {
     return (
       <LandingPage
         rightCta={
-          <button type="button" className="btn-primary" onClick={() => setPublicView('auth')}>
-            Sign in
-          </button>
+          <div className="lp-cta-row">
+            <button type="button" className="btn-outline" onClick={() => setPublicView('auth')}>
+              Sign in
+            </button>
+            <button type="button" className="btn-primary" onClick={() => setPublicView('auth')}>
+              Get started
+            </button>
+          </div>
         }
         onLogoClick={() => setPublicView('home')}
         onGetStarted={() => setPublicView('auth')}
