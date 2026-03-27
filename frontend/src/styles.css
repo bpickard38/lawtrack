@@ -3846,7 +3846,7 @@ body {
 }
 
 .ts-add-case-btn:hover {
-  background: #4338ca;
+  background: #3A3A3A;
 }
 
 .ts-loading {
@@ -3912,6 +3912,21 @@ body {
   margin-top: 2px;
 }
 
+.ts-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: white;
+  border-bottom: 1px solid #DCDCDC;
+}
+
+.ts-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .ts-grid-outer {
   flex: 1;
   min-height: 0;
@@ -3953,7 +3968,7 @@ body {
 .ts-grid-head {
   display: grid;
   min-width: 720px;
-  background: #F6F6F6;
+  background: white;
   border: 1px solid #DCDCDC;
   border-bottom: none;
   border-top-left-radius: 10px;
@@ -3968,7 +3983,7 @@ body {
   border-top: none;
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
-  background: #F6F6F6;
+  background: white;
 }
 
 .ts-grid-body {
@@ -4021,57 +4036,72 @@ body {
 .ts-time-slot {
   padding: 0 8px;
   font-size: 10px;
-  color: #AAAAAA;
+  color: transparent;
   text-align: right;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-end;
+  padding-top: 4px;
   background: white;
   border-right: 1px solid #DCDCDC;
-  border-bottom: 1px solid #F4F4F4;
+  border-bottom: 1px dashed #F0F0F0;
   position: sticky;
   left: 0;
   z-index: 6;
 }
 
+.ts-time-slot.ts-time-hour {
+  color: #AAAAAA;
+  border-bottom: 1px solid #E8E8E8;
+}
+
 .ts-day-header {
-  padding: 10px 8px 14px;
+  padding: 12px 8px 10px;
   text-align: center;
   border-right: 1px solid #DCDCDC;
   border-bottom: 1px solid #DCDCDC;
-  background: #F6F6F6;
-  /* header row is outside the scroller now */
-}
-
-.ts-day-header.today {
-  background: #111111;
-  color: white;
+  background: white;
 }
 
 .ts-day-name {
-  font-size: 13px;
+  font-size: 11px;
   text-transform: uppercase;
-  color: #6B6B6B;
+  letter-spacing: 0.06em;
+  color: #9E9E9E;
   font-weight: 500;
+  margin-bottom: 4px;
 }
 
 .ts-day-num {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 400;
   color: #111111;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  border-radius: 50%;
 }
 
-.ts-day-header.today .ts-day-name,
-.ts-day-header.today .ts-day-num {
+.ts-day-num.today {
+  background: #111111;
   color: white;
+  font-weight: 600;
 }
 
 .ts-cell {
   border-right: 1px solid #DCDCDC;
-  border-bottom: 1px solid #F4F4F4;
+  border-bottom: 1px dashed #F0F0F0;
   cursor: pointer;
   transition: background 0.15s;
   background: white;
+}
+
+/* Hour boundary gets a solid line */
+.ts-day-cells .ts-cell:nth-child(2n+1) {
+  border-bottom: 1px solid #E8E8E8;
 }
 
 .ts-cell:hover {
@@ -4106,7 +4136,7 @@ body {
 }
 
 .ts-day-col.today {
-  background: #fefce8;
+  background: #fafbff;
 }
 
 .ts-day-cells {
@@ -4140,35 +4170,32 @@ body {
   left: 0;
   right: 0;
   margin: 1px 4px;
-  padding: 5px 8px;
-  border-radius: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
   cursor: grab;
   overflow: hidden;
-  background: white;
-  border: 1px solid #DCDCDC;
-  border-left: 3px solid #3A3A3A;
-  color: #111111;
-  font-size: 12px;
+  background: #2A2A2A;
+  border: none;
+  color: white;
+  font-size: 11px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-height: 0;
   user-select: none;
   touch-action: none;
 }
 
-.ts-block[data-type="document"] { border-left-color: #3A3A3A; }
-.ts-block[data-type="email"]    { border-left-color: #6B6B6B; }
-.ts-block[data-type="call"]     { border-left-color: #9E9E9E; }
+.ts-block[data-type="document"] { background: #2A2A2A; }
+.ts-block[data-type="email"]    { background: #4A6FA5; }
+.ts-block[data-type="call"]     { background: #2E7D52; }
 
 .ts-block:active {
   cursor: grabbing;
 }
 
 .ts-block:hover {
-  background: #FAFAFA;
-  border-color: #AAAAAA;
-  border-left-color: inherit;
+  filter: brightness(1.15);
 }
 
 .ts-block-dragging {
@@ -4182,21 +4209,21 @@ body {
   z-index: 9999;
   pointer-events: none;
   padding: 6px 10px;
-  border-radius: 8px;
-  background: white;
-  border: 1px solid #DCDCDC;
-  border-left: 3px solid #3A3A3A;
-  color: #111111;
-  font-size: 12px;
+  border-radius: 4px;
+  background: #2A2A2A;
+  border: none;
+  color: white;
+  font-size: 11px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  opacity: 0.9;
 }
 
-.ts-drag-preview .ts-block-time { font-weight: 600; font-size: 11px; color: #6B6B6B; }
+.ts-drag-preview .ts-block-time { font-weight: 600; font-size: 11px; color: rgba(255,255,255,0.75); }
 .ts-drag-preview .ts-block-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-.ts-drag-preview .ts-block-case { font-size: 10px; color: #6B6B6B; }
+.ts-drag-preview .ts-block-case { font-size: 10px; color: rgba(255,255,255,0.65); }
 
 .ts-type-badge {
   display: inline-block;
@@ -4204,15 +4231,15 @@ body {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #9E9E9E;
+  color: rgba(255,255,255,0.7);
   line-height: 1;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .ts-block-time {
-  font-weight: 600;
-  font-size: 11px;
-  color: #6B6B6B;
+  font-weight: 500;
+  font-size: 10px;
+  color: rgba(255,255,255,0.75);
 }
 
 .ts-block-name {
@@ -4220,12 +4247,12 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 500;
-  color: #111111;
+  color: white;
 }
 
 .ts-block-case {
   font-size: 10px;
-  color: #6B6B6B;
+  color: rgba(255,255,255,0.65);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

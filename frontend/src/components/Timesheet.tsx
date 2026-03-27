@@ -327,35 +327,47 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
       {!loading && (
         <div className="ts-grid-outer">
           <div className="ts-grid-head-wrapper">
-            <button
-              type="button"
-              className="ts-header-arrow left"
-              onClick={() => setWeekOffset(o => o - 1)}
-              aria-label="Previous week"
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              className="ts-today-btn"
-              onClick={() => setWeekOffset(0)}
-              aria-label="Go to today"
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              className="ts-header-arrow right"
-              onClick={() => setWeekOffset(o => o + 1)}
-              aria-label="Next week"
-            >
-              →
-            </button>
+            <div className="ts-toolbar">
+              <div className="ts-toolbar-left">
+                <button
+                  type="button"
+                  className="ts-today-btn"
+                  onClick={() => setWeekOffset(0)}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  className="ts-header-arrow"
+                  onClick={() => setWeekOffset(o => o - 1)}
+                  aria-label="Previous week"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="ts-header-arrow"
+                  onClick={() => setWeekOffset(o => o + 1)}
+                  aria-label="Next week"
+                >
+                  ›
+                </button>
+                <span className="ts-week-label">
+                  {(() => {
+                    const s = days[0], e = days[6];
+                    const sm = s.toLocaleDateString('en-US', { month: 'long' });
+                    const em = e.toLocaleDateString('en-US', { month: 'long' });
+                    const yr = e.getFullYear();
+                    return sm === em
+                      ? `${sm} ${s.getDate()} – ${e.getDate()}, ${yr}`
+                      : `${sm} ${s.getDate()} – ${em} ${e.getDate()}, ${yr}`;
+                  })()}
+                </span>
+              </div>
+            </div>
             <div
               className="ts-grid-head"
-              style={{
-                gridTemplateColumns: '72px repeat(7, 1fr)',
-              }}
+              style={{ gridTemplateColumns: '56px repeat(7, 1fr)' }}
             >
               <div className="ts-time-header" />
               {days.map((day, j) => {
@@ -364,11 +376,11 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
                 return (
                   <div
                     key={key}
-                    className={`ts-day-header ${isToday ? 'today' : ''}`}
+                    className="ts-day-header"
                     style={{ gridColumn: j + 2 }}
                   >
                     <div className="ts-day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                    <div className="ts-day-num">{day.getDate()}</div>
+                    <div className={`ts-day-num${isToday ? ' today' : ''}`}>{day.getDate()}</div>
                   </div>
                 );
               })}
@@ -380,14 +392,21 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
               className="ts-grid-body"
               style={{
                 gridTemplateRows: `repeat(${slotCount}, ${ROW_HEIGHT}px)`,
-                gridTemplateColumns: '72px repeat(7, 1fr)',
+                gridTemplateColumns: '56px repeat(7, 1fr)',
               }}
             >
               {Array.from({ length: slotCount }, (_, i) => {
                 const { h, m } = slotToTime(i);
-                const label = h < 12 ? `${h}:${m.toString().padStart(2, '0')} AM` : (h === 12 ? '12' : h - 12) + `:${m.toString().padStart(2, '0')} PM`;
+                const isHour = m === 0;
+                const label = isHour
+                  ? (h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`)
+                  : '';
                 return (
-                  <div key={`t-${i}`} className="ts-time-slot" style={{ gridColumn: 1, gridRow: i + 1 }}>
+                  <div
+                    key={`t-${i}`}
+                    className={`ts-time-slot${isHour ? ' ts-time-hour' : ''}`}
+                    style={{ gridColumn: 1, gridRow: i + 1 }}
+                  >
                     {label}
                   </div>
                 );
