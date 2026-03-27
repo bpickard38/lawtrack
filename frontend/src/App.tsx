@@ -25,12 +25,27 @@ function App() {
   const [cases, setCases] = useState<Case[]>([]);
   const [currentView, setCurrentView] = useState<View>('timesheet');
   const [loading, setLoading] = useState(true);
-  const [publicView, setPublicView] = useState<PublicView>('home');
+  const [publicView, setPublicView] = useState<PublicView>(
+    () => window.location.hash === '#auth' ? 'auth' : 'home'
+  );
   const [showHomepage, setShowHomepage] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [marketingMenuOpen, setMarketingMenuOpen] = useState(false);
   const [showDesktopDownloadFallback, setShowDesktopDownloadFallback] = useState(false);
   const openDesktopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function navigatePublic(view: PublicView) {
+    setPublicView(view);
+    window.location.hash = view === 'auth' ? 'auth' : '';
+  }
+
+  useEffect(() => {
+    function onHashChange() {
+      setPublicView(window.location.hash === '#auth' ? 'auth' : 'home');
+    }
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   useEffect(() => {
     if (attorney) loadCases();
@@ -75,10 +90,10 @@ function App() {
         <div className="app">
           <header className="app-header">
             <div className="header-content">
-              <button className="app-logo" type="button" onClick={() => setPublicView('home')}>
+              <button className="app-logo" type="button" onClick={() => navigatePublic('home')}>
                 <img src="/logo.jpg" alt="" style={{height: '26px', width: 'auto', mixBlendMode: 'multiply'}} /><span style={{fontSize: '15px', fontWeight: 700, color: '#7A7A7A', letterSpacing: '-0.03em'}}>LawTrack</span>
               </button>
-              <button className="logout-btn" type="button" onClick={() => setPublicView('home')}>
+              <button className="logout-btn" type="button" onClick={() => navigatePublic('home')}>
                 Back
               </button>
             </div>
@@ -94,16 +109,16 @@ function App() {
       <LandingPage
         rightCta={
           <div className="lp-cta-row">
-            <button type="button" className="btn-outline" onClick={() => setPublicView('auth')}>
+            <button type="button" className="btn-outline" onClick={() => navigatePublic('auth')}>
               Sign in
             </button>
-            <button type="button" className="btn-primary" onClick={() => setPublicView('auth')}>
+            <button type="button" className="btn-primary" onClick={() => navigatePublic('auth')}>
               Get started
             </button>
           </div>
         }
-        onLogoClick={() => setPublicView('home')}
-        onGetStarted={() => setPublicView('auth')}
+        onLogoClick={() => navigatePublic('home')}
+        onGetStarted={() => navigatePublic('auth')}
       />
     );
   }
