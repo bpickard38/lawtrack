@@ -366,6 +366,10 @@ body {
   font-size: 13px;
   color: #6B6B6B;
   font-weight: 500;
+  border: 1px solid #E8E8E8;
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: white;
   padding: 5px 12px;
   background: #F6F6F6;
   border: 1px solid #DCDCDC;
@@ -827,9 +831,7 @@ body {
 }
 
 .lp-feature-icon {
-  font-size: 22px;
-  line-height: 1;
-  margin-bottom: 4px;
+  display: none;
 }
 
 .lp-feature-title {
@@ -1160,8 +1162,15 @@ body {
   background: #f0f4ff;
 }
 
-.lp-mock-item-icon {
-  font-size: 14px;
+.lp-mock-item-type {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9E9E9E;
+  background: #F0F0F0;
+  border-radius: 4px;
+  padding: 2px 6px;
   flex-shrink: 0;
 }
 

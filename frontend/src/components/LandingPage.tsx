@@ -166,9 +166,9 @@ export default function LandingPage({
               </button>
             </div>
             <div className="lp-hero-features">
-              <span>✓ Background activity tracking</span>
-              <span>✓ Auto-assignment to cases</span>
-              <span>✓ Export-ready billing reports</span>
+              <span>Background activity tracking</span>
+              <span>Auto-assignment to cases</span>
+              <span>Export-ready billing reports</span>
             </div>
           </section>
 
@@ -182,19 +182,18 @@ export default function LandingPage({
               <div className="lp-bento-item lp-bento-hero">
                 <div className="lp-mock-tray">
                   <div className="lp-mock-tray-bar">
-                    <span>⚖</span>
                     <span>LawTrack</span>
                     <span className="lp-mock-tray-dot" />
                     <span className="lp-mock-tray-status">Tracking</span>
                   </div>
                   <div className="lp-mock-tray-items">
                     <div className="lp-mock-tray-item">
-                      <span className="lp-mock-item-icon">📄</span>
+                      <span className="lp-mock-item-type">doc</span>
                       <span>draft_agreement.docx</span>
                       <span className="lp-mock-item-time">0:42</span>
                     </div>
                     <div className="lp-mock-tray-item">
-                      <span className="lp-mock-item-icon">📧</span>
+                      <span className="lp-mock-item-type">email</span>
                       <span>Re: Smith Matter</span>
                       <span className="lp-mock-item-time">0:18</span>
                     </div>
@@ -266,32 +265,26 @@ export default function LandingPage({
             </div>
             <div className="lp-features-grid">
               <div className="lp-feature-card">
-                <div className="lp-feature-icon">⏱</div>
                 <div className="lp-feature-title">Less admin time</div>
                 <div className="lp-feature-body">Capture work while it happens so you don't reconstruct your day at 5pm.</div>
               </div>
               <div className="lp-feature-card">
-                <div className="lp-feature-icon">💰</div>
                 <div className="lp-feature-title">More billable time</div>
                 <div className="lp-feature-body">Find and recover time that slips through the cracks between meetings and documents.</div>
               </div>
               <div className="lp-feature-card">
-                <div className="lp-feature-icon">📋</div>
                 <div className="lp-feature-title">Cleaner narratives</div>
                 <div className="lp-feature-body">Edit and approve entries quickly with consistent, professional descriptions.</div>
               </div>
               <div className="lp-feature-card">
-                <div className="lp-feature-icon">🔒</div>
                 <div className="lp-feature-title">Privacy-first</div>
                 <div className="lp-feature-body">Only window titles and duration are captured. No document content ever leaves your machine.</div>
               </div>
               <div className="lp-feature-card">
-                <div className="lp-feature-icon">⚡</div>
                 <div className="lp-feature-title">Auto-assignment</div>
                 <div className="lp-feature-body">Rules match activity to cases automatically, so your timesheet fills itself.</div>
               </div>
               <div className="lp-feature-card">
-                <div className="lp-feature-icon">📊</div>
                 <div className="lp-feature-title">Export-ready reports</div>
                 <div className="lp-feature-body">One click to generate a clean PDF invoice — broken down by case and activity type.</div>
               </div>
@@ -343,19 +336,19 @@ export default function LandingPage({
               </div>
               <ul className="lp-trust-list">
                 <li>
-                  <div className="lp-trust-icon">✓</div>
+                  <div className="lp-trust-icon">—</div>
                   <div>
                     <strong>Titles only.</strong> Activity names and how long you spent (e.g. "Email – Re: Smith matter"). No content is read, stored, or sent to our servers.
                   </div>
                 </li>
                 <li>
-                  <div className="lp-trust-icon">✓</div>
+                  <div className="lp-trust-icon">—</div>
                   <div>
                     <strong>You stay in control.</strong> Review, edit, or delete any entry. Exports use template descriptions so nothing sensitive appears on invoices.
                   </div>
                 </li>
                 <li>
-                  <div className="lp-trust-icon">✓</div>
+                  <div className="lp-trust-icon">—</div>
                   <div>
                     <strong>Built for law.</strong> Designed so you can keep time accurately and stay within confidentiality and technology rules.
                   </div>
@@ -367,11 +360,11 @@ export default function LandingPage({
           <section className="lp-integrations" aria-labelledby="lp-integrations-heading">
             <h2 id="lp-integrations-heading" className="lp-integrations-title">Works with how you work</h2>
             <div className="lp-integrations-row">
-              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📧</span> Gmail</span>
-              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📬</span> Outlook</span>
-              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📄</span> Word</span>
-              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>🎥</span> Zoom</span>
-              <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📁</span> Dropbox</span>
+              <span className="lp-integration-item">Gmail</span>
+              <span className="lp-integration-item">Outlook</span>
+              <span className="lp-integration-item">Word</span>
+              <span className="lp-integration-item">Zoom</span>
+              <span className="lp-integration-item">Dropbox</span>
             </div>
             <p className="lp-integrations-note">Desktop agent detects these and similar apps; we only record app/window title and duration.</p>
           </section>
@@ -436,12 +429,12 @@ export default function LandingPage({
               <p className="lp-pricing-sub">Questions about pricing, firm plans, or integrations? We'd love to hear from you.</p>
               <div className="lp-contact-options">
                 <a className="lp-contact-card" href="mailto:hello@lawtrack.io">
-                  <div className="lp-contact-card-icon">✉</div>
+                  <div className="lp-contact-card-icon"></div>
                   <div className="lp-contact-card-label">Email us</div>
                   <div className="lp-contact-card-value">hello@lawtrack.io</div>
                 </a>
                 <div className="lp-contact-card" onClick={() => navigateTab('pricing')} style={{cursor: 'pointer'}}>
-                  <div className="lp-contact-card-icon">💼</div>
+                  <div className="lp-contact-card-icon"></div>
                   <div className="lp-contact-card-label">Firm plans</div>
                   <div className="lp-contact-card-value">Custom pricing for teams →</div>
                 </div>
