@@ -117,14 +117,18 @@ body {
   height: 36px;
   width: auto;
   display: block;
-  mix-blend-mode: multiply;
 }
 
 .lp-logo-wordmark {
-  height: 24px;
-  width: auto;
-  display: block;
-  mix-blend-mode: multiply;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #C0C0C0 0%, #888888 40%, #D8D8D8 70%, #A0A0A0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-family: inherit;
+  line-height: 1;
 }
 
 /* Center nav links */

@@ -76,7 +76,7 @@ function App() {
           <header className="app-header">
             <div className="header-content">
               <button className="app-logo" type="button" onClick={() => setPublicView('home')}>
-                <img src="/Symbol.png" alt="" style={{height: '22px', width: 'auto'}} /><img src="/Wordmark.png" alt="LawTrack" style={{height: '15px', width: 'auto'}} />
+                <img src="/Logo.png" alt="" style={{height: '26px', width: 'auto'}} /><span style={{fontSize: '15px', fontWeight: 700, background: 'linear-gradient(135deg, #C0C0C0 0%, #888 40%, #D8D8D8 70%, #A0A0A0 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', letterSpacing: '-0.03em'}}>LawTrack</span>
               </button>
               <button className="logout-btn" type="button" onClick={() => setPublicView('home')}>
                 Back
@@ -185,7 +185,7 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <button className="app-logo" type="button" onClick={() => setShowHomepage(true)}>
-            <img src="/Symbol.png" alt="" style={{height: '22px', width: 'auto'}} /><img src="/Wordmark.png" alt="LawTrack" style={{height: '15px', width: 'auto'}} />
+            <img src="/Logo.png" alt="" style={{height: '26px', width: 'auto'}} /><span style={{fontSize: '15px', fontWeight: 700, background: 'linear-gradient(135deg, #C0C0C0 0%, #888 40%, #D8D8D8 70%, #A0A0A0 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', letterSpacing: '-0.03em'}}>LawTrack</span>
           </button>
           <nav className="nav-tabs">
             <button 
