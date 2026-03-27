@@ -113,23 +113,10 @@ body {
   flex-shrink: 0;
 }
 
-/* Clip wrapper hides the baked-in drop shadow around the logo PNG */
-.lp-logo-symbol-wrap {
-  display: block;
-  width: 30px;
-  height: 30px;
-  overflow: hidden;
-  position: relative;
-  flex-shrink: 0;
-}
-
 .lp-logo-symbol {
-  position: absolute;
-  height: 54px;
+  height: 34px;
   width: auto;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  display: block;
   mix-blend-mode: multiply;
 }
 
