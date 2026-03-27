@@ -66,6 +66,19 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
+/* Subtle hero gradient background stripe */
+.lp::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 600px;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(17, 24, 39, 0.05) 0%, rgba(255,255,255,0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* Full-width clean navbar */
 .lp-topbar {
   display: flex;
@@ -218,6 +231,8 @@ body {
   max-width: 1160px;
   width: 100%;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 /* Hero — centered, Linear-style */
@@ -319,12 +334,19 @@ body {
 .lp-hero-features {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 8px;
   margin-top: 40px;
   justify-content: center;
+}
+
+.lp-hero-features span {
   font-size: 13px;
   color: #6b7280;
   font-weight: 500;
+  padding: 5px 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
 }
 
 .lp-pill {
@@ -441,17 +463,83 @@ body {
 }
 
 .lp-mock-bar {
-  height: 44px;
-  background: #f3f4f6;
+  height: 48px;
+  background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
 }
 
-.lp-mock-grid {
+.lp-mock-bar-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.lp-mock-bar-tab {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.lp-mock-bar-tab.active {
+  color: #111827;
+  background: #e5e7eb;
+  font-weight: 600;
+}
+
+.lp-mock-app-body {
+  display: flex;
+  min-height: 260px;
+}
+
+.lp-mock-sidebar {
+  width: 100px;
+  border-right: 1px solid #e5e7eb;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #f9fafb;
+}
+
+.lp-mock-sidebar-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: default;
+}
+
+.lp-mock-sidebar-item.active {
+  background: #111827;
+  color: white;
+  font-weight: 600;
+}
+
+.lp-mock-calendar {
+  flex: 1;
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
+
+.lp-mock-cal-entry {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: white;
+}
+
+.lp-tl-doc.lp-mock-cal-entry { background: #002147; }
+.lp-tl-email.lp-mock-cal-entry { background: #0ea5e9; }
+.lp-tl-call.lp-mock-cal-entry { background: #f59e0b; }
 
 .lp-mock-row {
   height: 32px;
@@ -849,16 +937,17 @@ body {
 
 .lp-faq-q {
   font-weight: 600;
-  font-size: 15px;
-  margin-bottom: 8px;
-  color: #1a1a2e;
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #111827;
+  letter-spacing: -0.01em;
 }
 
 .lp-faq-a {
   margin: 0;
-  font-size: 14px;
-  color: #64748b;
-  line-height: 1.6;
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.7;
 }
 
 /* Footer */

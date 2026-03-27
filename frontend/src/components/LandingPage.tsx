@@ -131,7 +131,6 @@ export default function LandingPage({
               <span>✓ Background activity tracking</span>
               <span>✓ Auto-assignment to cases</span>
               <span>✓ Export-ready billing reports</span>
-              <span>✓ Privacy-first by design</span>
             </div>
           </section>
 
@@ -270,10 +269,27 @@ export default function LandingPage({
             <div className="lp-screenshot-placeholder">
               <div className="lp-screenshot-inner">
                 <div className="lp-screenshot-mock">
-                  <div className="lp-mock-bar" />
-                  <div className="lp-mock-grid">
-                    <div className="lp-mock-row" /><div className="lp-mock-row" /><div className="lp-mock-row" />
-                    <div className="lp-mock-row" /><div className="lp-mock-row" /><div className="lp-mock-row" />
+                  <div className="lp-mock-bar">
+                    <div className="lp-mock-bar-tabs">
+                      <span className="lp-mock-bar-tab active">Timesheet</span>
+                      <span className="lp-mock-bar-tab">Reports</span>
+                      <span className="lp-mock-bar-tab">Rules</span>
+                    </div>
+                  </div>
+                  <div className="lp-mock-app-body">
+                    <div className="lp-mock-sidebar">
+                      <div className="lp-mock-sidebar-item active">Mon 24</div>
+                      <div className="lp-mock-sidebar-item">Tue 25</div>
+                      <div className="lp-mock-sidebar-item">Wed 26</div>
+                      <div className="lp-mock-sidebar-item">Thu 27</div>
+                      <div className="lp-mock-sidebar-item">Fri 28</div>
+                    </div>
+                    <div className="lp-mock-calendar">
+                      <div className="lp-mock-cal-entry lp-tl-doc">Draft agreement — Smith v. Jones · 1.2h</div>
+                      <div className="lp-mock-cal-entry lp-tl-email">Client correspondence — Acme Corp · 0.5h</div>
+                      <div className="lp-mock-cal-entry lp-tl-call">Zoom call — Initial consultation · 0.3h</div>
+                      <div className="lp-mock-cal-entry lp-tl-doc" style={{opacity: 0.5}}>Review contract — Johnson LLC · 0.8h</div>
+                    </div>
                   </div>
                 </div>
               </div>
