@@ -1,19 +1,38 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 type Tab = 'home' | 'pricing' | 'contact';
 
+function tabFromHash(): Tab {
+  const h = window.location.hash;
+  if (h === '#pricing') return 'pricing';
+  if (h === '#contact') return 'contact';
+  return 'home';
+}
+
 export default function LandingPage({
-  initialTab = 'home',
   rightCta,
   onLogoClick,
   onGetStarted,
 }: {
-  initialTab?: Tab;
   rightCta: React.ReactNode;
   onLogoClick?: () => void;
   onGetStarted?: () => void;
 }) {
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const [tab, setTab] = useState<Tab>(tabFromHash);
+
+  function navigateTab(t: Tab) {
+    setTab(t);
+    window.location.hash = t === 'home' ? '' : t;
+  }
+
+  useEffect(() => {
+    function onHashChange() {
+      const next = tabFromHash();
+      setTab(next);
+    }
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   const pricing = useMemo(
     () => [
@@ -104,21 +123,21 @@ export default function LandingPage({
           <button
             type="button"
             className={`lp-nav-link ${tab === 'home' ? 'active' : ''}`}
-            onClick={() => setTab('home')}
+            onClick={() => navigateTab('home')}
           >
             Product
           </button>
           <button
             type="button"
             className={`lp-nav-link ${tab === 'pricing' ? 'active' : ''}`}
-            onClick={() => setTab('pricing')}
+            onClick={() => navigateTab('pricing')}
           >
             Pricing
           </button>
           <button
             type="button"
             className={`lp-nav-link ${tab === 'contact' ? 'active' : ''}`}
-            onClick={() => setTab('contact')}
+            onClick={() => navigateTab('contact')}
           >
             Contact
           </button>
@@ -142,7 +161,7 @@ export default function LandingPage({
                   Get started
                 </button>
               )}
-              <button type="button" className="lp-cta-secondary" onClick={() => setTab('pricing')}>
+              <button type="button" className="lp-cta-secondary" onClick={() => navigateTab('pricing')}>
                 See pricing →
               </button>
             </div>
@@ -377,7 +396,7 @@ export default function LandingPage({
                     <button
                       type="button"
                       className={p.highlight ? 'lp-cta-primary lp-pricing-col-cta' : 'lp-cta-secondary lp-pricing-col-cta'}
-                      onClick={p.name === 'Firm' ? () => setTab('contact') : onGetStarted}
+                      onClick={p.name === 'Firm' ? () => navigateTab('contact') : onGetStarted}
                     >
                       {p.cta}
                     </button>
@@ -421,7 +440,7 @@ export default function LandingPage({
                   <div className="lp-contact-card-label">Email us</div>
                   <div className="lp-contact-card-value">hello@lawtrack.io</div>
                 </a>
-                <div className="lp-contact-card" onClick={() => setTab('pricing')} style={{cursor: 'pointer'}}>
+                <div className="lp-contact-card" onClick={() => navigateTab('pricing')} style={{cursor: 'pointer'}}>
                   <div className="lp-contact-card-icon">💼</div>
                   <div className="lp-contact-card-label">Firm plans</div>
                   <div className="lp-contact-card-value">Custom pricing for teams →</div>
