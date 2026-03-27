@@ -129,12 +129,12 @@ body {
   line-height: 1;
 }
 
-/* Center nav links */
+/* Right-side nav links */
 .lp-nav {
   display: flex;
   align-items: center;
   gap: 2px;
-  margin-left: 24px;
+  margin-left: auto;
 }
 
 .lp-nav-link {
@@ -164,7 +164,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
+  margin-left: 16px;
 }
 
 /* Shared primary/secondary buttons (marketing + app) */
@@ -872,7 +872,7 @@ body {
 
 .lp-pricing-table {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   border: 1px solid #DCDCDC;
   border-radius: 12px;
   overflow: hidden;
@@ -1321,10 +1321,7 @@ body {
   .lp-footer { padding: 24px 32px; }
   .lp-features-grid { grid-template-columns: repeat(2, 1fr); }
   .lp-privacy-inner { grid-template-columns: 1fr; gap: 40px; padding: 40px; }
-  .lp-pricing-table { grid-template-columns: repeat(2, 1fr); }
-  .lp-pricing-col { border-right: none; border-bottom: 1px solid #DCDCDC; }
-  .lp-pricing-col:nth-child(odd) { border-right: 1px solid #DCDCDC; }
-  .lp-pricing-col:nth-last-child(-n+2) { border-bottom: none; }
+  .lp-pricing-table { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 768px) {

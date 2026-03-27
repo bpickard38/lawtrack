@@ -18,20 +18,6 @@ export default function LandingPage({
   const pricing = useMemo(
     () => [
       {
-        name: 'Free',
-        price: '$0',
-        per: '',
-        blurb: 'Get started with manual time tracking at no cost.',
-        cta: 'Get started free',
-        features: [
-          'Unlimited manual time entries',
-          'Up to 3 active cases',
-          'Basic reporting',
-          'Web app access',
-          'CSV export',
-        ],
-      },
-      {
         name: 'Starter',
         price: '$29',
         per: 'per user / month',
