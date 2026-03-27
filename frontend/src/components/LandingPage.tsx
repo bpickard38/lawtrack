@@ -85,8 +85,9 @@ export default function LandingPage({
   return (
     <div className="lp">
       <header className="lp-topbar">
-        <button className="lp-logo" type="button" onClick={onLogoClick}>
-          ⚖️ <span>LawTrack</span>
+        <button className="lp-logo" type="button" onClick={onLogoClick} aria-label="LawTrack home">
+          <img src="/Symbol.png" alt="" className="lp-logo-symbol" />
+          <img src="/Wordmark.png" alt="LawTrack" className="lp-logo-wordmark" />
         </button>
         <nav className="lp-nav" aria-label="Marketing">
           <button

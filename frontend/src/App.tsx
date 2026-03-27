@@ -76,7 +76,7 @@ function App() {
           <header className="app-header">
             <div className="header-content">
               <button className="app-logo" type="button" onClick={() => setPublicView('home')}>
-                ⚖️ LawTrack
+                <img src="/Symbol.png" alt="" style={{height: '22px', width: 'auto'}} /><img src="/Wordmark.png" alt="LawTrack" style={{height: '15px', width: 'auto'}} />
               </button>
               <button className="logout-btn" type="button" onClick={() => setPublicView('home')}>
                 Back
@@ -185,7 +185,7 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <button className="app-logo" type="button" onClick={() => setShowHomepage(true)}>
-            ⚖️ LawTrack
+            <img src="/Symbol.png" alt="" style={{height: '22px', width: 'auto'}} /><img src="/Wordmark.png" alt="LawTrack" style={{height: '15px', width: 'auto'}} />
           </button>
           <nav className="nav-tabs">
             <button 
