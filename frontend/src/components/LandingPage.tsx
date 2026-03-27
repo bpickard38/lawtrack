@@ -76,7 +76,7 @@ export default function LandingPage({
       },
       {
         q: 'Is LawTrack compliant with bar rules?',
-        a: 'LawTrack is designed to support accurate timekeeping and client communication. We recommend reviewing your jurisdiction’s rules on technology and confidentiality; we can provide a short security and privacy overview for your firm.',
+        a: 'LawTrack is designed to support accurate timekeeping and client communication. We recommend reviewing your jurisdiction\'s rules on technology and confidentiality; we can provide a short security and privacy overview for your firm.',
       },
     ],
     [],
@@ -88,60 +88,58 @@ export default function LandingPage({
         <button className="lp-logo" type="button" onClick={onLogoClick}>
           ⚖️ <span>LawTrack</span>
         </button>
+        <nav className="lp-nav" aria-label="Marketing">
+          <button
+            type="button"
+            className={`lp-nav-link ${tab === 'home' ? 'active' : ''}`}
+            onClick={() => setTab('home')}
+          >
+            Home
+          </button>
+          <button
+            type="button"
+            className={`lp-nav-link ${tab === 'pricing' ? 'active' : ''}`}
+            onClick={() => setTab('pricing')}
+          >
+            Pricing
+          </button>
+        </nav>
         <div className="lp-topbar-right">{rightCta}</div>
       </header>
-
-      <nav className="lp-tabs" aria-label="Marketing">
-        <button
-          type="button"
-          className={`lp-tab ${tab === 'home' ? 'active' : ''}`}
-          onClick={() => setTab('home')}
-        >
-          Home
-        </button>
-        <button
-          type="button"
-          className={`lp-tab ${tab === 'pricing' ? 'active' : ''}`}
-          onClick={() => setTab('pricing')}
-        >
-          Pricing
-        </button>
-      </nav>
 
       {tab === 'home' ? (
         <main className="lp-main">
           <section className="lp-hero" aria-labelledby="lp-hero-heading">
-            <div className="lp-hero-left">
-              <h1 id="lp-hero-heading" className="lp-hero-title">Automatic time tracking for lawyers.</h1>
-              <p className="lp-hero-subhead">
-                Capture work as it happens. Assign time to cases. Keep timesheets clean and billable — without the busywork.
-              </p>
-              <div className="lp-hero-cta">
-                {onGetStarted && (
-                  <button type="button" className="lp-cta-primary" onClick={onGetStarted}>
-                    Get started
-                  </button>
-                )}
-                <button type="button" className="lp-cta-secondary" onClick={() => setTab('pricing')}>
-                  See pricing
+            <div className="lp-hero-badge">Built for legal professionals</div>
+            <h1 id="lp-hero-heading" className="lp-hero-title">
+              Automatic time tracking<br />for lawyers.
+            </h1>
+            <p className="lp-hero-subhead">
+              Capture work as it happens. Assign time to cases. Keep timesheets clean and billable — without the busywork.
+            </p>
+            <div className="lp-hero-cta">
+              {onGetStarted && (
+                <button type="button" className="lp-cta-primary" onClick={onGetStarted}>
+                  Get started
                 </button>
-              </div>
+              )}
+              <button type="button" className="lp-cta-secondary" onClick={() => setTab('pricing')}>
+                See pricing →
+              </button>
             </div>
-            <div className="lp-hero-right">
-              <div className="lp-card">
-                <div className="lp-card-title">What LawTrack does</div>
-                <ul className="lp-list">
-                  <li>Tracks work in the background (desktop first)</li>
-                  <li>Turns activity into clean, editable time entries</li>
-                  <li>Auto-assigns time to cases using mapping rules</li>
-                  <li>Gives you a Google Calendar–style timesheet</li>
-                </ul>
-              </div>
+            <div className="lp-hero-features">
+              <span>✓ Background activity tracking</span>
+              <span>✓ Auto-assignment to cases</span>
+              <span>✓ Export-ready billing reports</span>
+              <span>✓ Privacy-first by design</span>
             </div>
           </section>
 
           <section className="lp-how" aria-labelledby="lp-how-heading">
-            <h2 id="lp-how-heading" className="lp-section-title">How it works</h2>
+            <div className="lp-section-header">
+              <div className="lp-section-label">How it works</div>
+              <h2 id="lp-how-heading" className="lp-section-title">From install to invoice<br />in three steps.</h2>
+            </div>
             <div className="lp-how-bento">
               {/* Step 1 — hero tile */}
               <div className="lp-bento-item lp-bento-hero">
@@ -165,9 +163,11 @@ export default function LandingPage({
                     </div>
                   </div>
                 </div>
-                <span className="lp-how-num">1</span>
-                <span className="lp-how-title">Install the agent</span>
-                <span className="lp-how-desc">Run the desktop app and sign in. It runs in the background and records which apps you use and for how long.</span>
+                <div className="lp-bento-content">
+                  <span className="lp-how-num">1</span>
+                  <span className="lp-how-title">Install the agent</span>
+                  <span className="lp-how-desc">Run the desktop app and sign in. It runs in the background and records which apps you use and for how long.</span>
+                </div>
               </div>
               {/* Step 2 */}
               <div className="lp-bento-item">
@@ -187,9 +187,11 @@ export default function LandingPage({
                     <div className="lp-mock-toggle" />
                   </div>
                 </div>
-                <span className="lp-how-num">2</span>
-                <span className="lp-how-title">Set rules & review</span>
-                <span className="lp-how-desc">Define rules to auto-assign time to cases. Review and edit entries on your timesheet before they become billable.</span>
+                <div className="lp-bento-content">
+                  <span className="lp-how-num">2</span>
+                  <span className="lp-how-title">Set rules & review</span>
+                  <span className="lp-how-desc">Define rules to auto-assign time to cases. Review and edit entries on your timesheet before they become billable.</span>
+                </div>
               </div>
               {/* Step 3 */}
               <div className="lp-bento-item">
@@ -211,35 +213,62 @@ export default function LandingPage({
                   </div>
                   <button className="lp-mock-export-btn" type="button">Export PDF ↓</button>
                 </div>
-                <span className="lp-how-num">3</span>
-                <span className="lp-how-title">Export & bill</span>
-                <span className="lp-how-desc">Run reports by case and date. Export to PDF for invoices — clean descriptions, no sensitive content.</span>
+                <div className="lp-bento-content">
+                  <span className="lp-how-num">3</span>
+                  <span className="lp-how-title">Export & bill</span>
+                  <span className="lp-how-desc">Run reports by case and date. Export to PDF for invoices — clean descriptions, no sensitive content.</span>
+                </div>
               </div>
             </div>
           </section>
 
-          <section className="lp-features" aria-labelledby="lp-features-heading">
-            <h2 id="lp-features-heading" className="lp-visually-hidden">Benefits</h2>
-            <div className="lp-feature">
-              <div className="lp-feature-title">Less admin time</div>
-              <div className="lp-feature-body">Capture work while it happens so you don’t reconstruct your day later.</div>
+          <section className="lp-features-section" aria-labelledby="lp-features-heading">
+            <div className="lp-section-header">
+              <div className="lp-section-label">Benefits</div>
+              <h2 id="lp-features-heading" className="lp-section-title">Everything you need,<br />nothing you don't.</h2>
             </div>
-            <div className="lp-feature">
-              <div className="lp-feature-title">More billable time</div>
-              <div className="lp-feature-body">Find and recover time that slips through the cracks.</div>
-            </div>
-            <div className="lp-feature">
-              <div className="lp-feature-title">Cleaner narratives</div>
-              <div className="lp-feature-body">Edit and approve entries quickly with consistent descriptions.</div>
+            <div className="lp-features-grid">
+              <div className="lp-feature-card">
+                <div className="lp-feature-icon">⏱</div>
+                <div className="lp-feature-title">Less admin time</div>
+                <div className="lp-feature-body">Capture work while it happens so you don't reconstruct your day at 5pm.</div>
+              </div>
+              <div className="lp-feature-card">
+                <div className="lp-feature-icon">💰</div>
+                <div className="lp-feature-title">More billable time</div>
+                <div className="lp-feature-body">Find and recover time that slips through the cracks between meetings and documents.</div>
+              </div>
+              <div className="lp-feature-card">
+                <div className="lp-feature-icon">📋</div>
+                <div className="lp-feature-title">Cleaner narratives</div>
+                <div className="lp-feature-body">Edit and approve entries quickly with consistent, professional descriptions.</div>
+              </div>
+              <div className="lp-feature-card">
+                <div className="lp-feature-icon">🔒</div>
+                <div className="lp-feature-title">Privacy-first</div>
+                <div className="lp-feature-body">Only window titles and duration are captured. No document content ever leaves your machine.</div>
+              </div>
+              <div className="lp-feature-card">
+                <div className="lp-feature-icon">⚡</div>
+                <div className="lp-feature-title">Auto-assignment</div>
+                <div className="lp-feature-body">Rules match activity to cases automatically, so your timesheet fills itself.</div>
+              </div>
+              <div className="lp-feature-card">
+                <div className="lp-feature-icon">📊</div>
+                <div className="lp-feature-title">Export-ready reports</div>
+                <div className="lp-feature-body">One click to generate a clean PDF invoice — broken down by case and activity type.</div>
+              </div>
             </div>
           </section>
 
           <section className="lp-screenshot" aria-labelledby="lp-screenshot-heading">
-            <h2 id="lp-screenshot-heading" className="lp-section-title">Your timesheet, one place</h2>
-            <p className="lp-section-sub">Calendar view, case assignment, and export-ready reports.</p>
+            <div className="lp-section-header lp-section-header-center">
+              <div className="lp-section-label">The app</div>
+              <h2 id="lp-screenshot-heading" className="lp-section-title">Your timesheet,<br />one place.</h2>
+              <p className="lp-section-sub">Calendar view, case assignment, and export-ready reports — all in one clean interface.</p>
+            </div>
             <div className="lp-screenshot-placeholder">
               <div className="lp-screenshot-inner">
-                <span className="lp-screenshot-label">App screenshot</span>
                 <div className="lp-screenshot-mock">
                   <div className="lp-mock-bar" />
                   <div className="lp-mock-grid">
@@ -252,17 +281,37 @@ export default function LandingPage({
           </section>
 
           <section className="lp-privacy" aria-labelledby="lp-privacy-heading">
-            <h2 id="lp-privacy-heading" className="lp-section-title">Privacy-first</h2>
-            <p className="lp-privacy-lead">We only capture titles and duration — never the body of emails, documents, or calls.</p>
-            <ul className="lp-trust-list">
-              <li><strong>Titles only.</strong> Activity names and how long you spent (e.g. "Email – Re: Smith matter", "draft.docx"). No content is read, stored, or sent to our servers.</li>
-              <li><strong>You stay in control.</strong> Review, edit, or delete any entry. Exports use template descriptions (e.g. “Client correspondence”) so nothing sensitive appears on invoices.</li>
-              <li><strong>Built for law.</strong> Designed so you can keep time accurately and stay within confidentiality and technology rules.</li>
-            </ul>
+            <div className="lp-privacy-inner">
+              <div className="lp-privacy-left">
+                <div className="lp-section-label">Security & privacy</div>
+                <h2 id="lp-privacy-heading" className="lp-section-title">Privacy-first,<br />by design.</h2>
+                <p className="lp-privacy-lead">We only capture titles and duration — never the body of emails, documents, or calls.</p>
+              </div>
+              <ul className="lp-trust-list">
+                <li>
+                  <div className="lp-trust-icon">✓</div>
+                  <div>
+                    <strong>Titles only.</strong> Activity names and how long you spent (e.g. "Email – Re: Smith matter"). No content is read, stored, or sent to our servers.
+                  </div>
+                </li>
+                <li>
+                  <div className="lp-trust-icon">✓</div>
+                  <div>
+                    <strong>You stay in control.</strong> Review, edit, or delete any entry. Exports use template descriptions so nothing sensitive appears on invoices.
+                  </div>
+                </li>
+                <li>
+                  <div className="lp-trust-icon">✓</div>
+                  <div>
+                    <strong>Built for law.</strong> Designed so you can keep time accurately and stay within confidentiality and technology rules.
+                  </div>
+                </li>
+              </ul>
+            </div>
           </section>
 
           <section className="lp-integrations" aria-labelledby="lp-integrations-heading">
-            <h2 id="lp-integrations-heading" className="lp-section-title">Works with how you work</h2>
+            <h2 id="lp-integrations-heading" className="lp-integrations-title">Works with how you work</h2>
             <div className="lp-integrations-row">
               <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📧</span> Gmail</span>
               <span className="lp-integration-item"><span className="lp-integration-icon" aria-hidden>📬</span> Outlook</span>
@@ -276,8 +325,11 @@ export default function LandingPage({
       ) : (
         <main className="lp-main">
           <section className="lp-pricing" aria-labelledby="lp-pricing-heading">
-            <h2 id="lp-pricing-heading">Pricing</h2>
-            <p className="lp-subtitle">Simple plans that scale from solo to firm.</p>
+            <div className="lp-section-header lp-section-header-center">
+              <div className="lp-section-label">Pricing</div>
+              <h2 id="lp-pricing-heading" className="lp-section-title">Simple, transparent pricing.</h2>
+              <p className="lp-section-sub">Plans that scale from solo to firm. No hidden fees.</p>
+            </div>
             <div className="lp-pricing-grid">
               {pricing.map((p) => (
                 <div key={p.name} className={`lp-price-card ${p.highlight ? 'highlight' : ''}`}>
