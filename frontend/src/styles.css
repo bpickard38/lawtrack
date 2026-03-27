@@ -113,20 +113,31 @@ body {
   flex-shrink: 0;
 }
 
-.lp-logo-symbol {
-  height: 36px;
-  width: auto;
+/* Clip wrapper hides the baked-in drop shadow around the logo PNG */
+.lp-logo-symbol-wrap {
   display: block;
+  width: 30px;
+  height: 30px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lp-logo-symbol {
+  position: absolute;
+  height: 54px;
+  width: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: multiply;
 }
 
 .lp-logo-wordmark {
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  background: linear-gradient(135deg, #C0C0C0 0%, #888888 40%, #D8D8D8 70%, #A0A0A0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #7A7A7A;
   font-family: inherit;
   line-height: 1;
 }
