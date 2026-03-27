@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-type Tab = 'home' | 'pricing';
+type Tab = 'home' | 'pricing' | 'contact';
 
 export default function LandingPage({
   initialTab = 'home',
@@ -18,38 +18,63 @@ export default function LandingPage({
   const pricing = useMemo(
     () => [
       {
+        name: 'Free',
+        price: '$0',
+        per: '',
+        blurb: 'Get started with manual time tracking at no cost.',
+        cta: 'Get started free',
+        features: [
+          'Unlimited manual time entries',
+          'Up to 3 active cases',
+          'Basic reporting',
+          'Web app access',
+          'CSV export',
+        ],
+      },
+      {
         name: 'Starter',
-        price: '$39',
+        price: '$29',
         per: 'per user / month',
-        blurb: 'Spend less time on timesheets — one calendar, all your matters.',
-        benefits: [
-          'Capture time your way with a simple calendar',
-          'Assign entries to cases and run reports by matter',
-          'Stop chasing time in spreadsheets; get a single source of truth',
+        blurb: 'Everything you need to keep timesheets clean and accurate.',
+        cta: 'Get started',
+        features: [
+          'All Free features',
+          'Unlimited cases',
+          'PDF invoice export',
+          'Date range reports',
+          'Case time breakdowns',
+          'Email support',
         ],
       },
       {
         name: 'Pro',
-        price: '$49.99',
+        price: '$49',
         per: 'per user / month',
         highlight: true,
-        popular: true,
-        blurb: 'Capture more billable hours without the admin headache.',
-        benefits: [
-          'Desktop agent tracks documents, email, and calls in the background',
-          'Rules auto-assign time to the right matters so you bill accurately',
-          'Review, edit, and export — reports ready for billing in one place',
+        blurb: 'Capture every billable hour automatically in the background.',
+        cta: 'Get started',
+        features: [
+          'All Starter features',
+          'Desktop agent (auto-tracking)',
+          'Auto-assignment rules',
+          'Activity type breakdown',
+          'Agent API key',
+          'Priority email support',
         ],
       },
       {
         name: 'Firm',
-        price: "Let's talk",
-        per: 'custom',
+        price: 'Custom',
+        per: 'annual billing',
         blurb: 'Get your whole firm tracking time the right way.',
-        benefits: [
-          'Dedicated onboarding so everyone adopts best practices',
-          'Admin controls and firm-wide reporting',
-          'Priority support and optional custom integrations',
+        cta: 'Contact us',
+        features: [
+          'All Pro features',
+          'Admin dashboard',
+          'Firm-wide reporting',
+          'Dedicated onboarding',
+          'Priority support + SLA',
+          'Custom integrations',
         ],
       },
     ],
@@ -68,7 +93,7 @@ export default function LandingPage({
       },
       {
         q: 'Can I turn off automatic tracking?',
-        a: 'Yes. You can quit the desktop agent anytime from the system tray. You can also use manual time entry only (Starter plan) or pause tracking when working on sensitive matters.',
+        a: 'Yes. You can quit the desktop agent anytime from the system tray. You can also use manual time entry only (Free or Starter plan) or pause tracking when working on sensitive matters.',
       },
       {
         q: 'How do you handle client confidentiality?',
@@ -76,7 +101,7 @@ export default function LandingPage({
       },
       {
         q: 'Is LawTrack compliant with bar rules?',
-        a: 'LawTrack is designed to support accurate timekeeping and client communication. We recommend reviewing your jurisdiction\'s rules on technology and confidentiality; we can provide a short security and privacy overview for your firm.',
+        a: "LawTrack is designed to support accurate timekeeping and client communication. We recommend reviewing your jurisdiction's rules on technology and confidentiality; we can provide a short security and privacy overview for your firm.",
       },
     ],
     [],
@@ -95,7 +120,7 @@ export default function LandingPage({
             className={`lp-nav-link ${tab === 'home' ? 'active' : ''}`}
             onClick={() => setTab('home')}
           >
-            Home
+            Product
           </button>
           <button
             type="button"
@@ -103,6 +128,13 @@ export default function LandingPage({
             onClick={() => setTab('pricing')}
           >
             Pricing
+          </button>
+          <button
+            type="button"
+            className={`lp-nav-link ${tab === 'contact' ? 'active' : ''}`}
+            onClick={() => setTab('contact')}
+          >
+            Contact
           </button>
         </nav>
         <div className="lp-topbar-right">{rightCta}</div>
@@ -339,34 +371,40 @@ export default function LandingPage({
             <p className="lp-integrations-note">Desktop agent detects these and similar apps; we only record app/window title and duration.</p>
           </section>
         </main>
-      ) : (
+      ) : tab === 'pricing' ? (
         <main className="lp-main">
           <section className="lp-pricing" aria-labelledby="lp-pricing-heading">
-            <div className="lp-section-header lp-section-header-center">
-              <div className="lp-section-label">Pricing</div>
-              <h2 id="lp-pricing-heading" className="lp-section-title">Simple, transparent pricing.</h2>
-              <p className="lp-section-sub">Plans that scale from solo to firm. No hidden fees.</p>
+            <div className="lp-pricing-header">
+              <h1 id="lp-pricing-heading" className="lp-pricing-title">Pricing</h1>
+              <p className="lp-pricing-sub">Simple, transparent pricing. No hidden fees.</p>
             </div>
-            <div className="lp-pricing-grid">
+
+            <div className="lp-pricing-table">
               {pricing.map((p) => (
-                <div key={p.name} className={`lp-price-card ${p.highlight ? 'highlight' : ''}`}>
-                  {p.popular && <div className="lp-price-badge">Most popular</div>}
-                  <div className="lp-price-name">{p.name}</div>
-                  <div className="lp-price">
-                    <span className="lp-price-amount">{p.price}</span>
-                    <span className="lp-price-per">{p.per}</span>
+                <div key={p.name} className={`lp-pricing-col ${p.highlight ? 'highlight' : ''}`}>
+                  <div className="lp-pricing-col-top">
+                    <div className="lp-pricing-tier-name">{p.name}</div>
+                    <div className="lp-pricing-tier-price">
+                      <span className="lp-pricing-tier-amount">{p.price}</span>
+                    </div>
+                    {p.per && <div className="lp-pricing-tier-per">{p.per}</div>}
+                    <button
+                      type="button"
+                      className={p.highlight ? 'lp-cta-primary lp-pricing-col-cta' : 'lp-cta-secondary lp-pricing-col-cta'}
+                      onClick={p.name === 'Firm' ? () => setTab('contact') : onGetStarted}
+                    >
+                      {p.cta}
+                    </button>
                   </div>
-                  <div className="lp-price-blurb">{p.blurb}</div>
-                  <ul className="lp-list">
-                    {p.benefits.map((i) => (
-                      <li key={i}>{i}</li>
+                  <div className="lp-pricing-col-divider" />
+                  <ul className="lp-pricing-features">
+                    {p.features.map((f) => (
+                      <li key={f}>
+                        <span className="lp-pricing-check">✓</span>
+                        <span>{f}</span>
+                      </li>
                     ))}
                   </ul>
-                  {onGetStarted && (
-                    <button type="button" className={p.highlight ? 'lp-cta-primary lp-price-cta' : 'lp-cta-secondary lp-price-cta'} onClick={onGetStarted}>
-                      Get started
-                    </button>
-                  )}
                 </div>
               ))}
             </div>
@@ -382,6 +420,28 @@ export default function LandingPage({
                 </div>
               ))}
             </dl>
+          </section>
+        </main>
+      ) : (
+        <main className="lp-main">
+          <section className="lp-contact" aria-labelledby="lp-contact-heading">
+            <div className="lp-contact-inner">
+              <div className="lp-section-label">Contact</div>
+              <h1 id="lp-contact-heading" className="lp-pricing-title">Get in touch</h1>
+              <p className="lp-pricing-sub">Questions about pricing, firm plans, or integrations? We'd love to hear from you.</p>
+              <div className="lp-contact-options">
+                <a className="lp-contact-card" href="mailto:hello@lawtrack.io">
+                  <div className="lp-contact-card-icon">✉</div>
+                  <div className="lp-contact-card-label">Email us</div>
+                  <div className="lp-contact-card-value">hello@lawtrack.io</div>
+                </a>
+                <div className="lp-contact-card" onClick={() => setTab('pricing')} style={{cursor: 'pointer'}}>
+                  <div className="lp-contact-card-icon">💼</div>
+                  <div className="lp-contact-card-label">Firm plans</div>
+                  <div className="lp-contact-card-value">Custom pricing for teams →</div>
+                </div>
+              </div>
+            </div>
           </section>
         </main>
       )}
