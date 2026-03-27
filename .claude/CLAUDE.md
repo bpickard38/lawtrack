@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Deployment
+
+The app is deployed on **Vercel** (frontend) connected to the **GitHub repo `bpickard38/lawtrack`** on the `main` branch. After making any code changes, always commit and push to `main` so Vercel picks up the update automatically. A git hook auto-commits and pushes on save, so verify with `git log --oneline origin/main` that changes are pushed.
+
 ## Project Overview
 
 LawTrack is a time tracking and billing system for legal professionals with three components:
