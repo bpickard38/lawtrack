@@ -163,10 +163,10 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
 
   function getActivityIcon(t: string) {
     switch (t) {
-      case 'document': return '📄';
-      case 'email': return '📧';
-      case 'call': return '📞';
-      default: return '📋';
+      case 'document': return 'doc';
+      case 'email': return 'email';
+      case 'call': return 'call';
+      default: return t;
     }
   }
 
@@ -512,7 +512,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
             <div className="time-breakdown">
               <BreakdownSection
                 type="document"
-                icon="📄"
+                icon=""
                 label="Documents"
                 minutes={summary.document_minutes}
                 totalMinutes={summary.total_minutes}
@@ -527,7 +527,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               />
               <BreakdownSection
                 type="email"
-                icon="📧"
+                icon=""
                 label="Emails"
                 minutes={summary.email_minutes}
                 totalMinutes={summary.total_minutes}
@@ -542,7 +542,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               />
               <BreakdownSection
                 type="call"
-                icon="📞"
+                icon=""
                 label="Calls"
                 minutes={summary.call_minutes}
                 totalMinutes={summary.total_minutes}
@@ -897,7 +897,7 @@ function BreakdownSection({
                 const end = new Date(a.end_time);
                 return (
                   <li key={a.id} className="breakdown-activity-item">
-                    <span className="breakdown-act-icon">{getActivityIcon(a.type)}</span>
+                    <span className="ts-type-badge">{getActivityIcon(a.type)}</span>
                     <div className="breakdown-act-main">
                       <span className="breakdown-act-name">{getActivityName(a)}</span>
                       <span className="breakdown-act-time">
@@ -1023,9 +1023,9 @@ function ActivityEditModal({ activity, cases, onClose, onSaved, onDeleted }: Act
           <div className="ts-form-row">
             <label>Type</label>
             <select value={type} onChange={(e) => setType(e.target.value as ActivityType)}>
-              <option value="document">📄 Document</option>
-              <option value="email">📧 Email</option>
-              <option value="call">📞 Call</option>
+              <option value="document">Document</option>
+              <option value="email">Email</option>
+              <option value="call">Call</option>
             </select>
           </div>
           <div className="ts-form-row">
@@ -1167,10 +1167,10 @@ function UnassignedActivities({ attorneyId, cases, onActivityAssigned, onEdit, o
 
   function getActivityIcon(t: string) {
     switch (t) {
-      case 'document': return '📄';
-      case 'email': return '📧';
-      case 'call': return '📞';
-      default: return '📋';
+      case 'document': return 'doc';
+      case 'email': return 'email';
+      case 'call': return 'call';
+      default: return t;
     }
   }
 
@@ -1241,7 +1241,7 @@ function UnassignedActivityItem({
 
   return (
     <li className="breakdown-activity-item">
-      <span className="breakdown-act-icon">{getActivityIcon(activity.type)}</span>
+      <span className="ts-type-badge">{getActivityIcon(activity.type)}</span>
       <div className="breakdown-act-main" style={{ flex: 1 }}>
         <span className="breakdown-act-name">{getActivityName(activity)}</span>
         <span className="breakdown-act-time">

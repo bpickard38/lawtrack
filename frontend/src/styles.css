@@ -21,8 +21,10 @@ body {
 
 /* Header */
 .app-header {
-  background: white;
-  border-bottom: 2px solid #DCDCDC;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #DCDCDC;
   padding: 0;
   position: sticky;
   top: 0;
@@ -31,9 +33,10 @@ body {
 
 .header-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 14px 32px;
+  padding: 0 48px;
+  height: 66px;
+  gap: 8px;
 }
 
 .app-header h1 {
@@ -1209,7 +1212,7 @@ body {
 .lp-mock-rule-label {
   font-size: 10px;
   font-weight: 700;
-  background: #e0e7ff;
+  background: #F4F4F4;
   color: #3730a3;
   padding: 2px 6px;
   border-radius: 4px;
@@ -1444,8 +1447,9 @@ body {
 /* Navigation Tabs */
 .nav-tabs {
   display: flex;
-  justify-content: center;
-  padding: 4px 32px 10px;
+  align-items: center;
+  margin-left: auto;
+  padding: 0;
   gap: 4px;
   background: transparent;
 }
@@ -1453,24 +1457,25 @@ body {
 .nav-tab {
   background: none;
   border: none;
-  padding: 14px 24px;
-  font-size: 15px;
+  padding: 6px 12px;
+  font-size: 14px;
   font-weight: 500;
   color: #6B6B6B;
   cursor: pointer;
-  border-bottom: 3px solid transparent;
-  transition: all 0.2s;
+  border-radius: 6px;
+  font-family: inherit;
+  transition: color 0.15s, background 0.15s;
 }
 
 .nav-tab:hover {
-  color: #3A3A3A;
+  color: #111111;
   background: #F4F4F4;
 }
 
 .nav-tab.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
-  background: white;
+  color: #111111;
+  font-weight: 600;
+  background: #F4F4F4;
 }
 
 .install-app-link {
@@ -1480,16 +1485,16 @@ body {
   margin-left: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #2563eb;
+  color: #111111;
   text-decoration: none;
-  border: 1px solid #2563eb;
+  border: 1px solid #111111;
   border-radius: 8px;
   white-space: nowrap;
   transition: background 0.2s, color 0.2s;
 }
 
 .install-app-link:hover {
-  background: #2563eb;
+  background: #111111;
   color: white;
 }
 
@@ -1505,9 +1510,9 @@ body {
   padding: 8px 14px;
   font-size: 14px;
   font-weight: 500;
-  color: #2563eb;
+  color: #111111;
   background: transparent;
-  border: 1px solid #2563eb;
+  border: 1px solid #111111;
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
@@ -1516,7 +1521,7 @@ body {
 }
 
 .open-desktop-btn:hover {
-  background: #2563eb;
+  background: #111111;
   color: white;
 }
 
@@ -1585,7 +1590,7 @@ body {
 }
 
 .agent-status-start {
-  background: #e0e7ff;
+  background: #F4F4F4;
   color: #3730a3;
 }
 
@@ -1652,7 +1657,7 @@ body {
   font-weight: 500;
   border: none;
   border-radius: 8px;
-  background: #4f46e5;
+  background: #111111;
   color: white;
   cursor: pointer;
 }
@@ -1734,7 +1739,7 @@ body {
   background: none;
   border: none;
   padding: 0;
-  color: #4f46e5;
+  color: #111111;
   font-weight: 500;
   cursor: pointer;
   font-size: inherit;
@@ -1742,7 +1747,7 @@ body {
 }
 
 .privacy-link-btn:hover {
-  color: #4338ca;
+  color: #3A3A3A;
 }
 
 .privacy-coming-soon {
@@ -1802,7 +1807,7 @@ body {
 }
 
 .privacy-toggle-input:checked + .privacy-toggle-switch {
-  background: #4f46e5;
+  background: #111111;
 }
 
 .privacy-toggle-input:checked + .privacy-toggle-switch::after {
@@ -1810,7 +1815,7 @@ body {
 }
 
 .privacy-toggle-input:focus-visible + .privacy-toggle-switch {
-  outline: 2px solid #4f46e5;
+  outline: 2px solid #111111;
   outline-offset: 2px;
 }
 
@@ -1868,12 +1873,12 @@ body {
 
 .filter-btn.active {
   color: white;
-  background: #2563eb;
+  background: #111111;
 }
 
 /* Add Button */
 .add-btn {
-  background: #2563eb;
+  background: #111111;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -1885,7 +1890,7 @@ body {
 }
 
 .add-btn:hover {
-  background: #1d4ed8;
+  background: #111111;
 }
 
 /* Activity Form Overlay */
@@ -1948,7 +1953,7 @@ body {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: #111111;
 }
 
 .form-row {
@@ -1976,7 +1981,7 @@ body {
 }
 
 .submit-btn {
-  background: #2563eb;
+  background: #111111;
   color: white;
   border: none;
   padding: 10px 18px;
@@ -1987,7 +1992,7 @@ body {
 }
 
 .submit-btn:hover {
-  background: #1d4ed8;
+  background: #111111;
 }
 
 /* Timeline */
@@ -2102,8 +2107,9 @@ body {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #d1fae5;
-  color: #065f46;
+  background: #F0F0F0;
+  color: #3A3A3A;
+  border: 1px solid #DCDCDC;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
@@ -2124,7 +2130,7 @@ body {
 }
 
 .assign-btn {
-  background: #2563eb;
+  background: #111111;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -2135,7 +2141,7 @@ body {
 }
 
 .assign-btn:hover {
-  background: #1d4ed8;
+  background: #111111;
 }
 
 .cancel-assign-btn {
@@ -2264,7 +2270,7 @@ body {
 
 .onboarding-step-link,
 .onboarding-step-btn {
-  color: #4f46e5;
+  color: #111111;
   font-weight: 500;
   text-decoration: none;
   background: none;
@@ -2324,8 +2330,8 @@ body {
 }
 
 .reports-tab.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
+  color: #111111;
+  border-bottom-color: #111111;
 }
 
 .case-reports-grid {
@@ -2338,7 +2344,7 @@ body {
   background: white;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #DCDCDC;
 }
 
 .case-report-header {
@@ -2369,7 +2375,7 @@ body {
 .time-value {
   font-size: 36px;
   font-weight: 700;
-  color: #2563eb;
+  color: #111111;
   line-height: 1;
 }
 
@@ -2399,7 +2405,7 @@ body {
 }
 
 .breakdown-icon {
-  font-size: 18px;
+  display: none;
 }
 
 .breakdown-label {
@@ -2427,15 +2433,15 @@ body {
 }
 
 .breakdown-fill.document {
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  background: #3A3A3A;
 }
 
 .breakdown-fill.email {
-  background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+  background: #6B6B6B;
 }
 
 .breakdown-fill.call {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: #9E9E9E;
 }
 
 .breakdown-percent {
@@ -2536,9 +2542,9 @@ body {
 }
 
 .breakdown-btn-edit:hover {
-  background: #eef2ff;
+  background: #FAFAFA;
   border-color: #a5b4fc;
-  color: #4f46e5;
+  color: #111111;
 }
 
 .breakdown-btn-delete:hover {
@@ -2672,20 +2678,22 @@ body {
 
 .add-attorney-btn,
 .add-case-btn {
-  background: #059669;
+  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
   color: white;
-  border: none;
+  border: 1px solid #3A3A3A;
   padding: 10px 20px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  font-family: inherit;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.18);
+  transition: opacity 0.15s;
 }
 
 .add-attorney-btn:hover,
 .add-case-btn:hover {
-  background: #047857;
+  opacity: 0.88;
 }
 
 .reports-export-btn {
@@ -2694,6 +2702,16 @@ body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  font-family: inherit;
+  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
+  color: white;
+  border: 1px solid #3A3A3A;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.18);
+  transition: opacity 0.15s;
+}
+
+.reports-export-btn:hover {
+  opacity: 0.88;
 }
 
 .attorney-actions {
@@ -2755,8 +2773,8 @@ body {
 }
 
 .edit-description-btn:hover {
-  border-color: #2563eb;
-  color: #2563eb;
+  border-color: #111111;
+  color: #111111;
   background: #eff6ff;
 }
 
@@ -2781,7 +2799,7 @@ body {
 
 .edit-textarea:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: #111111;
 }
 
 .edit-actions {
@@ -2895,14 +2913,14 @@ body {
 }
 
 .date-filter-btn:hover {
-  border-color: #2563eb;
-  color: #2563eb;
+  border-color: #111111;
+  color: #111111;
   background: #eff6ff;
 }
 
 .date-filter-btn.active {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: #111111;
+  border-color: #111111;
   color: white;
 }
 
@@ -2927,7 +2945,7 @@ body {
 
 .custom-date-range input[type="date"]:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: #111111;
 }
 
 .custom-date-range span {
@@ -3201,7 +3219,7 @@ body {
 .auth-link {
   background: none;
   border: none;
-  color: #667eea;
+  color: #111111;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
@@ -3344,7 +3362,7 @@ body {
 .stat-value {
   font-size: 20px;
   font-weight: 600;
-  color: #2563eb;
+  color: #111111;
 }
 
 .case-footer {
@@ -3434,13 +3452,13 @@ body {
   align-items: center;
   gap: 12px;
   padding: 12px 24px;
-  background: #eef2ff;
-  border-bottom: 1px solid #c7d2fe;
+  background: #FAFAFA;
+  border-bottom: 1px solid #DCDCDC;
 }
 
 .bulk-actions select {
   padding: 6px 12px;
-  border: 1px solid #c7d2fe;
+  border: 1px solid #DCDCDC;
   border-radius: 6px;
   background: white;
 }
@@ -3451,7 +3469,7 @@ body {
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  background: #4f46e5;
+  background: #111111;
   color: white;
 }
 
@@ -3491,11 +3509,11 @@ body {
 }
 
 .day-header.today {
-  background: #eef2ff;
+  background: #FAFAFA;
 }
 
 .day-header.today .day-date {
-  background: #4f46e5;
+  background: #111111;
   color: white;
   border-radius: 50%;
   width: 28px;
@@ -3548,8 +3566,8 @@ body {
 }
 
 .timesheet-activity.selected {
-  border-color: #4f46e5;
-  background: #eef2ff;
+  border-color: #111111;
+  background: #FAFAFA;
 }
 
 .timesheet-activity.non-billable {
@@ -3648,8 +3666,8 @@ body {
 .case-badge.small {
   font-size: 10px;
   padding: 2px 6px;
-  background: #d1fae5;
-  color: #065f46;
+  background: #F0F0F0;
+  color: #3A3A3A;
   border-radius: 4px;
   white-space: nowrap;
 }
@@ -3684,7 +3702,7 @@ body {
   width: 100%;
   padding: 4px 8px;
   font-size: 11px;
-  border: 1px solid #4f46e5;
+  border: 1px solid #111111;
   border-radius: 4px;
 }
 
@@ -3818,7 +3836,7 @@ body {
 
 .ts-add-case-btn {
   padding: 10px 18px;
-  background: #4f46e5;
+  background: #111111;
   color: white;
   border: none;
   border-radius: 8px;
@@ -3868,7 +3886,7 @@ body {
   margin-bottom: 8px;
 }
 .ts-empty-link {
-  color: #4f46e5;
+  color: #111111;
   font-weight: 500;
   text-decoration: none;
 }
@@ -3878,7 +3896,7 @@ body {
 .ts-empty-btn {
   background: none;
   border: none;
-  color: #4f46e5;
+  color: #111111;
   font-weight: 500;
   cursor: pointer;
   font-size: inherit;
@@ -4002,8 +4020,9 @@ body {
 
 .ts-time-slot {
   padding: 0 8px;
-  font-size: 11px;
-  color: #6B6B6B;
+  font-size: 10px;
+  color: #AAAAAA;
+  text-align: right;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -4025,7 +4044,8 @@ body {
 }
 
 .ts-day-header.today {
-  background: #fef9c3;
+  background: #111111;
+  color: white;
 }
 
 .ts-day-name {
@@ -4041,8 +4061,9 @@ body {
   color: #111111;
 }
 
+.ts-day-header.today .ts-day-name,
 .ts-day-header.today .ts-day-num {
-  color: #ca8a04;
+  color: white;
 }
 
 .ts-cell {
@@ -4054,20 +4075,20 @@ body {
 }
 
 .ts-cell:hover {
-  background: #eff6ff;
+  background: #F4F4F4;
 }
 
 .ts-cell.today {
-  background: #fefce8;
+  background: #FAFAFA;
 }
 
 .ts-cell.today:hover {
-  background: #fef9c3;
+  background: #F0F0F0;
 }
 
 .ts-cell-drop-target {
-  background: #dbeafe !important;
-  border: 2px dashed #3b82f6;
+  background: #F0F0F0 !important;
+  border: 2px dashed #3A3A3A;
 }
 
 .ts-day-col {
@@ -4119,13 +4140,14 @@ body {
   left: 0;
   right: 0;
   margin: 1px 4px;
-  padding: 6px 8px;
+  padding: 5px 8px;
   border-radius: 6px;
   cursor: grab;
   overflow: hidden;
-  background: #e0e7ff;
-  border: 1px solid #a5b4fc;
-  color: #3730a3;
+  background: white;
+  border: 1px solid #DCDCDC;
+  border-left: 3px solid #3A3A3A;
+  color: #111111;
   font-size: 12px;
   display: flex;
   flex-direction: column;
@@ -4135,13 +4157,18 @@ body {
   touch-action: none;
 }
 
+.ts-block[data-type="document"] { border-left-color: #3A3A3A; }
+.ts-block[data-type="email"]    { border-left-color: #6B6B6B; }
+.ts-block[data-type="call"]     { border-left-color: #9E9E9E; }
+
 .ts-block:active {
   cursor: grabbing;
 }
 
 .ts-block:hover {
-  background: #c7d2fe;
-  border-color: #818cf8;
+  background: #FAFAFA;
+  border-color: #AAAAAA;
+  border-left-color: inherit;
 }
 
 .ts-block-dragging {
@@ -4156,39 +4183,49 @@ body {
   pointer-events: none;
   padding: 6px 10px;
   border-radius: 8px;
-  background: #e0e7ff;
-  border: 2px solid #6366f1;
-  color: #3730a3;
+  background: white;
+  border: 1px solid #DCDCDC;
+  border-left: 3px solid #3A3A3A;
+  color: #111111;
   font-size: 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
-.ts-drag-preview .ts-block-icon { font-size: 14px; }
-.ts-drag-preview .ts-block-time { font-weight: 600; font-size: 11px; }
+.ts-drag-preview .ts-block-time { font-weight: 600; font-size: 11px; color: #6B6B6B; }
 .ts-drag-preview .ts-block-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-.ts-drag-preview .ts-block-case { font-size: 10px; color: #6366f1; }
+.ts-drag-preview .ts-block-case { font-size: 10px; color: #6B6B6B; }
 
-.ts-block-icon {
-  font-size: 14px;
+.ts-type-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #9E9E9E;
+  line-height: 1;
+  margin-bottom: 2px;
 }
 
 .ts-block-time {
   font-weight: 600;
   font-size: 11px;
+  color: #6B6B6B;
 }
 
 .ts-block-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
+  color: #111111;
 }
 
 .ts-block-case {
   font-size: 10px;
-  color: #6366f1;
+  color: #6B6B6B;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4278,17 +4315,20 @@ body {
 
 .ts-btn-save {
   padding: 10px 18px;
-  background: #4f46e5;
+  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
   color: white;
-  border: none;
+  border: 1px solid #3A3A3A;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  font-family: inherit;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.18);
+  transition: opacity 0.15s;
 }
 
 .ts-btn-save:hover:not(:disabled) {
-  background: #4338ca;
+  opacity: 0.88;
 }
 
 .ts-btn-save:disabled {
@@ -4340,17 +4380,20 @@ body {
 
 .add-rule-btn {
   padding: 10px 20px;
-  background: #4f46e5;
+  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
   color: white;
-  border: none;
+  border: 1px solid #3A3A3A;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  font-family: inherit;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.18);
+  transition: opacity 0.15s;
 }
 
 .add-rule-btn:hover {
-  background: #4338ca;
+  opacity: 0.88;
 }
 
 .rules-test {
@@ -4465,9 +4508,10 @@ body {
 
 .rule-pattern {
   font-weight: 600;
-  color: #4f46e5;
+  color: #111111;
   font-family: monospace;
-  background: #eef2ff;
+  background: #F4F4F4;
+  border: 1px solid #DCDCDC;
   padding: 4px 8px;
   border-radius: 4px;
 }
@@ -4478,8 +4522,9 @@ body {
 
 .rule-case {
   font-weight: 600;
-  color: #065f46;
-  background: #d1fae5;
+  color: #3A3A3A;
+  background: #F0F0F0;
+  border: 1px solid #DCDCDC;
   padding: 4px 12px;
   border-radius: 4px;
 }
@@ -4510,8 +4555,8 @@ body {
 }
 
 .rule-actions .edit-btn:hover {
-  background: #eef2ff;
-  border-color: #4f46e5;
+  background: #FAFAFA;
+  border-color: #111111;
 }
 
 .rule-actions .delete-btn:hover {
@@ -4598,7 +4643,7 @@ body {
 
 .rule-form .submit-btn {
   padding: 10px 20px;
-  background: #4f46e5;
+  background: #111111;
   color: white;
   border: none;
   border-radius: 8px;

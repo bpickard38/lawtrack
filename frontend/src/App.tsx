@@ -200,58 +200,36 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <button className="app-logo" type="button" onClick={() => setShowHomepage(true)}>
-            <img src="/logo.jpg" alt="" style={{height: '26px', width: 'auto', mixBlendMode: 'multiply'}} /><span style={{fontSize: '15px', fontWeight: 700, color: '#7A7A7A', letterSpacing: '-0.03em'}}>LawTrack</span>
+            <img src="/logo.jpg" alt="" style={{height: '26px', width: 'auto', mixBlendMode: 'multiply'}} />
+            <span style={{fontSize: '15px', fontWeight: 700, color: '#7A7A7A', letterSpacing: '-0.03em'}}>LawTrack</span>
           </button>
+
           <nav className="nav-tabs">
-            <button 
+            <button
               className={`nav-tab ${currentView === 'timesheet' ? 'active' : ''}`}
               onClick={() => setCurrentView('timesheet')}
             >
-              📅 Timesheet
+              Timesheet
             </button>
-            <button 
+            <button
               className={`nav-tab ${currentView === 'reports' ? 'active' : ''}`}
               onClick={() => setCurrentView('reports')}
             >
-              📊 Reports
+              Reports
             </button>
-            <button 
+            <button
               className={`nav-tab ${currentView === 'rules' ? 'active' : ''}`}
               onClick={() => setCurrentView('rules')}
             >
-              🔗 Rules
+              Rules
             </button>
-            <button 
+            <button
               className={`nav-tab ${currentView === 'privacy' ? 'active' : ''}`}
               onClick={() => setCurrentView('privacy')}
             >
               Privacy
             </button>
           </nav>
-
-          <div className="desktop-app-cta">
-            <a
-              href="lawtrack://open"
-              className="open-desktop-btn"
-              onClick={() => {
-                if (openDesktopTimeoutRef.current) window.clearTimeout(openDesktopTimeoutRef.current);
-                openDesktopTimeoutRef.current = window.setTimeout(() => setShowDesktopDownloadFallback(true), 1500);
-              }}
-            >
-              Open LawTrack Desktop
-            </a>
-            {showDesktopDownloadFallback && (
-              <a
-                href={AGENT_INSTALLER_URL}
-                className="install-app-link desktop-download-fallback"
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                App not installed? Download here
-              </a>
-            )}
-          </div>
 
           <div className="attorney-info">
             <button

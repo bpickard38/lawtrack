@@ -277,12 +277,12 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
     return a.description || 'Activity';
   };
 
-  const getActivityIcon = (t: string) => {
+  const getActivityTypeLabel = (t: string) => {
     switch (t) {
-      case 'document': return '📄';
-      case 'email': return '📧';
-      case 'call': return '📞';
-      default: return '📋';
+      case 'document': return 'doc';
+      case 'email': return 'email';
+      case 'call': return 'call';
+      default: return t;
     }
   };
 
@@ -447,15 +447,12 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
                         <div
                           key={a.id}
                           className={`ts-block ${isDragging ? 'ts-block-dragging' : ''}`}
+                          data-type={a.type}
                           style={{ top, height }}
                           onPointerDown={e => handleBlockPointerDown(e, a)}
                         >
-                          <span className="ts-block-time">
-                            {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – {end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                          </span>
-                          <span className="ts-block-name">
-                            {getActivityIcon(a.type)} {getActivityName(a)}
-                          </span>
+                          <span className="ts-type-badge">{getActivityTypeLabel(a.type)}</span>
+                          <span className="ts-block-name">{getActivityName(a)}</span>
                           {a.case_id && <span className="ts-block-case">{getCaseName(a.case_id)}</span>}
                         </div>
                       );
@@ -478,7 +475,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
           }}
           aria-hidden
         >
-          <span className="ts-block-icon">{getActivityIcon(draggingActivity.type)}</span>
+          <span className="ts-type-badge">{getActivityTypeLabel(draggingActivity.type)}</span>
           <span className="ts-block-time">
             {parseUTC(draggingActivity.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} – {parseUTC(draggingActivity.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
           </span>
@@ -663,9 +660,9 @@ function ActivityModal({
           <div className="ts-form-row">
             <label>Type</label>
             <select value={type} onChange={e => setType(e.target.value as ActivityType)}>
-              <option value="document">📄 Document</option>
-              <option value="email">📧 Email</option>
-              <option value="call">📞 Call</option>
+              <option value="document">Document</option>
+              <option value="email">Email</option>
+              <option value="call">Call</option>
             </select>
           </div>
           <div className="ts-form-row">
