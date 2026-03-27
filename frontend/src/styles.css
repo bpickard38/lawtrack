@@ -59,38 +59,43 @@ body {
 /* Landing page */
 .lp {
   min-height: 100vh;
-  background: radial-gradient(1000px 400px at 20% 0%, #e0e7ff 0%, rgba(224, 231, 255, 0) 60%),
-              radial-gradient(800px 360px at 80% 10%, #dbeafe 0%, rgba(219, 234, 254, 0) 55%),
-              #ffffff;
-  color: #111827;
+  background: radial-gradient(ellipse 900px 500px at 50% -80px, #e8edf5 0%, transparent 70%), #ffffff;
+  color: #1a1a2e;
   display: flex;
   flex-direction: column;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 .lp-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 28px;
-  border-bottom: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
+  padding: 14px 20px;
+  margin: 12px 16px 0;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   position: sticky;
-  top: 0;
+  top: 12px;
   z-index: 100;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .lp-logo {
   background: none;
   border: none;
   padding: 0;
-  font-size: 22px;
-  font-weight: 900;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'Inter', system-ui, sans-serif;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
-  color: #111827;
+  color: #002147;
+  letter-spacing: -0.02em;
 }
 
 .lp-logo span {
@@ -105,7 +110,7 @@ body {
 
 /* Shared primary/secondary buttons (marketing + app) */
 .btn-primary {
-  background: #4f46e5;
+  background: #002147;
   color: white;
   border: none;
   padding: 10px 18px;
@@ -116,22 +121,23 @@ body {
 }
 
 .btn-primary:hover {
-  background: #4338ca;
+  background: #001530;
 }
 
 .btn-secondary {
   background: transparent;
-  color: #4f46e5;
-  border: 2px solid #4f46e5;
+  color: #1a1a2e;
+  border: 1.5px solid #d1d5db;
   padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
 }
 
 .btn-secondary:hover {
-  background: rgba(79, 70, 229, 0.08);
+  background: #f8fafc;
+  border-color: #9ca3af;
 }
 
 .btn-outline {
@@ -150,19 +156,19 @@ body {
 }
 
 .lp-signin-btn {
-  /* Alias for backwards compatibility */
-  background: #4f46e5;
+  background: #002147;
   color: white;
   border: none;
-  padding: 10px 18px;
+  padding: 9px 18px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 .lp-signin-btn:hover {
-  background: #4338ca;
+  background: #001530;
 }
 
 .lp-cta-row {
@@ -174,30 +180,33 @@ body {
 
 .lp-tabs {
   display: flex;
-  gap: 8px;
-  padding: 14px 28px;
+  gap: 6px;
+  padding: 16px 28px 0;
   background: transparent;
 }
 
 .lp-tab {
   border: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.7);
-  padding: 10px 14px;
+  background: transparent;
+  padding: 8px 16px;
   border-radius: 999px;
   cursor: pointer;
-  font-weight: 700;
-  color: #374151;
+  font-weight: 500;
+  font-size: 14px;
+  color: #64748b;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: background 0.15s, color 0.15s;
 }
 
 .lp-tab.active {
-  background: white;
-  border-color: #c7d2fe;
-  color: #3730a3;
+  background: #002147;
+  border-color: #002147;
+  color: white;
 }
 
 .lp-main {
   flex: 1;
-  padding: 28px;
+  padding: 36px 28px 28px;
   max-width: 1100px;
   width: 100%;
   margin: 0 auto;
@@ -206,24 +215,25 @@ body {
 .lp-hero {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
-  gap: 22px;
+  gap: 28px;
   align-items: start;
-  padding: 26px 0;
+  padding: 32px 0 16px;
 }
 
 .lp-hero h1,
 .lp-hero-title {
-  font-size: 48px;
-  font-weight: 800;
-  line-height: 1.05;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 50px;
+  font-weight: 600;
+  line-height: 1.1;
   letter-spacing: -0.03em;
-  margin: 0 0 16px 0;
-  color: #111827;
+  margin: 0 0 18px 0;
+  color: #1a1a2e;
 }
 
 .lp-hero p {
   font-size: 17px;
-  color: #374151;
+  color: #64748b;
   max-width: 60ch;
   margin: 0;
 }
@@ -231,96 +241,106 @@ body {
 .lp-hero-cta {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
   margin-top: 28px;
 }
 
 .lp-cta-primary {
   padding: 12px 22px;
   font-size: 15px;
-}
-
-.lp-cta-primary,
-.lp-cta-primary:hover {
-  /* Extend btn-primary for hero */
-  background: #4f46e5;
+  background: #002147;
   color: white;
   border: none;
   border-radius: 8px;
   font-weight: 600;
+  font-family: 'Inter', system-ui, sans-serif;
   cursor: pointer;
+  transition: background 0.15s;
 }
 
 .lp-cta-primary:hover {
-  background: #4338ca;
+  background: #001530;
 }
 
 .lp-cta-secondary {
-  padding: 10px 20px;
+  padding: 11px 20px;
   font-size: 15px;
-}
-
-.lp-cta-secondary,
-.lp-cta-secondary:hover {
   background: transparent;
-  color: #4f46e5;
-  border: 2px solid #4f46e5;
+  color: #1a1a2e;
+  border: 1.5px solid #d1d5db;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: 'Inter', system-ui, sans-serif;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
 .lp-cta-secondary:hover {
-  background: rgba(79, 70, 229, 0.08);
+  border-color: #9ca3af;
+  background: #f8fafc;
 }
 
 .lp-hero-subhead {
   font-size: 18px;
-  color: #4b5563;
+  color: #64748b;
   max-width: 52ch;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .lp-pill {
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid #e5e7eb;
-  font-weight: 700;
-  color: #111827;
+  font-weight: 500;
+  color: #1a1a2e;
   font-size: 13px;
 }
 
+/* Hero card - glassmorphism */
 .lp-card {
-  border: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 14px;
-  padding: 16px 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  outline: 1px solid #e5e7eb;
 }
 
 .lp-card-title {
-  font-weight: 900;
-  margin-bottom: 10px;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 14px;
 }
 
 .lp-list {
   margin: 0;
   padding-left: 18px;
   color: #374151;
+  line-height: 1.7;
+  font-size: 15px;
 }
 
 .lp-section-title {
-  font-size: 26px;
-  font-weight: 800;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 30px;
+  font-weight: 600;
   margin-bottom: 8px;
   letter-spacing: -0.02em;
+  color: #1a1a2e;
+  line-height: 1.15;
 }
 
 .lp-section-sub {
-  color: #6b7280;
-  margin-bottom: 20px;
+  color: #64748b;
+  margin-bottom: 24px;
   max-width: 50ch;
+  font-size: 16px;
 }
 
 .lp-visually-hidden {
@@ -336,42 +356,44 @@ body {
 }
 
 .lp-screenshot {
-  margin-top: 48px;
-  padding-top: 32px;
+  margin-top: 56px;
+  padding-top: 40px;
   border-top: 1px solid #e5e7eb;
 }
 
 .lp-screenshot-placeholder {
-  background: linear-gradient(145deg, #f3f4f6 0%, #e5e7eb 100%);
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
   overflow: hidden;
   max-width: 900px;
 }
 
 .lp-screenshot-inner {
-  padding: 24px;
+  padding: 28px;
 }
 
 .lp-screenshot-label {
   display: block;
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 12px;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 14px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  font-weight: 500;
 }
 
 .lp-screenshot-mock {
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   overflow: hidden;
+  border: 1px solid #e5e7eb;
 }
 
 .lp-mock-bar {
   height: 40px;
-  background: #f9fafb;
+  background: #f8fafc;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -383,15 +405,15 @@ body {
 }
 
 .lp-mock-row {
-  height: 32px;
-  background: #f9fafb;
+  height: 28px;
+  background: #f1f5f9;
   border-radius: 6px;
 }
 
 .lp-trust,
 .lp-privacy {
-  margin-top: 48px;
-  padding-top: 32px;
+  margin-top: 56px;
+  padding-top: 40px;
   border-top: 1px solid #e5e7eb;
 }
 
@@ -399,9 +421,9 @@ body {
   font-size: 17px;
   color: #374151;
   max-width: 52ch;
-  line-height: 1.5;
-  margin: 0 0 20px 0;
-  font-weight: 500;
+  line-height: 1.55;
+  margin: 0 0 22px 0;
+  font-weight: 400;
 }
 
 .lp-trust-list {
@@ -412,11 +434,16 @@ body {
 }
 
 .lp-trust-list li {
-  padding: 12px 0;
-  padding-left: 28px;
+  padding: 13px 0;
+  padding-left: 26px;
   position: relative;
   color: #374151;
-  line-height: 1.5;
+  line-height: 1.55;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.lp-trust-list li:last-child {
+  border-bottom: none;
 }
 
 .lp-trust-list li::before {
@@ -428,125 +455,152 @@ body {
 }
 
 .lp-integrations {
-  margin-top: 48px;
-  padding-top: 32px;
+  margin-top: 56px;
+  padding-top: 40px;
   border-top: 1px solid #e5e7eb;
 }
 
 .lp-integrations-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 24px;
+  gap: 10px;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .lp-integration-item {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
+  font-weight: 500;
   color: #374151;
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 9px 16px;
+  background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .lp-integration-icon {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
 }
 
 .lp-integrations-note {
   font-size: 13px;
-  color: #6b7280;
+  color: #94a3b8;
   max-width: 50ch;
 }
 
+/* How it works - bento grid */
 .lp-how {
-  margin-top: 48px;
-  padding-top: 32px;
+  margin-top: 56px;
+  padding-top: 40px;
   border-top: 1px solid #e5e7eb;
 }
 
-.lp-how-steps {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.lp-how-bento {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  counter-reset: step;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 20px;
 }
 
-.lp-how-steps > li {
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.8);
+.lp-bento-item {
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  background: white;
+  border-radius: 24px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  position: relative;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.lp-bento-hero {
+  grid-column: span 2;
 }
 
 .lp-how-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: #4f46e5;
+  width: 28px;
+  height: 28px;
+  background: #002147;
   color: white;
-  font-weight: 800;
-  font-size: 16px;
+  font-weight: 700;
+  font-size: 13px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .lp-how-title {
-  font-weight: 800;
+  font-weight: 600;
   font-size: 16px;
+  color: #1a1a2e;
 }
 
 .lp-how-desc {
   font-size: 14px;
-  color: #4b5563;
-  line-height: 1.5;
+  color: #64748b;
+  line-height: 1.55;
 }
 
+/* Features - bento */
 .lp-features {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-rows: auto auto;
+  gap: 12px;
   margin-top: 22px;
 }
 
 .lp-feature {
   border: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.75);
-  border-radius: 14px;
-  padding: 16px;
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+}
+
+.lp-feature:first-child {
+  grid-column: span 2;
+  grid-row: span 2;
+  background: #f8fafc;
+}
+
+.lp-feature:first-child .lp-feature-title {
+  font-size: 22px;
 }
 
 .lp-feature-title {
-  font-weight: 900;
-  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 15px;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
 }
 
 .lp-feature-body {
-  color: #374151;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
+/* Pricing */
 .lp-pricing h2 {
-  font-size: 28px;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 30px;
+  font-weight: 600;
   margin-bottom: 8px;
+  letter-spacing: -0.02em;
+  color: #1a1a2e;
 }
 
 .lp-subtitle {
-  color: #6b7280;
-  margin-bottom: 18px;
+  color: #64748b;
+  margin-bottom: 22px;
 }
 
 .lp-pricing-grid {
@@ -557,72 +611,76 @@ body {
 
 .lp-price-card {
   border: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 14px;
-  padding: 16px;
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  position: relative;
 }
 
 .lp-price-card.highlight {
-  border-color: #818cf8;
-  box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.15), 0 8px 10px -6px rgba(79, 70, 229, 0.15);
-  padding-top: 28px;
+  border-color: #002147;
+  box-shadow: 0 0 0 1px #002147;
+  padding-top: 32px;
 }
 
 .lp-price-name {
-  font-weight: 900;
-  margin-bottom: 8px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: #1a1a2e;
 }
 
 .lp-price {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .lp-price-amount {
   font-size: 32px;
-  font-weight: 900;
+  font-weight: 800;
+  color: #1a1a2e;
+  letter-spacing: -0.03em;
 }
 
 .lp-price-per {
-  color: #6b7280;
-  font-weight: 700;
+  color: #94a3b8;
+  font-weight: 500;
   font-size: 12px;
 }
 
 .lp-price-blurb {
-  color: #374151;
-  margin-bottom: 12px;
+  color: #64748b;
+  margin-bottom: 14px;
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .lp-price-cta {
-  margin-top: 16px;
+  margin-top: 18px;
   width: 100%;
-}
-
-.lp-price-card {
-  position: relative;
 }
 
 .lp-price-badge {
   position: absolute;
-  top: -10px;
+  top: -11px;
   left: 50%;
   transform: translateX(-50%);
-  background: #4f46e5;
+  background: #002147;
   color: white;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   padding: 4px 12px;
   border-radius: 999px;
   white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
+/* FAQ */
 .lp-faq {
-  margin-top: 48px;
-  padding-top: 32px;
+  margin-top: 56px;
+  padding-top: 40px;
   border-top: 1px solid #e5e7eb;
 }
 
@@ -633,28 +691,36 @@ body {
 }
 
 .lp-faq-item {
-  margin-bottom: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.lp-faq-item:last-child {
+  border-bottom: none;
 }
 
 .lp-faq-q {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 15px;
-  margin-bottom: 6px;
-  color: #111827;
+  margin-bottom: 8px;
+  color: #1a1a2e;
 }
 
 .lp-faq-a {
   margin: 0;
   font-size: 14px;
-  color: #4b5563;
-  line-height: 1.55;
+  color: #64748b;
+  line-height: 1.6;
 }
 
+/* Footer */
 .lp-footer {
-  padding: 18px 28px;
+  margin-top: 8px;
+  padding: 20px 28px;
   border-top: 1px solid #e5e7eb;
-  color: #6b7280;
+  color: #94a3b8;
   font-size: 13px;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 .lp-footer-inner {
@@ -663,6 +729,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
 .lp-footer-links {
@@ -671,36 +739,258 @@ body {
 }
 
 .lp-footer-link {
-  color: #6b7280;
+  color: #94a3b8;
   text-decoration: none;
+  transition: color 0.15s;
 }
 
 .lp-footer-link:hover {
+  color: #64748b;
+}
+
+/* ─── Abstract UI mock components (How it works bento) ─── */
+
+/* Step 1: Tray mock */
+.lp-mock-tray {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  max-width: 380px;
+}
+
+.lp-mock-tray-bar {
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.lp-mock-tray-dot {
+  width: 7px;
+  height: 7px;
+  background: #22c55e;
+  border-radius: 50%;
+  margin-left: auto;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.lp-mock-tray-status {
+  font-size: 12px;
+  color: #22c55e;
+  font-weight: 600;
+  margin-left: -4px;
+}
+
+.lp-mock-tray-items {
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lp-mock-tray-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
   color: #374151;
-  text-decoration: underline;
+}
+
+.lp-mock-tray-item:first-child {
+  background: #f0f4ff;
+}
+
+.lp-mock-item-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.lp-mock-item-time {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Step 2: Rules mock */
+.lp-mock-rules {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.lp-mock-rule-item {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.lp-mock-rule-item:last-child {
+  border-bottom: none;
+}
+
+.lp-mock-rule-label {
+  font-size: 10px;
+  font-weight: 700;
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.lp-mock-rule-cond {
+  color: #374151;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.lp-mock-rule-arrow {
+  color: #94a3b8;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.lp-mock-rule-result {
+  color: #002147;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.lp-mock-toggle {
+  margin-left: auto;
+  width: 30px;
+  height: 17px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  position: relative;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.lp-mock-toggle::after {
+  content: '';
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: white;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.lp-mock-toggle-on {
+  background: #002147;
+}
+
+.lp-mock-toggle-on::after {
+  left: 15px;
+}
+
+/* Step 3: Timeline mock */
+.lp-mock-timeline {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.lp-mock-tl-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.lp-mock-tl-bar {
+  height: 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.lp-tl-doc { background: #002147; }
+.lp-tl-email { background: #0ea5e9; }
+.lp-tl-call { background: #f59e0b; }
+
+.lp-mock-tl-label {
+  color: #374151;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+
+.lp-mock-tl-dur {
+  color: #64748b;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.lp-mock-export-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: default;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 @media (max-width: 920px) {
   .lp-hero { grid-template-columns: 1fr; }
-  .lp-features { grid-template-columns: 1fr; }
+  .lp-features { grid-template-columns: 1fr; grid-template-rows: auto; }
+  .lp-feature:first-child { grid-column: auto; grid-row: auto; }
+  .lp-feature:first-child .lp-feature-title { font-size: 15px; }
   .lp-pricing-grid { grid-template-columns: 1fr; }
-  .lp-main { padding: 18px; }
+  .lp-main { padding: 24px 18px; }
   .lp-hero h1,
   .lp-hero-title { font-size: 36px; }
-  .lp-how-steps { grid-template-columns: 1fr; }
-  .lp-topbar { padding: 14px 18px; }
-  .lp-tabs { padding: 12px 18px; }
+  .lp-how-bento { grid-template-columns: 1fr; }
+  .lp-bento-hero { grid-column: auto; }
+  .lp-topbar { margin: 8px 10px 0; }
+  .lp-tabs { padding: 14px 18px 0; }
 }
 
 @media (max-width: 600px) {
   .lp-hero-title { font-size: 28px; }
   .lp-hero-subhead { font-size: 16px; }
   .lp-cta-row { gap: 8px; }
-  .lp-footer { padding: 14px 18px; }
+  .lp-footer { padding: 16px 18px; }
   .lp-hero-cta { flex-direction: column; align-items: stretch; }
   .lp-cta-primary, .lp-cta-secondary { text-align: center; }
   .lp-integrations-row { justify-content: flex-start; }
   .lp-footer-inner { flex-direction: column; align-items: flex-start; }
+  .lp-topbar { margin: 6px 8px 0; padding: 12px 16px; }
 }
 
 .attorney-info {

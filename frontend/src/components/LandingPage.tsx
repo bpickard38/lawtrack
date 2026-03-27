@@ -142,23 +142,80 @@ export default function LandingPage({
 
           <section className="lp-how" aria-labelledby="lp-how-heading">
             <h2 id="lp-how-heading" className="lp-section-title">How it works</h2>
-            <ol className="lp-how-steps">
-              <li>
+            <div className="lp-how-bento">
+              {/* Step 1 — hero tile */}
+              <div className="lp-bento-item lp-bento-hero">
+                <div className="lp-mock-tray">
+                  <div className="lp-mock-tray-bar">
+                    <span>⚖</span>
+                    <span>LawTrack</span>
+                    <span className="lp-mock-tray-dot" />
+                    <span className="lp-mock-tray-status">Tracking</span>
+                  </div>
+                  <div className="lp-mock-tray-items">
+                    <div className="lp-mock-tray-item">
+                      <span className="lp-mock-item-icon">📄</span>
+                      <span>draft_agreement.docx</span>
+                      <span className="lp-mock-item-time">0:42</span>
+                    </div>
+                    <div className="lp-mock-tray-item">
+                      <span className="lp-mock-item-icon">📧</span>
+                      <span>Re: Smith Matter</span>
+                      <span className="lp-mock-item-time">0:18</span>
+                    </div>
+                  </div>
+                </div>
                 <span className="lp-how-num">1</span>
                 <span className="lp-how-title">Install the agent</span>
                 <span className="lp-how-desc">Run the desktop app and sign in. It runs in the background and records which apps you use and for how long.</span>
-              </li>
-              <li>
+              </div>
+              {/* Step 2 */}
+              <div className="lp-bento-item">
+                <div className="lp-mock-rules">
+                  <div className="lp-mock-rule-item">
+                    <span className="lp-mock-rule-label">IF</span>
+                    <span className="lp-mock-rule-cond">"Smith" in filename</span>
+                    <span className="lp-mock-rule-arrow">→</span>
+                    <span className="lp-mock-rule-result">Smith v. Jones</span>
+                    <div className="lp-mock-toggle lp-mock-toggle-on" />
+                  </div>
+                  <div className="lp-mock-rule-item">
+                    <span className="lp-mock-rule-label">IF</span>
+                    <span className="lp-mock-rule-cond">from @acme.com</span>
+                    <span className="lp-mock-rule-arrow">→</span>
+                    <span className="lp-mock-rule-result">Acme Corp</span>
+                    <div className="lp-mock-toggle" />
+                  </div>
+                </div>
                 <span className="lp-how-num">2</span>
                 <span className="lp-how-title">Set rules & review</span>
                 <span className="lp-how-desc">Define rules to auto-assign time to cases. Review and edit entries on your timesheet before they become billable.</span>
-              </li>
-              <li>
+              </div>
+              {/* Step 3 */}
+              <div className="lp-bento-item">
+                <div className="lp-mock-timeline">
+                  <div className="lp-mock-tl-row">
+                    <div className="lp-mock-tl-bar lp-tl-doc" style={{width: '62%'}} />
+                    <span className="lp-mock-tl-label">Draft agreement</span>
+                    <span className="lp-mock-tl-dur">1.2h</span>
+                  </div>
+                  <div className="lp-mock-tl-row">
+                    <div className="lp-mock-tl-bar lp-tl-email" style={{width: '38%'}} />
+                    <span className="lp-mock-tl-label">Client correspondence</span>
+                    <span className="lp-mock-tl-dur">0.5h</span>
+                  </div>
+                  <div className="lp-mock-tl-row">
+                    <div className="lp-mock-tl-bar lp-tl-call" style={{width: '22%'}} />
+                    <span className="lp-mock-tl-label">Zoom call</span>
+                    <span className="lp-mock-tl-dur">0.3h</span>
+                  </div>
+                  <button className="lp-mock-export-btn" type="button">Export PDF ↓</button>
+                </div>
                 <span className="lp-how-num">3</span>
                 <span className="lp-how-title">Export & bill</span>
                 <span className="lp-how-desc">Run reports by case and date. Export to PDF for invoices — clean descriptions, no sensitive content.</span>
-              </li>
-            </ol>
+              </div>
+            </div>
           </section>
 
           <section className="lp-features" aria-labelledby="lp-features-heading">
