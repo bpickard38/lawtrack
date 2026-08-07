@@ -1,10 +1,14 @@
 import hashlib
+import logging
 import os
 import secrets
 
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 from typing import List, Optional
@@ -27,6 +31,8 @@ from auth_utils import (
     get_password_hash, verify_password, create_access_token,
     decode_access_token, oauth2_scheme
 )
+
+LOG = logging.getLogger("lawtrack.main")
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
@@ -100,14 +106,20 @@ def _ensure_schema() -> None:
             )
     except Exception:
         # Don't crash startup if this is running on a non-Postgres/local setup.
-        # The ORM create_all will still run below.
-        pass
+        # The ORM create_all will still run below. Still log it, so a real
+        # migration failure on a Postgres deploy doesn't silently vanish.
+        LOG.exception("_ensure_schema() failed; falling back to Base.metadata.create_all()")
 
 # Create/upgrade tables
 _ensure_schema()
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="LawTrack API", version="1.0.0")
+
+# Rate limiting (per-IP) for brute-force-prone auth endpoints
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS Configuration
 # CORS_ORIGINS: comma-separated list of allowed origins (e.g. "https://app.example.com,http://localhost:5173").
@@ -185,7 +197,8 @@ async def get_attorney_from_api_key(
 # ============================================================================
 
 @app.post("/api/auth/register", response_model=RegisterResponse)
-def register(user: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("10/hour")
+def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user. For attorneys, an agent API key is created and returned once."""
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == user.email).first()
@@ -240,7 +253,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     return RegisterResponse(user=UserResponse.model_validate(db_user), agent_api_key=agent_api_key)
 
 @app.post("/api/auth/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login and get access token"""
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -382,7 +396,8 @@ def revoke_agent_key(
     return {"message": "Agent key revoked"}
 
 @app.post("/api/auth/agent-key/from-login")
-def agent_key_from_login(payload: AgentKeyLoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def agent_key_from_login(request: Request, payload: AgentKeyLoginRequest, db: Session = Depends(get_db)):
     """
     Desktop agent: sign in with LawTrack email and password to get an API key.
     Creates a key if the attorney doesn't have one. The agent stores it locally; user never sees it.
@@ -1044,6 +1059,9 @@ def agent_create_activity(
     db: Session = Depends(get_db),
 ):
     """Create activity from the auto-tracking agent. Auth via X-API-Key."""
+    if not attorney.tracking_enabled:
+        raise HTTPException(status_code=403, detail="Tracking is disabled for this account")
+
     duration = int((payload.end_time - payload.start_time).total_seconds() / 60)
     data = payload.dict()
     data["attorney_id"] = attorney.id
