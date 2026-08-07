@@ -1,10 +1,14 @@
+import os
 from datetime import datetime, timedelta
 from typing import Optional
+from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+
+load_dotenv()
 
 # Password hashing
 # Use bcrypt_sha256 to avoid bcrypt's 72-byte password limitation and backend quirks.
@@ -14,7 +18,13 @@ pwd_context = CryptContext(
 )
 
 # JWT settings
-SECRET_KEY = "your-secret-key-change-this-in-production-use-openssl-rand-hex-32"
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not set. Generate one with "
+        "`openssl rand -hex 32` and set it in backend/.env (local) or your "
+        "deployment's environment variables (e.g. Railway)."
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 

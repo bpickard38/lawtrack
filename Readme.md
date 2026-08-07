@@ -68,8 +68,10 @@ CREATE DATABASE lawtrack;
    Copy `.env.example` to `.env` and update with your database credentials:
    ```
    DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/lawtrack
+   SECRET_KEY=<generate with: openssl rand -hex 32>
    CORS_ORIGINS=http://localhost:5173
    ```
+   `SECRET_KEY` is required — the server will refuse to start without it.
 
 5. **Initialize database:**
    ```powershell

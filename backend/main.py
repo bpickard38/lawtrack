@@ -1,4 +1,5 @@
 import hashlib
+import os
 import secrets
 
 from fastapi import FastAPI, Depends, HTTPException, status
@@ -16,7 +17,7 @@ from schemas import (
     RegisterResponse, AgentKeyLoginRequest,
     AttorneyCreate, AttorneyResponse,
     SettingsResponse, TrackingSettingUpdate,
-    CaseCreate, CaseResponse,
+    CaseCreate, CaseUpdate, CaseResponse,
     ActivityCreate, ActivityUpdate, ActivityResponse, AgentActivityCreate,
     CaseTimeSummary, ActivityType,
     BulkAssignRequest, MergeActivitiesRequest, SplitActivityRequest,
@@ -109,9 +110,14 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="LawTrack API", version="1.0.0")
 
 # CORS Configuration
+# CORS_ORIGINS: comma-separated list of allowed origins (e.g. "https://app.example.com,http://localhost:5173").
+# Falls back to "*" (all origins) if unset, matching prior behavior for local dev.
+_cors_origins_env = os.getenv("CORS_ORIGINS", "*").strip()
+_cors_origins = ["*"] if _cors_origins_env == "*" else [o.strip() for o in _cors_origins_env.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -470,7 +476,9 @@ def get_attorney(attorney_id: int, current_user: User = Depends(get_current_user
 
 @app.post("/api/cases", response_model=CaseResponse)
 def create_case(case: CaseCreate, current_attorney: Attorney = Depends(get_current_attorney), db: Session = Depends(get_db)):
-    db_case = Case(**case.dict())
+    case_dict = case.dict()
+    case_dict["attorney_id"] = current_attorney.id
+    db_case = Case(**case_dict, firm_id=current_attorney.firm_id)
     db.add(db_case)
     db.commit()
     db.refresh(db_case)
@@ -512,23 +520,22 @@ def get_case(case_id: int, current_attorney: Attorney = Depends(get_current_atto
 @app.patch("/api/cases/{case_id}", response_model=CaseResponse)
 def update_case(
     case_id: int,
-    update: dict,
+    update: CaseUpdate,
     current_attorney: Attorney = Depends(get_current_attorney),
     db: Session = Depends(get_db)
 ):
     case = db.query(Case).filter(Case.id == case_id).first()
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
-    
+
     # Verify access
     if case.attorney_id != current_attorney.id:
         raise HTTPException(status_code=403, detail="Access denied")
-    
-    # Update fields
-    for key, value in update.items():
-        if hasattr(case, key):
-            setattr(case, key, value)
-    
+
+    # Update only the fields the client actually sent
+    for key, value in update.dict(exclude_unset=True).items():
+        setattr(case, key, value)
+
     db.commit()
     db.refresh(case)
     return case
@@ -608,17 +615,19 @@ def create_activity(
     db: Session = Depends(get_db)
 ):
     duration = int((activity.end_time - activity.start_time).total_seconds() / 60)
-    
+
     activity_dict = activity.dict()
-    
+    activity_dict["attorney_id"] = current_attorney.id
+
     # Auto-assign case based on rules (if no case already set)
     case_id = activity_dict.get("case_id")
     if not case_id:
         case_id = _auto_assign_case(db, current_attorney.id, activity_dict)
-    
+
     db_activity = Activity(
         **activity_dict,
         case_id=case_id,
+        firm_id=current_attorney.firm_id,
         duration_minutes=duration
     )
     db.add(db_activity)
@@ -693,31 +702,33 @@ def get_activity(
 @app.patch("/api/activities/{activity_id}", response_model=ActivityResponse)
 def update_activity(
     activity_id: int,
-    update: dict,
+    update: ActivityUpdate,
     current_attorney: Attorney = Depends(get_current_attorney),
     db: Session = Depends(get_db)
 ):
     activity = db.query(Activity).filter(Activity.id == activity_id).first()
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    
+
     # Verify access
     if activity.attorney_id != current_attorney.id:
         raise HTTPException(status_code=403, detail="Access denied")
-    
-    if 'start_time' in update and isinstance(update['start_time'], str):
-        update['start_time'] = datetime.fromisoformat(update['start_time'].replace('Z', '+00:00'))
-    if 'end_time' in update and isinstance(update['end_time'], str):
-        update['end_time'] = datetime.fromisoformat(update['end_time'].replace('Z', '+00:00'))
-    
-    for key, value in update.items():
-        if hasattr(activity, key):
-            setattr(activity, key, value)
-    
-    if 'start_time' in update or 'end_time' in update:
+
+    update_fields = update.dict(exclude_unset=True)
+
+    # If reassigning to a case, verify the attorney has access to it
+    if "case_id" in update_fields and update_fields["case_id"] is not None:
+        case = db.query(Case).filter(Case.id == update_fields["case_id"]).first()
+        if not case or case.attorney_id != current_attorney.id:
+            raise HTTPException(status_code=403, detail="Access denied to case")
+
+    for key, value in update_fields.items():
+        setattr(activity, key, value)
+
+    if "start_time" in update_fields or "end_time" in update_fields:
         duration = int((activity.end_time - activity.start_time).total_seconds() / 60)
         activity.duration_minutes = duration
-    
+
     db.commit()
     db.refresh(activity)
     return activity

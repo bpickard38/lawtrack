@@ -124,6 +124,11 @@ class CaseCreate(BaseModel):
     client_name: Optional[str] = None
     attorney_id: int
 
+class CaseUpdate(BaseModel):
+    name: Optional[str] = None
+    client_name: Optional[str] = None
+    status: Optional[str] = None
+
 class CaseResponse(BaseModel):
     id: int
     name: str
@@ -169,10 +174,17 @@ class AgentActivityCreate(BaseModel):
     phone_number: Optional[str] = None
 
 class ActivityUpdate(BaseModel):
+    type: Optional[ActivityType] = None
     case_id: Optional[int] = None
     description: Optional[str] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+    document_name: Optional[str] = None
+    email_from: Optional[str] = None
+    email_to: Optional[str] = None
+    email_subject: Optional[str] = None
+    contact_name: Optional[str] = None
+    phone_number: Optional[str] = None
     is_billable: Optional[bool] = None
     narrative: Optional[str] = None
     status: Optional[str] = None  # captured/edited/approved/invoiced
