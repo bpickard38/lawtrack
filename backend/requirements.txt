@@ -1,6 +1,6 @@
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
-sqlalchemy==2.0.25
+sqlalchemy==2.0.36  # 2.0.25 is incompatible with Python 3.13 (AssertionError in sqlalchemy.util.langhelpers); 2.0.36 adds 3.13 support
 psycopg2-binary>=2.9.10
 pydantic>=2.10.0  # Changed this line
 python-dotenv==1.0.0
@@ -11,5 +11,6 @@ email-validator==2.1.0
 slowapi==0.1.9
 authlib==1.3.2
 httpx==0.27.0
+itsdangerous==2.2.0
 # Pin bcrypt to a version compatible with passlib on Railway (avoids backend issues)
 bcrypt==3.2.2
