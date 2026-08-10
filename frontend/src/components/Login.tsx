@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
@@ -15,11 +17,18 @@ interface LoginProps {
 }
 
 export default function Login({ onSwitchToRegister }: LoginProps) {
-  const { login } = useAuth();
+  const { login, oauthError, clearOauthError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (oauthError) {
+      setError(oauthError);
+      clearOauthError();
+    }
+  }, [oauthError, clearOauthError]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,7 +54,7 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
         <h1 className="auth-heading">Sign in</h1>
         <p className="auth-sub">Welcome back. Enter your details below.</p>
 
-        <a href="/api/auth/google" className="auth-google-btn">
+        <a href={`${API_BASE}/api/auth/google`} className="auth-google-btn">
           <GoogleIcon />
           Continue with Google
         </a>

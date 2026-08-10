@@ -5,10 +5,13 @@ import secrets
 
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from starlette.middleware.sessions import SessionMiddleware
+from authlib.integrations.starlette_client import OAuth, OAuthError
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 from typing import List, Optional
@@ -29,7 +32,7 @@ from schemas import (
 )
 from auth_utils import (
     get_password_hash, verify_password, create_access_token,
-    decode_access_token, oauth2_scheme
+    decode_access_token, oauth2_scheme, SECRET_KEY
 )
 
 LOG = logging.getLogger("lawtrack.main")
@@ -134,6 +137,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Google Sign-In (OAuth2 / OIDC). Optional — the app runs fine without it;
+# the /api/auth/google* endpoints just return 503 until both env vars are set.
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_OAUTH_CONFIGURED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+
+# Needed by Authlib to stash the OAuth state/nonce between the redirect to
+# Google and the callback. Both hops are plain browser navigations to this
+# backend's own domain, so a same-site session cookie is sufficient.
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, same_site="lax")
+
+oauth = OAuth()
+if GOOGLE_OAUTH_CONFIGURED:
+    oauth.register(
+        name="google",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
 
 # ============================================================================
 # AUTHENTICATION DEPENDENCY
@@ -251,6 +277,73 @@ def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
         agent_api_key = raw
 
     return RegisterResponse(user=UserResponse.model_validate(db_user), agent_api_key=agent_api_key)
+
+@app.get("/api/auth/google", name="google_login")
+async def google_login(request: Request):
+    """Kick off Google's OAuth consent screen."""
+    if not GOOGLE_OAUTH_CONFIGURED:
+        raise HTTPException(status_code=503, detail="Google sign-in is not configured")
+    redirect_uri = f"{BACKEND_URL}/api/auth/google/callback"
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get("/api/auth/google/callback", name="google_callback")
+async def google_callback(request: Request, db: Session = Depends(get_db)):
+    """Handle Google's redirect back after the user approves/denies access.
+
+    Finds or creates a matching User/Attorney by verified email (mirroring
+    /api/auth/register), then hands off to the frontend the same way a
+    normal login does: a LawTrack-issued JWT, not anything from Google.
+    """
+    if not GOOGLE_OAUTH_CONFIGURED:
+        raise HTTPException(status_code=503, detail="Google sign-in is not configured")
+
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except OAuthError:
+        return RedirectResponse(f"{FRONTEND_URL}/#auth_error=google_failed")
+
+    userinfo = token.get("userinfo") or {}
+    email = userinfo.get("email")
+    if not email or not userinfo.get("email_verified"):
+        return RedirectResponse(f"{FRONTEND_URL}/#auth_error=google_failed")
+
+    db_user = db.query(User).filter(User.email == email).first()
+
+    if db_user is None:
+        full_name = userinfo.get("name") or email.split("@")[0]
+        db_user = User(
+            firm_id=None,
+            email=email,
+            # Google-authenticated accounts never use a password; store an
+            # unusable random hash so hashed_password's NOT NULL constraint
+            # is satisfied without weakening password-login for anyone else.
+            hashed_password=get_password_hash(secrets.token_urlsafe(32)),
+            full_name=full_name,
+            role=UserRole.ATTORNEY.value,
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+
+        attorney = Attorney(
+            firm_id=None,
+            user_id=db_user.id,
+            name=full_name,
+            email=email,
+            billable_rate=300.00,
+        )
+        db.add(attorney)
+        db.commit()
+        db.refresh(attorney)
+
+        raw = "lt_" + secrets.token_urlsafe(24)
+        db.add(AgentApiKey(attorney_id=attorney.id, key_hash=_hash_api_key(raw), key_prefix=_api_key_prefix(raw)))
+        db.commit()
+    elif not db_user.is_active:
+        return RedirectResponse(f"{FRONTEND_URL}/#auth_error=account_inactive")
+
+    access_token = create_access_token(data={"sub": db_user.email})
+    return RedirectResponse(f"{FRONTEND_URL}/#google_token={access_token}")
 
 @app.post("/api/auth/login", response_model=Token)
 @limiter.limit("10/minute")

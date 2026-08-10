@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../AuthContext';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
     <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
@@ -57,7 +59,7 @@ export default function Register({ onSwitchToLogin }: RegisterProps) {
         <h1 className="auth-heading">Create account</h1>
         <p className="auth-sub">Start tracking billable time in minutes.</p>
 
-        <a href="/api/auth/google" className="auth-google-btn">
+        <a href={`${API_BASE}/api/auth/google`} className="auth-google-btn">
           <GoogleIcon />
           Continue with Google
         </a>

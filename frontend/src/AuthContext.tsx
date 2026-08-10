@@ -35,6 +35,8 @@ interface AuthContextType {
   deleteAccount: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  oauthError: string | null;
+  clearOauthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,9 +46,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [attorney, setAttorney] = useState<Attorney | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
-  // Check for existing token on mount
+  // Check for a Google sign-in redirect first, then fall back to any
+  // previously saved token.
   useEffect(() => {
+    const hash = window.location.hash;
+
+    if (hash.startsWith('#google_token=')) {
+      const authToken = decodeURIComponent(hash.slice('#google_token='.length));
+      localStorage.setItem('auth_token', authToken);
+      setToken(authToken);
+      window.location.hash = '';
+      fetchUserData(authToken);
+      return;
+    }
+
+    if (hash.startsWith('#auth_error=')) {
+      const code = decodeURIComponent(hash.slice('#auth_error='.length));
+      setOauthError(
+        code === 'account_inactive'
+          ? 'This account has been deactivated.'
+          : 'Google sign-in failed. Please try again, or use email and password.'
+      );
+      window.location.hash = 'auth';
+      setIsLoading(false);
+      return;
+    }
+
     const savedToken = localStorage.getItem('auth_token');
     if (savedToken) {
       setToken(savedToken);
@@ -55,6 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }, []);
+
+  function clearOauthError() {
+    setOauthError(null);
+  }
 
   async function fetchUserData(authToken: string) {
     try {
@@ -234,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, attorney, token, login, register, updateProfile, changePassword, deleteAccount, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, attorney, token, login, register, updateProfile, changePassword, deleteAccount, logout, isLoading, oauthError, clearOauthError }}>
       {children}
     </AuthContext.Provider>
   );
