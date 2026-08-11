@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { fetchCaseRules } from '../api';
+import { fetchCaseRules, getAgentKeyStatus } from '../api';
 
 const STORAGE_KEYS = {
   dismissed: 'lawtrack_onboardingDismissed',
   hasFirstActivity: 'lawtrack_hasFirstActivity',
   hasExported: 'lawtrack_onboarding_hasExported',
-  hasClickedInstall: 'lawtrack_hasClickedInstall',
 } as const;
 
 function getStored(key: keyof typeof STORAGE_KEYS): boolean {
@@ -36,10 +35,10 @@ export function getOnboardingStatus(
   rulesCount: number,
   hasFirstActivityStored: boolean,
   hasExportedStored: boolean,
-  hasClickedInstallStored: boolean
+  agentHasSentActivity: boolean
 ): OnboardingStatus {
   return {
-    installAgent: hasClickedInstallStored,
+    installAgent: agentHasSentActivity,
     addCase: casesCount >= 1,
     createRule: rulesCount >= 1,
     captureActivity: hasFirstActivityStored,
@@ -80,7 +79,9 @@ export default function OnboardingChecklist({
   const [hasFirstActivityStored, setHasFirstActivityStored] = useState(() => getStored('hasFirstActivity'));
   const hasFirstActivity = hasFirstActivityProp === true || hasFirstActivityStored;
   const [hasExported, setHasExported] = useState(() => getStored('hasExported'));
-  const [hasClickedInstall, setHasClickedInstall] = useState(() => getStored('hasClickedInstall'));
+  // Whether the agent has actually sent LawTrack an activity — real proof it's
+  // installed and working, not just that someone clicked the download link.
+  const [agentHasSentActivity, setAgentHasSentActivity] = useState(false);
 
   useEffect(() => {
     const onUpdated = () => setHasExported(getStored('hasExported'));
@@ -94,6 +95,9 @@ export default function OnboardingChecklist({
     fetchCaseRules()
       .then((rules) => { if (!cancelled) setRulesCount(rules.length); })
       .catch(() => {});
+    getAgentKeyStatus()
+      .then((s) => { if (!cancelled) setAgentHasSentActivity(s.has_activity); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, [dismissed]);
 
@@ -102,7 +106,7 @@ export default function OnboardingChecklist({
     rulesCount,
     hasFirstActivity,
     hasExported,
-    hasClickedInstall
+    agentHasSentActivity
   );
   const complete = isOnboardingComplete(status);
 
@@ -110,11 +114,6 @@ export default function OnboardingChecklist({
     setStored('dismissed', true);
     setDismissed(true);
     onDismiss();
-  };
-
-  const handleInstallClick = () => {
-    setStored('hasClickedInstall', true);
-    setHasClickedInstall(true);
   };
 
   if (dismissed || complete) return null;
@@ -142,14 +141,16 @@ export default function OnboardingChecklist({
               target="_blank"
               rel="noopener noreferrer"
               className="onboarding-step-link"
-              onClick={handleInstallClick}
             >
               Install desktop agent
             </a>
           ) : (
-            <a href="/install" className="onboarding-step-link" onClick={handleInstallClick}>
+            <a href="/install" className="onboarding-step-link">
               Install desktop agent
             </a>
+          )}
+          {!status.installAgent && (
+            <span className="onboarding-step-desc"> — checks off automatically once it sends its first activity</span>
           )}
         </li>
         <li className={status.addCase ? 'onboarding-step done' : 'onboarding-step'}>

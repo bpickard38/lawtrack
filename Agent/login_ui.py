@@ -4,9 +4,14 @@ User enters LawTrack email and password; we get an API key and save it to .env.
 """
 import logging
 import os
+import queue
 import subprocess
 import sys
+import threading
+import webbrowser
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import requests
 
@@ -97,6 +102,80 @@ def _login_request(email: str, password: str) -> tuple[str | None, str | None]:
         return None, error_msg
 
 
+def _exchange_token_for_agent_key(jwt_token: str) -> tuple[str | None, str | None]:
+    """Trade a LawTrack JWT (from the Google sign-in flow) for a real agent
+    API key, via the same endpoint the website's Profile page uses."""
+    try:
+        r = requests.post(
+            f"{API_URL.rstrip('/')}/api/auth/agent-key",
+            headers={"Authorization": f"Bearer {jwt_token}"},
+            timeout=15,
+        )
+        if not r.ok:
+            return None, f"Could not create an agent key ({r.status_code})"
+        return r.json().get("api_key"), None
+    except requests.RequestException as e:
+        return None, f"Network error: {e}"
+
+
+def _run_google_oauth_flow(result_queue: "queue.Queue[tuple[str | None, str | None]]") -> None:
+    """Open the browser to Google sign-in via the backend, and receive the
+    resulting token on a one-shot local HTTP server — the "loopback
+    redirect" pattern recommended for native/desktop apps (RFC 8252).
+    Puts (token, None) or (None, error) on result_queue when done.
+    """
+    captured: dict[str, str] = {}
+
+    class _CallbackHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            qs = parse_qs(urlparse(self.path).query)
+            if "token" in qs:
+                captured["token"] = qs["token"][0]
+                body = (
+                    b"<html><body style='font-family:sans-serif;padding:40px'>"
+                    b"<h2>Signed in</h2><p>You can close this tab and return to LawTrack Agent.</p>"
+                    b"</body></html>"
+                )
+            else:
+                captured["error"] = (qs.get("error") or ["unknown"])[0]
+                body = (
+                    b"<html><body style='font-family:sans-serif;padding:40px'>"
+                    b"<h2>Sign-in failed</h2><p>You can close this tab and return to LawTrack Agent.</p>"
+                    b"</body></html>"
+                )
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass  # don't spam stdout with request logs
+
+    try:
+        server = HTTPServer(("127.0.0.1", 0), _CallbackHandler)
+    except OSError as e:
+        result_queue.put((None, f"Could not start local callback server: {e}"))
+        return
+
+    port = server.server_address[1]
+    server.timeout = 300  # 5 minutes to complete sign-in in the browser
+
+    callback_url = f"http://127.0.0.1:{port}/callback"
+    auth_url = f"{API_URL.rstrip('/')}/api/auth/google?agent_callback={callback_url}"
+    LOG.info("Opening browser for Google sign-in: %s", auth_url)
+    webbrowser.open(auth_url)
+
+    server.handle_request()  # blocks until the one callback request arrives, or times out
+    server.server_close()
+
+    if "token" in captured:
+        result_queue.put((captured["token"], None))
+    elif "error" in captured:
+        result_queue.put((None, captured["error"]))
+    else:
+        result_queue.put((None, "timed out waiting for browser sign-in"))
+
+
 # UI colors (match LawTrack branding)
 _BG = "#f8fafc"
 _CARD_BG = "#ffffff"
@@ -149,14 +228,40 @@ def run_login_gui() -> bool:
             signin_btn.config(state=tk.NORMAL, text="Sign in", bg=_ACCENT)
             err_label.config(text=f"Error: {str(e)}")
 
+    def do_google_signin():
+        google_btn.config(state=tk.DISABLED, text="Waiting for browser…")
+        err_label.config(text="Complete sign-in in your browser, then return here.", fg=_TEXT_MUTED)
+        result_q: "queue.Queue[tuple[str | None, str | None]]" = queue.Queue()
+        threading.Thread(target=_run_google_oauth_flow, args=(result_q,), daemon=True).start()
+
+        def poll():
+            try:
+                token, error = result_q.get_nowait()
+            except queue.Empty:
+                root.after(500, poll)
+                return
+            if token:
+                key, key_error = _exchange_token_for_agent_key(token)
+                if key and _write_env_file(key):
+                    result.append(True)
+                    root.quit()
+                else:
+                    err_label.config(text=key_error or "Signed in but could not get an agent key.", fg=_ERR)
+                    google_btn.config(state=tk.NORMAL, text="Continue with Google")
+            else:
+                err_label.config(text=f"Google sign-in failed: {error}", fg=_ERR)
+                google_btn.config(state=tk.NORMAL, text="Continue with Google")
+
+        root.after(500, poll)
+
     root = tk.Tk()
     root.title("LawTrack")
     root.resizable(True, True)
-    root.minsize(420, 480)
+    root.minsize(420, 560)
     root.configure(bg=_BG)
 
     # Center window on screen; tall enough for all content including buttons
-    w, h = 420, 580
+    w, h = 420, 660
     root.geometry(f"{w}x{h}")
     root.update_idletasks()
     x = (root.winfo_screenwidth() // 2) - (w // 2)
@@ -165,7 +270,7 @@ def run_login_gui() -> bool:
 
     # Card container - fixed size but tall enough for all content
     card = tk.Frame(root, bg=_CARD_BG, padx=40, pady=32)
-    card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=380, height=520)
+    card.place(relx=0.5, rely=0.5, anchor=tk.CENTER, width=380, height=600)
 
     # Header
     title = tk.Label(
@@ -193,7 +298,32 @@ def run_login_gui() -> bool:
         bg=_CARD_BG,
         wraplength=300,
     )
-    api_url_label.pack(anchor=tk.W, pady=(0, 24))
+    api_url_label.pack(anchor=tk.W, pady=(0, 20))
+
+    # Continue with Google
+    google_btn = tk.Button(
+        card,
+        text="Continue with Google",
+        command=do_google_signin,
+        font=("Segoe UI", 11),
+        fg=_TEXT,
+        bg=_CARD_BG,
+        activeforeground=_TEXT,
+        activebackground=_ENTRY_BG,
+        relief=tk.SOLID,
+        borderwidth=1,
+        highlightbackground=_ENTRY_BORDER,
+        cursor="hand2",
+        pady=10,
+    )
+    google_btn.pack(fill=tk.X, pady=(0, 16))
+
+    # Divider
+    divider = tk.Frame(card, bg=_CARD_BG)
+    divider.pack(fill=tk.X, pady=(0, 16))
+    tk.Frame(divider, bg=_ENTRY_BORDER, height=1).pack(side=tk.LEFT, fill=tk.X, expand=True, pady=8)
+    tk.Label(divider, text=" or ", font=("Segoe UI", 9), fg=_TEXT_MUTED, bg=_CARD_BG).pack(side=tk.LEFT)
+    tk.Frame(divider, bg=_ENTRY_BORDER, height=1).pack(side=tk.LEFT, fill=tk.X, expand=True, pady=8)
 
     # Email
     email_var = tk.StringVar()

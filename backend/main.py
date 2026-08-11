@@ -2,6 +2,7 @@ import hashlib
 import logging
 import os
 import secrets
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -279,10 +280,23 @@ def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     return RegisterResponse(user=UserResponse.model_validate(db_user), agent_api_key=agent_api_key)
 
 @app.get("/api/auth/google", name="google_login")
-async def google_login(request: Request):
-    """Kick off Google's OAuth consent screen."""
+async def google_login(request: Request, agent_callback: Optional[str] = None):
+    """Kick off Google's OAuth consent screen.
+
+    agent_callback: optional loopback URL (http://127.0.0.1:<port>/callback or
+    http://localhost:<port>/callback) that the desktop Agent listens on. When
+    present, the callback below hands the token to that local server instead
+    of redirecting to the website — the standard "loopback redirect" pattern
+    for native/desktop apps (RFC 8252). Restricted to loopback addresses only
+    so this can't be abused as an open redirect.
+    """
     if not GOOGLE_OAUTH_CONFIGURED:
         raise HTTPException(status_code=503, detail="Google sign-in is not configured")
+    if agent_callback:
+        parsed = urlparse(agent_callback)
+        if parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost"):
+            raise HTTPException(status_code=400, detail="agent_callback must be a http://127.0.0.1(:port)/... URL")
+        request.session["agent_callback"] = agent_callback
     redirect_uri = f"{BACKEND_URL}/api/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -291,21 +305,29 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     """Handle Google's redirect back after the user approves/denies access.
 
     Finds or creates a matching User/Attorney by verified email (mirroring
-    /api/auth/register), then hands off to the frontend the same way a
-    normal login does: a LawTrack-issued JWT, not anything from Google.
+    /api/auth/register), then hands off a LawTrack-issued JWT (never
+    anything from Google itself) either to the website or, for the desktop
+    Agent, to the loopback callback stashed by google_login above.
     """
     if not GOOGLE_OAUTH_CONFIGURED:
         raise HTTPException(status_code=503, detail="Google sign-in is not configured")
 
+    agent_callback = request.session.pop("agent_callback", None)
+
+    def redirect_error(code: str) -> RedirectResponse:
+        if agent_callback:
+            return RedirectResponse(f"{agent_callback}?error={code}")
+        return RedirectResponse(f"{FRONTEND_URL}/#auth_error={code}")
+
     try:
         token = await oauth.google.authorize_access_token(request)
     except OAuthError:
-        return RedirectResponse(f"{FRONTEND_URL}/#auth_error=google_failed")
+        return redirect_error("google_failed")
 
     userinfo = token.get("userinfo") or {}
     email = userinfo.get("email")
     if not email or not userinfo.get("email_verified"):
-        return RedirectResponse(f"{FRONTEND_URL}/#auth_error=google_failed")
+        return redirect_error("google_failed")
 
     db_user = db.query(User).filter(User.email == email).first()
 
@@ -340,9 +362,11 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         db.add(AgentApiKey(attorney_id=attorney.id, key_hash=_hash_api_key(raw), key_prefix=_api_key_prefix(raw)))
         db.commit()
     elif not db_user.is_active:
-        return RedirectResponse(f"{FRONTEND_URL}/#auth_error=account_inactive")
+        return redirect_error("account_inactive")
 
     access_token = create_access_token(data={"sub": db_user.email})
+    if agent_callback:
+        return RedirectResponse(f"{agent_callback}?token={access_token}")
     return RedirectResponse(f"{FRONTEND_URL}/#google_token={access_token}")
 
 @app.post("/api/auth/login", response_model=Token)
@@ -526,11 +550,17 @@ def get_agent_key_status(
     current_attorney: Attorney = Depends(get_current_attorney),
     db: Session = Depends(get_db),
 ):
-    """Return whether user has an agent key and its masked prefix."""
+    """Return whether user has an agent key, its masked prefix, and whether the
+    agent has ever actually sent an activity (real proof it's installed and
+    working, as opposed to just having generated a key)."""
     row = db.query(AgentApiKey).filter(AgentApiKey.attorney_id == current_attorney.id).first()
+    has_activity = db.query(Activity).filter(
+        Activity.attorney_id == current_attorney.id,
+        Activity.source == "agent",
+    ).first() is not None
     if not row:
-        return {"has_key": False, "key_prefix": None}
-    return {"has_key": True, "key_prefix": row.key_prefix}
+        return {"has_key": False, "key_prefix": None, "has_activity": has_activity}
+    return {"has_key": True, "key_prefix": row.key_prefix, "has_activity": has_activity}
 
 
 # ============================================================================

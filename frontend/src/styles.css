@@ -2268,6 +2268,11 @@ body {
   display: inline;
 }
 
+.onboarding-step-desc {
+  color: #6B6B6B;
+  font-weight: normal;
+}
+
 .onboarding-step-link,
 .onboarding-step-btn {
   color: #111111;
