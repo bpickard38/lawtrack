@@ -31,7 +31,7 @@ import config
 from config import API_URL, API_KEY, MIN_SECONDS
 from tracker import track_activity
 from classifier import classify
-from sender import send_activity, fetch_tracking_enabled
+from sender import send_activity, fetch_tracking_enabled, send_heartbeat
 from login_ui import ensure_api_key, restart_self, run_login_gui
 
 logging.basicConfig(
@@ -51,6 +51,17 @@ def on_activity_finished(app_name: str, document_name: str, seconds: float, wind
         LOG.debug("Skipping filtered: %s - %s", app_name, document_name)
         return
     send_activity(app_name, document_name, seconds, activity_type)
+
+
+def on_heartbeat(app_name: str, document_name: str, window_title: str, elapsed_seconds: float) -> None:
+    """Fires periodically while still on the same window (see tracker.py) -
+    tells the website "here's what's happening right now". No MIN_SECONDS
+    gate here on purpose: live status should show up quickly, independent
+    of the longer threshold for what actually gets recorded as an Activity."""
+    activity_type = classify(app_name, window_title or document_name)
+    if activity_type is None:
+        return  # not a trackable app/site - let the last heartbeat just go stale
+    send_heartbeat(app_name, document_name, activity_type, elapsed_seconds)
 
 
 def create_tray_icon():
@@ -187,7 +198,20 @@ def run_tray(stop_event: threading.Event, pause_event: threading.Event):
         pystray.MenuItem("Quit", lambda icon, item: (stop_event.set(), icon.stop())),
     )
     icon = pystray.Icon("lawtrack", icon_image, "LawTrack", menu)
-    icon.run()
+
+    def on_ready(icon: "pystray.Icon"):
+        # Fires once the tray icon is actually up. Without this, a user who
+        # launches the agent (manually, or via Windows startup) gets zero
+        # visible confirmation it worked — the icon can land in Windows'
+        # collapsed notification-area overflow and go unnoticed entirely,
+        # making a working app look broken.
+        icon.visible = True
+        try:
+            icon.notify("LawTrack is now tracking time in the background.", "LawTrack")
+        except Exception as e:
+            LOG.debug("Tray notification failed (non-fatal): %s", e)
+
+    icon.run(setup=on_ready)
 
 
 def _is_second_instance() -> bool:
@@ -214,6 +238,27 @@ def _is_second_instance() -> bool:
         return False
 
 
+def _notify_already_running() -> None:
+    """Show a quick, unmissable dialog when a launch is blocked because the
+    agent is already running (e.g. from Windows startup). Deliberately not a
+    tray balloon — there's no icon object at this point in startup, and this
+    needs to work even if the existing tray icon is buried in the overflow."""
+    if sys.platform != "win32":
+        return
+    try:
+        import win32api
+        import win32con
+        win32api.MessageBox(
+            0,
+            "LawTrack is already running — look for its icon in your system tray "
+            "(it may be hidden under the \"^\" arrow near the clock).",
+            "LawTrack",
+            win32con.MB_OK | win32con.MB_ICONINFORMATION,
+        )
+    except Exception as e:
+        LOG.debug("Could not show already-running dialog: %s", e)
+
+
 def main():
     # If launched with lawtrack:// URL, try to send command to existing instance; if that succeeds, exit
     deferred_command: str | None = None
@@ -228,6 +273,12 @@ def main():
     # Single-instance: if another instance is already running, exit
     if _is_second_instance():
         LOG.info("LawTrack Agent already running; exiting.")
+        # A second launch attempt (e.g. someone clicking the Start Menu icon,
+        # not realizing it auto-started at login) would otherwise exit with
+        # zero visible feedback — indistinguishable from "did nothing at
+        # all" to anyone who isn't reading logs. A quick, unmissable dialog
+        # beats silence here even though it's a minor interruption.
+        _notify_already_running()
         sys.exit(0)
 
     LOG.info("LawTrack Agent starting (tray mode)...")
@@ -278,7 +329,12 @@ def main():
     tracker_thread = threading.Thread(
         target=track_activity,
         args=(on_activity_finished,),
-        kwargs={"stop_event": stop_event, "pause_event": pause_event, "server_pause_event": server_pause_event},
+        kwargs={
+            "stop_event": stop_event,
+            "pause_event": pause_event,
+            "server_pause_event": server_pause_event,
+            "on_heartbeat": on_heartbeat,
+        },
         daemon=False,
     )
     tracker_thread.start()

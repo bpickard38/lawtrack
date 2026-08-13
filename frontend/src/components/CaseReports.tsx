@@ -134,10 +134,6 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
         end_date: exportEndDate,
       });
       buildAndDownloadInvoicePdf(c, activities, exportStartDate, exportEndDate);
-      try {
-        localStorage.setItem('lawtrack_onboarding_hasExported', 'true');
-        window.dispatchEvent(new Event('lawtrack:onboarding-updated'));
-      } catch {}
       setShowExportModal(false);
     } catch (err) {
       alert('Failed to load activities: ' + (err instanceof Error ? err.message : 'Unknown error'));

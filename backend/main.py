@@ -22,7 +22,7 @@ from database import get_db, engine
 from models import Base, User, Attorney, Case, Activity, Firm, UserRole, CaseRule, AgentApiKey
 from schemas import (
     UserCreate, UserLogin, UserResponse, Token, UserUpdate, PasswordChange, UserUpdateResponse,
-    RegisterResponse, AgentKeyLoginRequest,
+    RegisterResponse, AgentKeyLoginRequest, AgentKeyCreateRequest, AgentHeartbeat,
     AttorneyCreate, AttorneyResponse,
     SettingsResponse, TrackingSettingUpdate,
     CaseCreate, CaseUpdate, CaseResponse,
@@ -108,6 +108,11 @@ def _ensure_schema() -> None:
                     """
                 )
             )
+            conn.execute(text("ALTER TABLE agent_api_keys ADD COLUMN IF NOT EXISTS device_name VARCHAR(255);"))
+            conn.execute(text("ALTER TABLE agent_api_keys ADD COLUMN IF NOT EXISTS current_activity_type VARCHAR(50);"))
+            conn.execute(text("ALTER TABLE agent_api_keys ADD COLUMN IF NOT EXISTS current_activity_label VARCHAR(500);"))
+            conn.execute(text("ALTER TABLE agent_api_keys ADD COLUMN IF NOT EXISTS current_activity_started_at TIMESTAMP;"))
+            conn.execute(text("ALTER TABLE agent_api_keys ADD COLUMN IF NOT EXISTS last_heartbeat_at TIMESTAMP;"))
     except Exception:
         # Don't crash startup if this is running on a non-Postgres/local setup.
         # The ORM create_all will still run below. Still log it, so a real
@@ -477,6 +482,7 @@ def get_my_attorney(attorney: Attorney = Depends(get_current_attorney)):
 
 @app.post("/api/auth/agent-key")
 def create_agent_key(
+    payload: AgentKeyCreateRequest = AgentKeyCreateRequest(),
     current_attorney: Attorney = Depends(get_current_attorney),
     db: Session = Depends(get_db),
 ):
@@ -494,6 +500,7 @@ def create_agent_key(
         attorney_id=current_attorney.id,
         key_hash=key_hash,
         key_prefix=key_prefix,
+        device_name=(payload.device_name or "").strip()[:255] or None,
     )
     db.add(row)
     db.commit()
@@ -540,7 +547,8 @@ def agent_key_from_login(request: Request, payload: AgentKeyLoginRequest, db: Se
     raw = "lt_" + secrets.token_urlsafe(24)
     key_hash = _hash_api_key(raw)
     key_prefix = _api_key_prefix(raw)
-    db.add(AgentApiKey(attorney_id=attorney.id, key_hash=key_hash, key_prefix=key_prefix))
+    device_name = (payload.device_name or "").strip()[:255] or None
+    db.add(AgentApiKey(attorney_id=attorney.id, key_hash=key_hash, key_prefix=key_prefix, device_name=device_name))
     db.commit()
     return {"api_key": raw}
 
@@ -550,17 +558,41 @@ def get_agent_key_status(
     current_attorney: Attorney = Depends(get_current_attorney),
     db: Session = Depends(get_db),
 ):
-    """Return whether user has an agent key, its masked prefix, and whether the
-    agent has ever actually sent an activity (real proof it's installed and
-    working, as opposed to just having generated a key)."""
+    """Return the status of this attorney's one desktop-agent connection:
+    whether a key exists, its masked prefix, when it was created, and when
+    the agent last actually sent something (derived from the most recent
+    agent-sourced activity - real proof of activity, not just a stored key).
+    Only one device can be connected at a time (agent_api_keys.attorney_id
+    is unique) - this reports on that single connection, not a list."""
     row = db.query(AgentApiKey).filter(AgentApiKey.attorney_id == current_attorney.id).first()
-    has_activity = db.query(Activity).filter(
+    last_activity = db.query(Activity).filter(
         Activity.attorney_id == current_attorney.id,
         Activity.source == "agent",
-    ).first() is not None
+    ).order_by(Activity.created_at.desc()).first()
+    last_activity_at = last_activity.created_at if last_activity else None
     if not row:
-        return {"has_key": False, "key_prefix": None, "has_activity": has_activity}
-    return {"has_key": True, "key_prefix": row.key_prefix, "has_activity": has_activity}
+        return {
+            "has_key": False, "key_prefix": None, "device_name": None, "created_at": None,
+            "last_activity_at": last_activity_at,
+            "current_activity_type": None, "current_activity_label": None, "current_activity_started_at": None,
+        }
+
+    # Only report "currently doing X" while the heartbeat is fresh (agent
+    # sends one roughly every 15s while active) - otherwise a closed or
+    # crashed agent would show a frozen, increasingly-wrong live status.
+    HEARTBEAT_FRESHNESS = timedelta(seconds=45)
+    is_fresh = row.last_heartbeat_at is not None and (datetime.utcnow() - row.last_heartbeat_at) < HEARTBEAT_FRESHNESS
+
+    return {
+        "has_key": True,
+        "key_prefix": row.key_prefix,
+        "device_name": row.device_name,
+        "created_at": row.created_at,
+        "last_activity_at": last_activity_at,
+        "current_activity_type": row.current_activity_type if is_fresh else None,
+        "current_activity_label": row.current_activity_label if is_fresh else None,
+        "current_activity_started_at": row.current_activity_started_at if is_fresh else None,
+    }
 
 
 # ============================================================================
@@ -1202,6 +1234,26 @@ def agent_create_activity(
     db.commit()
     db.refresh(db_activity)
     return db_activity
+
+@app.post("/api/agent/heartbeat")
+def agent_heartbeat(
+    payload: AgentHeartbeat,
+    attorney: Attorney = Depends(get_attorney_from_api_key),
+    db: Session = Depends(get_db),
+):
+    """Periodic 'here's what I'm doing right now' ping from the agent while
+    it's on a trackable window - lets the website show live status, separate
+    from the finalized Activity rows written on window switch. Auth via
+    X-API-Key, same as /api/agent/activities."""
+    row = db.query(AgentApiKey).filter(AgentApiKey.attorney_id == attorney.id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="No agent key found for this account")
+    row.current_activity_type = payload.activity_type
+    row.current_activity_label = payload.label[:500]
+    row.current_activity_started_at = payload.started_at
+    row.last_heartbeat_at = datetime.utcnow()
+    db.commit()
+    return {"ok": True}
 
 # ============================================================================
 # HEALTH CHECK (Public)

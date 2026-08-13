@@ -65,6 +65,39 @@ def send_activity(app_name: str, document_name: str, seconds: float, activity_ty
         return False
 
 
+def send_heartbeat(app_name: str, document_name: str, activity_type: str, elapsed_seconds: float) -> bool:
+    """
+    Tell the backend "here's what I'm doing right now" - lets the website
+    show live status. Separate from send_activity: this fires repeatedly
+    while still on the same window, well before MIN_SECONDS would ever
+    qualify it as a finalized Activity. Best-effort; failures are logged,
+    not retried (the next heartbeat a few seconds later supersedes it).
+    """
+    if not config.API_KEY:
+        return False
+
+    norm_type = _normalize_type(activity_type)
+    label = document_name if document_name and document_name != app_name else app_name
+    started_at = datetime.utcnow() - timedelta(seconds=elapsed_seconds)
+
+    payload = {
+        "activity_type": norm_type,
+        "label": label,
+        "started_at": started_at.isoformat() + "Z",
+    }
+    url = f"{config.API_URL.rstrip('/')}/api/agent/heartbeat"
+    headers = {"X-API-Key": config.API_KEY, "Content-Type": "application/json"}
+
+    try:
+        resp = requests.post(url, json=payload, headers=headers, timeout=8)
+        if not resp.ok:
+            LOG.debug("Heartbeat failed: status=%s body=%s", resp.status_code, resp.text)
+        return resp.ok
+    except requests.RequestException as e:
+        LOG.debug("Heartbeat network error (non-fatal): %s", e)
+        return False
+
+
 def fetch_tracking_enabled() -> bool | None:
     """
     GET /api/agent/settings (X-API-Key). Returns tracking_enabled (True/False) or None if request failed.

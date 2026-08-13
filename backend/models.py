@@ -129,4 +129,16 @@ class AgentApiKey(Base):
     attorney_id = Column(Integer, ForeignKey("attorneys.id"), nullable=False, unique=True)
     key_hash = Column(String(64), nullable=False)   # SHA-256 hex
     key_prefix = Column(String(20), nullable=False, unique=True)  # first chars for lookup
+    device_name = Column(String(255), nullable=True)  # hostname, sent by the agent at sign-in; null if key was created from the website
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+    # "What's happening right now" - set by periodic heartbeats from the
+    # agent while it's actively on a trackable window, separate from the
+    # finalized Activity rows (which only get written once you switch away).
+    # Nulled out in the API response (not the DB row) once last_heartbeat_at
+    # goes stale, so a crashed/closed agent doesn't show a frozen "currently
+    # tracking" forever.
+    current_activity_type = Column(String(50), nullable=True)
+    current_activity_label = Column(String(500), nullable=True)
+    current_activity_started_at = Column(TIMESTAMP, nullable=True)
+    last_heartbeat_at = Column(TIMESTAMP, nullable=True)

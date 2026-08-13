@@ -228,7 +228,16 @@ export async function testCaseRules(activityData: {
 }
 
 // Agent API key (for auto-tracking desktop agent)
-export async function getAgentKeyStatus(): Promise<{ has_key: boolean; key_prefix: string | null; has_activity: boolean }> {
+export async function getAgentKeyStatus(): Promise<{
+  has_key: boolean;
+  key_prefix: string | null;
+  device_name: string | null;
+  created_at: string | null;
+  last_activity_at: string | null;
+  current_activity_type: string | null;
+  current_activity_label: string | null;
+  current_activity_started_at: string | null;
+}> {
   const response = await fetch(`${API_BASE}/api/auth/agent-key`, {
     headers: getAuthHeaders()
   });

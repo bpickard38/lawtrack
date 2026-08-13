@@ -14,7 +14,7 @@ export default function Profile({ onBack }: { onBack: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [agentKeyStatus, setAgentKeyStatus] = useState<{ has_key: boolean; key_prefix: string | null } | null>(null);
+  const [agentKeyStatus, setAgentKeyStatus] = useState<{ has_key: boolean; key_prefix: string | null; device_name: string | null; created_at: string | null; last_activity_at: string | null } | null>(null);
   const [agentKeyJustCreated, setAgentKeyJustCreated] = useState<string | null>(null);
   const [agentKeyLoading, setAgentKeyLoading] = useState(false);
 
@@ -27,7 +27,7 @@ export default function Profile({ onBack }: { onBack: () => void }) {
     if (attorney) {
       getAgentKeyStatus()
         .then(setAgentKeyStatus)
-        .catch(() => setAgentKeyStatus({ has_key: false, key_prefix: null }));
+        .catch(() => setAgentKeyStatus({ has_key: false, key_prefix: null, device_name: null, created_at: null, last_activity_at: null }));
     } else {
       setAgentKeyStatus(null);
     }
@@ -82,7 +82,7 @@ export default function Profile({ onBack }: { onBack: () => void }) {
     try {
       const res = await createAgentKey();
       setAgentKeyJustCreated(res.api_key);
-      setAgentKeyStatus({ has_key: true, key_prefix: res.key_prefix });
+      setAgentKeyStatus({ has_key: true, key_prefix: res.key_prefix, device_name: null, created_at: new Date().toISOString(), last_activity_at: null });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create agent key');
     } finally {
@@ -97,7 +97,7 @@ export default function Profile({ onBack }: { onBack: () => void }) {
     try {
       await revokeAgentKey();
       setAgentKeyJustCreated(null);
-      setAgentKeyStatus({ has_key: false, key_prefix: null });
+      setAgentKeyStatus({ has_key: false, key_prefix: null, device_name: null, created_at: null, last_activity_at: null });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke agent key');
     } finally {
@@ -201,10 +201,57 @@ export default function Profile({ onBack }: { onBack: () => void }) {
                 </a>
                 {' '}(Windows)
               </p>
-              {agentKeyStatus?.has_key && (
-                <p style={{ color: '#6b7280', fontSize: 13, marginTop: 8 }}>
-                  API key: <code>{agentKeyStatus.key_prefix}…</code>
-                </p>
+              {agentKeyJustCreated && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                  <p style={{ fontSize: 13, marginBottom: 8 }}>
+                    New key created — copy it now, it won't be shown again:
+                  </p>
+                  <code style={{ fontSize: 13, wordBreak: 'break-all' }}>{agentKeyJustCreated}</code>
+                  <button type="button" onClick={copyAgentKey} style={{ marginLeft: 8, fontSize: 13 }}>
+                    Copy
+                  </button>
+                </div>
+              )}
+
+              {/* Only one device can be connected at a time (a new sign-in replaces
+                  the old key), so this is a single status card, not a device list. */}
+              {agentKeyStatus?.has_key ? (
+                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
+                  <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+                    ● {agentKeyStatus.device_name || 'Unnamed device'} connected{' '}
+                    <code style={{ fontSize: 12, fontWeight: 400 }}>({agentKeyStatus.key_prefix}…)</code>
+                  </p>
+                  <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
+                    Connected since {agentKeyStatus.created_at ? new Date(agentKeyStatus.created_at).toLocaleString() : 'unknown'}
+                  </p>
+                  <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
+                    Last synced: {agentKeyStatus.last_activity_at
+                      ? new Date(agentKeyStatus.last_activity_at).toLocaleString()
+                      : "never — hasn't sent any activity yet"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleRevokeAgentKey}
+                    disabled={agentKeyLoading}
+                    style={{ marginTop: 10, color: '#dc2626', fontSize: 13 }}
+                  >
+                    Disconnect this device
+                  </button>
+                </div>
+              ) : (
+                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
+                  <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
+                    No device connected yet. Signing in from the desktop app connects it automatically — or
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCreateAgentKey}
+                    disabled={agentKeyLoading}
+                    style={{ marginTop: 8, fontSize: 13 }}
+                  >
+                    Generate an API key manually
+                  </button>
+                </div>
               )}
             </>
           )}

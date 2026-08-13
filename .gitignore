@@ -32,3 +32,6 @@ build/
 .idea/
 
 .vercel
+
+# Personal local dev helper scripts
+uninstall-agent-local.sh

@@ -6,7 +6,7 @@ import {
   updateActivity,
   deleteActivity,
 } from '../api';
-import OnboardingChecklist from './OnboardingChecklist';
+import QuickActions from './QuickActions';
 
 const SLOT_MINUTES = 30;
 const GRID_START_HOUR = 6;
@@ -20,7 +20,6 @@ interface TimesheetProps {
   onCaseAdded: () => void;
   onNavigateToRules?: () => void;
   onNavigateToReports?: () => void;
-  installAppUrl?: string;
 }
 
 type AddActivityPayload = { day: Date; slotIndex: number } | null;
@@ -53,7 +52,7 @@ function parseUTC(s: string): Date {
 }
 
 
-export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateToRules, onNavigateToReports, installAppUrl }: TimesheetProps) {
+export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateToRules, onNavigateToReports }: TimesheetProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,14 +109,6 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
   useEffect(() => {
     if (!loading) hasInitialized.current = true;
   }, [loading]);
-
-  // Mark "capture first activity" complete for onboarding (persisted so it doesn't flip when navigating weeks)
-  useEffect(() => {
-    if (loading || activities.length === 0) return;
-    try {
-      localStorage.setItem('lawtrack_hasFirstActivity', 'true');
-    } catch {}
-  }, [loading, activities.length]);
 
   // Update current time every minute for the red "now" bar
   useEffect(() => {
@@ -256,6 +247,14 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
     setEditActivity(null);
   };
 
+  const handleQuickLogActivity = () => {
+    const nowDate = new Date();
+    const minutesSinceStart = (nowDate.getHours() - GRID_START_HOUR) * 60 + nowDate.getMinutes();
+    const maxSlot = (GRID_END_HOUR - GRID_START_HOUR) * SLOTS_PER_HOUR - 1;
+    const slotIndex = Math.min(Math.max(Math.floor(minutesSinceStart / SLOT_MINUTES), 0), maxSlot);
+    handleCellClick(nowDate, slotIndex);
+  };
+
   const handleBlockPointerDown = (e: React.PointerEvent, a: Activity) => {
     e.stopPropagation();
     setDraggingActivity(a);
@@ -289,13 +288,10 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
   return (
     <div className="timesheet-calendar">
       {onNavigateToReports && (
-        <OnboardingChecklist
-          casesCount={cases.length}
-          hasFirstActivity={activities.length > 0}
-          installAppUrl={installAppUrl}
-          onNavigateToReports={onNavigateToReports}
-          onNavigateToRules={onNavigateToRules ?? (() => {})}
-          onDismiss={() => {}}
+        <QuickActions
+          onNewCase={onNavigateToReports}
+          onNewRule={onNavigateToRules ?? (() => {})}
+          onLogActivity={handleQuickLogActivity}
         />
       )}
       {loading && (
@@ -303,25 +299,8 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
       )}
       {!loading && activities.length === 0 && !hasInitialized.current && (
         <div className="ts-empty-state">
-          <h3 className="ts-empty-title">No activity yet</h3>
-          <p className="ts-empty-desc">Get started in a few steps:</p>
-          <ul className="ts-empty-steps">
-            {installAppUrl && (
-              <li>
-                <a href={installAppUrl} target="_blank" rel="noopener noreferrer" className="ts-empty-link">Install the desktop agent</a>
-                <span className="ts-empty-step-desc"> — tracks documents, email, and calls in the background</span>
-              </li>
-            )}
-            {onNavigateToRules && (
-              <li>
-                <button type="button" className="ts-empty-link ts-empty-btn" onClick={onNavigateToRules}>Create a rule</button>
-                <span className="ts-empty-step-desc"> — auto-assign time to cases by pattern</span>
-              </li>
-            )}
-            <li>
-              <span className="ts-empty-step-desc">Click any time slot below to add an entry manually</span>
-            </li>
-          </ul>
+          <h3 className="ts-empty-title">No activity this week</h3>
+          <p className="ts-empty-desc">Click any time slot below to add an entry, or use the quick actions above.</p>
         </div>
       )}
       {!loading && (

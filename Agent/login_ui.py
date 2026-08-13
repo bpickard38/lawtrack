@@ -5,6 +5,7 @@ User enters LawTrack email and password; we get an API key and save it to .env.
 import logging
 import os
 import queue
+import socket
 import subprocess
 import sys
 import threading
@@ -59,6 +60,15 @@ def _write_env_file(api_key: str) -> bool:
     return False
 
 
+def _device_name() -> str:
+    """Best-effort human-readable name for this machine, shown in the web
+    app's Profile page so a user can tell which computer is connected."""
+    try:
+        return socket.gethostname()
+    except Exception:
+        return "Unknown device"
+
+
 def _login_request(email: str, password: str) -> tuple[str | None, str | None]:
     """
     POST to agent-key/from-login; returns (api_key, error_message).
@@ -69,7 +79,7 @@ def _login_request(email: str, password: str) -> tuple[str | None, str | None]:
     try:
         r = requests.post(
             url,
-            json={"email": email, "password": password},
+            json={"email": email, "password": password, "device_name": _device_name()},
             headers={"Content-Type": "application/json"},
             timeout=15,
         )
@@ -108,7 +118,8 @@ def _exchange_token_for_agent_key(jwt_token: str) -> tuple[str | None, str | Non
     try:
         r = requests.post(
             f"{API_URL.rstrip('/')}/api/auth/agent-key",
-            headers={"Authorization": f"Bearer {jwt_token}"},
+            json={"device_name": _device_name()},
+            headers={"Authorization": f"Bearer {jwt_token}", "Content-Type": "application/json"},
             timeout=15,
         )
         if not r.ok:

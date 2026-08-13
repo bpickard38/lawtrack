@@ -10,11 +10,9 @@ import Timesheet from './components/Timesheet';
 import CaseRules from './components/CaseRules';
 import Privacy from './components/Privacy';
 import LandingPage from './components/LandingPage';
+import AgentStatusBadge from './components/AgentStatusBadge';
+import ConnectionBanner from './components/ConnectionBanner';
 import './styles.css';
-
-const AGENT_INSTALLER_URL =
-  (import.meta.env.VITE_AGENT_INSTALLER_URL as string) ||
-  'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe';
 
 type View = 'timesheet' | 'reports' | 'rules' | 'profile' | 'privacy';
 type PublicView = 'home' | 'auth';
@@ -197,6 +195,7 @@ function App() {
 
   return (
     <div className="app">
+      <ConnectionBanner />
       <header className="app-header">
         <div className="header-content">
           <button className="app-logo" type="button" onClick={() => setShowHomepage(true)}>
@@ -230,6 +229,10 @@ function App() {
               Privacy
             </button>
           </nav>
+
+          {attorney && (
+            <AgentStatusBadge onClick={() => setCurrentView('profile')} />
+          )}
 
           <div className="attorney-info">
             <button
@@ -285,7 +288,6 @@ function App() {
               onCaseAdded={handleCaseAdded}
               onNavigateToRules={() => setCurrentView('rules')}
               onNavigateToReports={() => setCurrentView('reports')}
-              installAppUrl={AGENT_INSTALLER_URL}
             />
           </div>
         ) : currentView === 'rules' ? (

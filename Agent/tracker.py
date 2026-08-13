@@ -118,10 +118,19 @@ def track_activity(
     stop_event: Optional[threading.Event] = None,
     pause_event: Optional[threading.Event] = None,
     server_pause_event: Optional[threading.Event] = None,
+    on_heartbeat: Optional[Callable[[str, str, str, float], None]] = None,
+    heartbeat_interval: float = 15.0,
 ) -> None:
     """
     Poll the active window and call on_activity_finished(app_name, document_name, seconds)
     when the foreground application changes and the elapsed time >= MIN_SECONDS.
+
+    While still on the *same* window, also calls
+    on_heartbeat(app_name, document_name, window_title, elapsed_seconds) roughly
+    every heartbeat_interval seconds - this is what lets the website show
+    "what's happening right now", independent of MIN_SECONDS (a heartbeat
+    can fire well before a window has been open long enough to be finalized
+    as an Activity).
 
     The function runs indefinitely until interrupted (KeyboardInterrupt) or stop_event is set.
     When pause_event or server_pause_event is set, tracking is paused (no reporting).
@@ -129,6 +138,7 @@ def track_activity(
     current_pid = os.getpid()
     last_app: Optional[Tuple[str, str]] = None
     start_time = time.time()
+    last_heartbeat_time = 0.0
 
     LOG.info("Starting tracker (min seconds = %s)", MIN_SECONDS)
 
@@ -183,6 +193,19 @@ def track_activity(
                     # update trackers
                     last_app = app_data
                     start_time = now
+                    last_heartbeat_time = 0.0  # fire a heartbeat for the new window right away
+
+                elif on_heartbeat and app_data and last_app:
+                    now = time.time()
+                    if now - last_heartbeat_time >= heartbeat_interval:
+                        process_name, window_title = last_app
+                        document_name = extract_filename_from_title(window_title, process_name)
+                        elapsed = now - start_time
+                        try:
+                            on_heartbeat(process_name, document_name, window_title, elapsed)
+                        except Exception:
+                            LOG.exception("Error in on_heartbeat callback")
+                        last_heartbeat_time = now
 
                 # Sleep in small steps so we can check stop_event
                 for _ in range(10):

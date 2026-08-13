@@ -63,6 +63,20 @@ class AgentKeyLoginRequest(BaseModel):
     """Email + password for desktop agent to obtain API key (no key copy needed)."""
     email: EmailStr
     password: str
+    device_name: Optional[str] = None
+
+class AgentKeyCreateRequest(BaseModel):
+    """Optional body for manually (re)creating an agent key. device_name is
+    only ever populated when the agent itself is the caller."""
+    device_name: Optional[str] = None
+
+class AgentHeartbeat(BaseModel):
+    """Sent periodically by the agent while it's actively on a trackable
+    window - lets the website show 'what's happening right now', separate
+    from the finalized Activity rows that only get written on window switch."""
+    activity_type: str
+    label: str
+    started_at: datetime
 
 # ============================================================================
 # FIRM SCHEMAS
