@@ -32,9 +32,7 @@ body {
 
 /* Header */
 .app-header {
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #ffffff;
   border-bottom: 1px solid #DCDCDC;
   padding: 0;
   position: sticky;
@@ -87,19 +85,6 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
-/* Subtle hero gradient background stripe */
-.lp::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 600px;
-  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(17, 24, 39, 0.05) 0%, rgba(255,255,255,0) 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
 /* Full-width clean navbar */
 .lp-topbar {
   display: flex;
@@ -107,9 +92,7 @@ body {
   padding: 0 48px;
   height: 66px;
   border-bottom: 1px solid #DCDCDC;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #ffffff;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -215,40 +198,37 @@ body {
 }
 
 .btn-outline {
-  background: linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 100%);
+  background: #ffffff;
   color: #111111;
   border: 1px solid #C8C8C8;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
-  transition: all 0.15s;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.1);
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .btn-outline:hover {
-  background: linear-gradient(180deg, #F8F8F8 0%, #E8E8E8 100%);
-  transform: translateY(-1px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 12px rgba(0,0,0,0.14);
+  background: #F4F4F4;
+  border-color: #AAAAAA;
 }
 
 .lp-signin-btn {
-  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
+  background: #111111;
   color: white;
-  border: 1px solid #3A3A3A;
+  border: 1px solid #111111;
   padding: 7px 16px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
   font-family: inherit;
-  transition: all 0.15s;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: background 0.15s;
 }
 
 .lp-signin-btn:hover {
-  background: linear-gradient(180deg, #383838 0%, #1C1C1C 100%);
+  background: #2A2A2A;
 }
 
 .lp-cta-row {
@@ -284,8 +264,8 @@ body {
   align-items: center;
   gap: 6px;
   padding: 5px 14px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #F0F0F0 0%, #E8E8E8 100%);
+  border-radius: 4px;
+  background: #F0F0F0;
   border: 1px solid #C8C8C8;
   font-size: 11px;
   font-weight: 700;
@@ -293,7 +273,6 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-bottom: 28px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .lp-hero-title {
@@ -331,41 +310,36 @@ body {
 .lp-cta-primary {
   padding: 11px 22px;
   font-size: 15px;
-  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
+  background: #111111;
   color: white;
-  border: 1px solid #3A3A3A;
-  border-radius: 8px;
+  border: 1px solid #111111;
+  border-radius: 6px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 8px rgba(0,0,0,0.2);
+  transition: background 0.15s;
 }
 
 .lp-cta-primary:hover {
-  background: linear-gradient(180deg, #383838 0%, #1C1C1C 100%);
-  transform: translateY(-1px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px rgba(0,0,0,0.25);
+  background: #2A2A2A;
 }
 
 .lp-cta-secondary {
   padding: 10px 20px;
   font-size: 15px;
-  background: linear-gradient(180deg, #FFFFFF 0%, #F0F0F0 100%);
+  background: #ffffff;
   color: #111111;
   border: 1px solid #C8C8C8;
-  border-radius: 8px;
+  border-radius: 6px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.1);
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .lp-cta-secondary:hover {
-  background: linear-gradient(180deg, #F8F8F8 0%, #E8E8E8 100%);
-  transform: translateY(-1px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 12px rgba(0,0,0,0.14);
+  background: #F4F4F4;
+  border-color: #AAAAAA;
 }
 
 .lp-hero-features {
@@ -380,19 +354,15 @@ body {
   font-size: 13px;
   color: #6B6B6B;
   font-weight: 500;
-  border: 1px solid #E8E8E8;
-  border-radius: 999px;
-  padding: 4px 12px;
-  background: white;
   padding: 5px 12px;
   background: #F6F6F6;
   border: 1px solid #DCDCDC;
-  border-radius: 999px;
+  border-radius: 4px;
 }
 
 .lp-pill {
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: #F4F4F4;
   border: 1px solid #DCDCDC;
   font-weight: 500;
@@ -647,7 +617,7 @@ body {
   flex-shrink: 0;
   width: 22px;
   height: 22px;
-  background: linear-gradient(135deg, #3A3A3A 0%, #111111 100%);
+  background: #111111;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -656,7 +626,6 @@ body {
   font-size: 11px;
   font-weight: 700;
   margin-top: 1px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 /* Integrations section */
@@ -750,10 +719,9 @@ body {
   flex-direction: row;
   gap: 48px;
   align-items: center;
-  background: linear-gradient(135deg, #1C1C1C 0%, #111111 60%, #0D0D0D 100%);
+  background: #111111;
   border: 1px solid #2A2A2A;
   color: white;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.18);
 }
 
 .lp-bento-content {
@@ -1224,7 +1192,7 @@ body {
   font-size: 10px;
   font-weight: 700;
   background: #F4F4F4;
-  color: #3730a3;
+  color: #3A3A3A;
   padding: 2px 6px;
   border-radius: 4px;
   flex-shrink: 0;
@@ -1388,7 +1356,7 @@ body {
   border: none;
   background: none;
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: 6px;
   font-size: 13px;
   color: #6B6B6B;
   cursor: pointer;
@@ -1449,7 +1417,7 @@ body {
   border: 1px solid #DCDCDC;
   background: white;
   padding: 8px 12px;
-  border-radius: 999px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
@@ -1605,12 +1573,13 @@ body {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  border: none;
-  border-radius: 9999px;
+  border: 1px solid #DCDCDC;
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
@@ -1650,7 +1619,7 @@ body {
 
 .agent-status-start {
   background: #F4F4F4;
-  color: #3730a3;
+  color: #3A3A3A;
 }
 
 .agent-status-start .agent-status-dot {
@@ -1722,7 +1691,7 @@ body {
 }
 
 .agent-quit-gotit-btn:hover {
-  background: #4338ca;
+  background: #2A2A2A;
 }
 
 /* Main Content */
@@ -2407,7 +2376,10 @@ body {
 }
 
 .breakdown-icon {
-  display: none;
+  display: flex;
+  align-items: center;
+  color: #6B6B6B;
+  flex-shrink: 0;
 }
 
 .breakdown-label {
@@ -2680,40 +2652,38 @@ body {
 
 .add-attorney-btn,
 .add-case-btn {
-  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
+  background: #111111;
   color: white;
-  border: 1px solid #3A3A3A;
+  border: 1px solid #111111;
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.18);
-  transition: opacity 0.15s;
+  transition: background 0.15s;
 }
 
 .add-attorney-btn:hover,
 .add-case-btn:hover {
-  opacity: 0.88;
+  background: #2A2A2A;
 }
 
 .reports-export-btn {
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
+  background: #111111;
   color: white;
-  border: 1px solid #3A3A3A;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.18);
-  transition: opacity 0.15s;
+  border: 1px solid #111111;
+  transition: background 0.15s;
 }
 
 .reports-export-btn:hover {
-  opacity: 0.88;
+  background: #2A2A2A;
 }
 
 .attorney-actions {
@@ -3142,21 +3112,20 @@ body {
 .auth-submit {
   width: 100%;
   padding: 12px 20px;
-  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
+  background: #111111;
   color: white;
-  border: 1px solid #3A3A3A;
-  border-radius: 8px;
+  border: 1px solid #111111;
+  border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: opacity 0.15s;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.18);
+  transition: background 0.15s;
   margin-top: 4px;
 }
 
 .auth-submit:hover:not(:disabled) {
-  opacity: 0.88;
+  background: #2A2A2A;
 }
 
 .auth-submit:disabled {
@@ -4306,20 +4275,19 @@ body {
 
 .ts-btn-save {
   padding: 10px 18px;
-  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
+  background: #111111;
   color: white;
-  border: 1px solid #3A3A3A;
-  border-radius: 8px;
+  border: 1px solid #111111;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
   font-family: inherit;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.18);
-  transition: opacity 0.15s;
+  transition: background 0.15s;
 }
 
 .ts-btn-save:hover:not(:disabled) {
-  opacity: 0.88;
+  background: #2A2A2A;
 }
 
 .ts-btn-save:disabled {
@@ -4371,20 +4339,19 @@ body {
 
 .add-rule-btn {
   padding: 10px 20px;
-  background: linear-gradient(180deg, #2A2A2A 0%, #111111 100%);
+  background: #111111;
   color: white;
-  border: 1px solid #3A3A3A;
-  border-radius: 8px;
+  border: 1px solid #111111;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
   font-family: inherit;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 6px rgba(0,0,0,0.18);
-  transition: opacity 0.15s;
+  transition: background 0.15s;
 }
 
 .add-rule-btn:hover {
-  opacity: 0.88;
+  background: #2A2A2A;
 }
 
 .rules-test {

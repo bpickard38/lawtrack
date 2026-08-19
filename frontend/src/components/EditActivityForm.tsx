@@ -95,9 +95,9 @@ export default function EditActivityForm({ activity, cases, onClose, onSaved }: 
           <div className="form-group">
             <label>Activity Type</label>
             <select value={type} onChange={(e) => setType(e.target.value as ActivityType)} required>
-              <option value="document">📄 Document</option>
-              <option value="email">📧 Email</option>
-              <option value="call">📞 Phone Call</option>
+              <option value="document">Document</option>
+              <option value="email">Email</option>
+              <option value="call">Phone Call</option>
             </select>
           </div>
 

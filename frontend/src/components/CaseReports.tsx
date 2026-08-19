@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import { FileText, Mail, Phone, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Case, CaseTimeSummary, Activity, ActivityType } from '../types';
 import {
   fetchCaseTimeSummary,
@@ -508,7 +510,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
             <div className="time-breakdown">
               <BreakdownSection
                 type="document"
-                icon=""
+                icon={<FileText size={15} />}
                 label="Documents"
                 minutes={summary.document_minutes}
                 totalMinutes={summary.total_minutes}
@@ -523,7 +525,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               />
               <BreakdownSection
                 type="email"
-                icon=""
+                icon={<Mail size={15} />}
                 label="Emails"
                 minutes={summary.email_minutes}
                 totalMinutes={summary.total_minutes}
@@ -538,7 +540,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               />
               <BreakdownSection
                 type="call"
-                icon=""
+                icon={<Phone size={15} />}
                 label="Calls"
                 minutes={summary.call_minutes}
                 totalMinutes={summary.total_minutes}
@@ -588,7 +590,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
           <div className="time-breakdown">
             <BreakdownSection
               type="document"
-              icon="📄"
+              icon={<FileText size={15} />}
               label="Documents"
               minutes={unassignedSummary.document_minutes}
               totalMinutes={unassignedSummary.total_minutes}
@@ -615,7 +617,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
             />
             <BreakdownSection
               type="email"
-              icon="📧"
+              icon={<Mail size={15} />}
               label="Emails"
               minutes={unassignedSummary.email_minutes}
               totalMinutes={unassignedSummary.total_minutes}
@@ -642,7 +644,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
             />
             <BreakdownSection
               type="call"
-              icon="📞"
+              icon={<Phone size={15} />}
               label="Calls"
               minutes={unassignedSummary.call_minutes}
               totalMinutes={unassignedSummary.total_minutes}
@@ -801,7 +803,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
 
 interface BreakdownSectionProps {
   type: 'document' | 'email' | 'call';
-  icon: string;
+  icon: ReactNode;
   label: string;
   minutes: number;
   totalMinutes: number;
@@ -869,7 +871,9 @@ function BreakdownSection({
         <span className="breakdown-value">
           {showCount ? totalCount : `${(minutes / 60).toFixed(1)}h`}
         </span>
-        <span className="breakdown-chevron">{expanded ? '▾' : '▸'}</span>
+        <span className="breakdown-chevron">
+          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </span>
       </div>
       {!showCount && (
         <>

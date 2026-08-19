@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { Check } from 'lucide-react';
 
 type Tab = 'home' | 'pricing' | 'contact';
 
@@ -398,7 +399,7 @@ export default function LandingPage({
                   <ul className="lp-pricing-features">
                     {p.features.map((f) => (
                       <li key={f}>
-                        <span className="lp-pricing-check">✓</span>
+                        <span className="lp-pricing-check"><Check size={14} /></span>
                         <span>{f}</span>
                       </li>
                     ))}
