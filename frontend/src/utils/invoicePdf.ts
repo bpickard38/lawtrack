@@ -10,7 +10,7 @@ import type { Case, Activity } from '../types';
 const FIRM_NAME_PLACEHOLDER = '[Firm Name]';
 
 /** Map activity to invoice line description (template only, no content). */
-function getNarrativeDescription(activity: Activity): string {
+export function getNarrativeDescription(activity: Activity): string {
   const type = activity.type;
   const docName = (activity.document_name || '').toLowerCase();
   const desc = (activity.description || '').toLowerCase();

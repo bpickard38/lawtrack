@@ -10,23 +10,18 @@ import {
   createCase,
 } from '../api';
 import { buildAndDownloadInvoicePdf } from '../utils/invoicePdf';
-
-function toYMD(d: Date) {
-  const y = d.getFullYear();
-  const m = (d.getMonth() + 1).toString().padStart(2, '0');
-  const day = d.getDate().toString().padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+import { parseUTC, toYMD } from '../utils/timesheetDates';
 
 interface CaseReportsProps {
   attorneyId: number;
   cases: Case[];
   onCaseAdded?: () => void;
+  initialShowAddCase?: boolean;
 }
 
 type ExpandKey = { caseId: number; type: 'document' | 'email' | 'call' };
 
-export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseReportsProps) {
+export default function CaseReports({ attorneyId, cases, onCaseAdded, initialShowAddCase }: CaseReportsProps) {
   const [summaries, setSummaries] = useState<Record<number, CaseTimeSummary>>({});
   const [unassignedSummary, setUnassignedSummary] = useState<CaseTimeSummary>({
     total_minutes: 0,
@@ -45,7 +40,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
   const [expandedUnassigned, setExpandedUnassigned] = useState<'document' | 'email' | 'call' | null>(null);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Activity | null>(null);
-  const [showAddCase, setShowAddCase] = useState(false);
+  const [showAddCase, setShowAddCase] = useState(!!initialShowAddCase);
   const [newCaseName, setNewCaseName] = useState('');
   const [newClientName, setNewClientName] = useState('');
   const [creatingCase, setCreatingCase] = useState(false);
@@ -53,6 +48,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
   const [exportCaseId, setExportCaseId] = useState<number | ''>('');
   const [exportStartDate, setExportStartDate] = useState('');
   const [exportEndDate, setExportEndDate] = useState('');
+  const [exportOnlyApproved, setExportOnlyApproved] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
 
   const loadSummaries = useCallback(async () => {
@@ -82,9 +78,9 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
       setUnassignedSummary({
         total_minutes: totalMinutes,
         total_hours: totalMinutes / 60,
-        document_minutes,
-        email_minutes,
-        call_minutes,
+        document_minutes: documentMinutes,
+        email_minutes: emailMinutes,
+        call_minutes: callMinutes,
         activity_count: unassigned.length,
       });
     } catch (error) {
@@ -120,22 +116,78 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
     }
   }
 
-  async function handleExportInvoicePdf() {
+  async function fetchExportActivities(): Promise<{ case: Case; activities: Activity[] } | null> {
     if (exportCaseId === '' || !exportStartDate || !exportEndDate) {
       alert('Please select a case and date range.');
-      return;
+      return null;
     }
     const c = cases.find(x => x.id === exportCaseId);
-    if (!c) return;
+    if (!c) return null;
+    const activities = await fetchActivities({
+      attorney_id: attorneyId,
+      case_id: exportCaseId as number,
+      start_date: exportStartDate,
+      end_date: exportEndDate,
+    });
+    const filtered = exportOnlyApproved ? activities.filter(a => a.status === 'approved') : activities;
+    return { case: c, activities: filtered };
+  }
+
+  async function handleExportInvoicePdf() {
     setExportLoading(true);
     try {
-      const activities = await fetchActivities({
-        attorney_id: attorneyId,
-        case_id: exportCaseId as number,
-        start_date: exportStartDate,
-        end_date: exportEndDate,
-      });
-      buildAndDownloadInvoicePdf(c, activities, exportStartDate, exportEndDate);
+      const result = await fetchExportActivities();
+      if (!result) return;
+      if (result.activities.length === 0) {
+        alert(exportOnlyApproved ? 'No approved entries in that range.' : 'No entries in that range.');
+        return;
+      }
+      buildAndDownloadInvoicePdf(result.case, result.activities, exportStartDate, exportEndDate);
+      setShowExportModal(false);
+    } catch (err) {
+      alert('Failed to load activities: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  function activitiesToCsv(activities: Activity[]): string {
+    const header = ['Date', 'Start', 'End', 'Duration (min)', 'Type', 'Description', 'Billable', 'Status'];
+    const rows = activities.map(a => {
+      const start = new Date(a.start_time);
+      const end = new Date(a.end_time);
+      const description = (a.narrative || getActivityName(a)).replace(/"/g, '""');
+      return [
+        toYMD(start),
+        start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        String(a.duration_minutes),
+        a.type,
+        `"${description}"`,
+        a.is_billable ? 'Yes' : 'No',
+        a.status,
+      ].join(',');
+    });
+    return [header.join(','), ...rows].join('\n');
+  }
+
+  async function handleExportCsv() {
+    setExportLoading(true);
+    try {
+      const result = await fetchExportActivities();
+      if (!result) return;
+      if (result.activities.length === 0) {
+        alert(exportOnlyApproved ? 'No approved entries in that range.' : 'No entries in that range.');
+        return;
+      }
+      const csv = activitiesToCsv(result.activities);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `time-${result.case.name.replace(/[^a-zA-Z0-9]/g, '-')}-${exportStartDate}-${exportEndDate}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
       setShowExportModal(false);
     } catch (err) {
       alert('Failed to load activities: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -472,7 +524,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
           </form>
           )}
           <button type="button" onClick={() => setShowExportModal(true)} className="btn-secondary reports-export-btn">
-            Export Invoice PDF
+            Export time
           </button>
         </div>
       </div>
@@ -696,17 +748,17 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
       {showExportModal && (
         <div className="agent-quit-modal-overlay" onClick={() => setShowExportModal(false)} role="presentation">
           <div className="agent-quit-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="export-invoice-title">
-            <h3 id="export-invoice-title">Export Invoice PDF</h3>
-            <p style={{ marginBottom: 16 }}>Select a case and date range. The PDF will list activities with template descriptions only (no content).</p>
+            <h3 id="export-invoice-title">Export time</h3>
+            <p style={{ marginBottom: 16 }}>Select a matter and date range. Descriptions are template-based only — no document or email content.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span>Case</span>
+                <span>Matter</span>
                 <select
                   value={exportCaseId}
                   onChange={(e) => setExportCaseId(e.target.value === '' ? '' : Number(e.target.value))}
                   style={{ padding: '8px 12px', border: '1px solid #d4e0ed', borderRadius: 8 }}
                 >
-                  <option value="">Select case</option>
+                  <option value="">Select matter</option>
                   {cases.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}{c.client_name ? ` (${c.client_name})` : ''}</option>
                   ))}
@@ -730,10 +782,17 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                   style={{ padding: '8px 12px', border: '1px solid #d4e0ed', borderRadius: 8 }}
                 />
               </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="checkbox" checked={exportOnlyApproved} onChange={(e) => setExportOnlyApproved(e.target.checked)} />
+                <span>Only include approved entries</span>
+              </label>
             </div>
             <div className="agent-quit-modal-actions">
               <button type="button" className="agent-quit-done-btn" onClick={() => setShowExportModal(false)}>
                 Cancel
+              </button>
+              <button type="button" className="btn-outline" onClick={handleExportCsv} disabled={exportLoading}>
+                {exportLoading ? 'Loading…' : 'Download CSV'}
               </button>
               <button type="button" className="agent-quit-gotit-btn" onClick={handleExportInvoicePdf} disabled={exportLoading}>
                 {exportLoading ? 'Loading…' : 'Download PDF'}
@@ -893,8 +952,8 @@ function BreakdownSection({
           ) : (
             <ul className="breakdown-activity-list">
               {activities.map((a) => {
-                const start = new Date(a.start_time);
-                const end = new Date(a.end_time);
+                const start = parseUTC(a.start_time);
+                const end = parseUTC(a.end_time);
                 return (
                   <li key={a.id} className="breakdown-activity-item">
                     <span className="ts-type-badge">{getActivityIcon(a.type)}</span>
@@ -951,13 +1010,13 @@ interface ActivityEditModalProps {
 
 function ActivityEditModal({ activity, cases, onClose, onSaved, onDeleted }: ActivityEditModalProps) {
   const [type, setType] = useState<ActivityType>(activity.type);
-  const [startDate, setStartDate] = useState(() => toYMD(new Date(activity.start_time)));
+  const [startDate, setStartDate] = useState(() => toYMD(parseUTC(activity.start_time)));
   const [startTime, setStartTime] = useState(() => {
-    const s = new Date(activity.start_time);
+    const s = parseUTC(activity.start_time);
     return `${s.getHours().toString().padStart(2, '0')}:${s.getMinutes().toString().padStart(2, '0')}`;
   });
   const [endTime, setEndTime] = useState(() => {
-    const e = new Date(activity.end_time);
+    const e = parseUTC(activity.end_time);
     return `${e.getHours().toString().padStart(2, '0')}:${e.getMinutes().toString().padStart(2, '0')}`;
   });
   const [name, setName] = useState(
@@ -1236,8 +1295,8 @@ function UnassignedActivityItem({
   getActivityIcon,
 }: UnassignedActivityItemProps) {
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
-  const start = new Date(activity.start_time);
-  const end = new Date(activity.end_time);
+  const start = parseUTC(activity.start_time);
+  const end = parseUTC(activity.end_time);
 
   return (
     <li className="breakdown-activity-item">

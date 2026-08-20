@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -23,12 +23,12 @@ from models import Base, User, Attorney, Case, Activity, Firm, UserRole, CaseRul
 from schemas import (
     UserCreate, UserLogin, UserResponse, Token, UserUpdate, PasswordChange, UserUpdateResponse,
     RegisterResponse, AgentKeyLoginRequest, AgentKeyCreateRequest, AgentHeartbeat,
-    AttorneyCreate, AttorneyResponse,
-    SettingsResponse, TrackingSettingUpdate,
-    CaseCreate, CaseUpdate, CaseResponse,
+    AttorneyCreate, AttorneyResponse, AttorneyUpdate,
+    SettingsResponse, TrackingSettingUpdate, ReminderSettingUpdate, ExcludedKeywordsUpdate,
+    CaseCreate, CaseUpdate, CaseResponse, CaseImportRequest, CaseImportResult,
     ActivityCreate, ActivityUpdate, ActivityResponse, AgentActivityCreate,
     CaseTimeSummary, ActivityType,
-    BulkAssignRequest, MergeActivitiesRequest, SplitActivityRequest,
+    BulkAssignRequest, BulkApproveRequest, MergeActivitiesRequest, SplitActivityRequest,
     CaseRuleCreate, CaseRuleUpdate, CaseRuleResponse
 )
 from auth_utils import (
@@ -67,6 +67,9 @@ def _ensure_schema() -> None:
 
             conn.execute(text("ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
             conn.execute(text("ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS tracking_enabled BOOLEAN DEFAULT TRUE;"))
+            conn.execute(text("ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS reminder_time VARCHAR(5);"))
+            conn.execute(text("ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE;"))
+            conn.execute(text("ALTER TABLE attorneys ADD COLUMN IF NOT EXISTS excluded_keywords TEXT;"))
             conn.execute(text("ALTER TABLE cases ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
             conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS firm_id INTEGER REFERENCES firms(id);"))
 
@@ -74,6 +77,7 @@ def _ensure_schema() -> None:
             conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS is_billable BOOLEAN DEFAULT TRUE;"))
             conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS narrative TEXT;"))
             conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'captured';"))
+            conn.execute(text("ALTER TABLE activities ADD COLUMN IF NOT EXISTS confidence VARCHAR(20);"))
 
             # Case rules table for auto-assignment
             conn.execute(
@@ -480,6 +484,20 @@ def get_my_attorney(attorney: Attorney = Depends(get_current_attorney)):
     """Get current user's attorney profile"""
     return attorney
 
+@app.patch("/api/auth/attorney", response_model=AttorneyResponse)
+def update_my_attorney(
+    update: AttorneyUpdate,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db),
+):
+    """Update current user's attorney profile (currently: billable_rate)."""
+    for key, value in update.dict(exclude_unset=True).items():
+        setattr(current_attorney, key, value)
+    db.add(current_attorney)
+    db.commit()
+    db.refresh(current_attorney)
+    return current_attorney
+
 @app.post("/api/auth/agent-key")
 def create_agent_key(
     payload: AgentKeyCreateRequest = AgentKeyCreateRequest(),
@@ -599,10 +617,20 @@ def get_agent_key_status(
 # SETTINGS (JWT-protected for web; agent uses /api/agent/settings with API key)
 # ============================================================================
 
+def _settings_response(attorney: Attorney) -> SettingsResponse:
+    return SettingsResponse(
+        tracking_enabled=attorney.tracking_enabled,
+        billable_rate=float(attorney.billable_rate) if attorney.billable_rate is not None else 0.0,
+        reminder_time=attorney.reminder_time,
+        excluded_keywords=attorney.excluded_keywords,
+        onboarding_completed=bool(attorney.onboarding_completed),
+    )
+
+
 @app.get("/api/settings", response_model=SettingsResponse)
 def get_settings(current_attorney: Attorney = Depends(get_current_attorney)):
-    """Get current user's settings (e.g. tracking_enabled). Auth: Bearer JWT."""
-    return SettingsResponse(tracking_enabled=current_attorney.tracking_enabled)
+    """Get current user's settings. Auth: Bearer JWT."""
+    return _settings_response(current_attorney)
 
 
 @app.post("/api/settings/tracking", response_model=SettingsResponse)
@@ -616,13 +644,54 @@ def update_tracking_setting(
     db.add(current_attorney)
     db.commit()
     db.refresh(current_attorney)
-    return SettingsResponse(tracking_enabled=current_attorney.tracking_enabled)
+    return _settings_response(current_attorney)
+
+
+@app.post("/api/settings/reminder", response_model=SettingsResponse)
+def update_reminder_setting(
+    payload: ReminderSettingUpdate,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db),
+):
+    """Set the daily review reminder time ("HH:MM" local, or null to turn off). Auth: Bearer JWT."""
+    current_attorney.reminder_time = payload.reminder_time
+    db.add(current_attorney)
+    db.commit()
+    db.refresh(current_attorney)
+    return _settings_response(current_attorney)
+
+
+@app.post("/api/settings/excluded-keywords", response_model=SettingsResponse)
+def update_excluded_keywords(
+    payload: ExcludedKeywordsUpdate,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db),
+):
+    """Set newline-separated substrings; matching activity from the desktop agent is dropped, not captured. Auth: Bearer JWT."""
+    current_attorney.excluded_keywords = payload.excluded_keywords
+    db.add(current_attorney)
+    db.commit()
+    db.refresh(current_attorney)
+    return _settings_response(current_attorney)
+
+
+@app.post("/api/settings/onboarding-complete", response_model=SettingsResponse)
+def complete_onboarding(
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db),
+):
+    """Mark the onboarding wizard as done so it isn't shown again. Auth: Bearer JWT."""
+    current_attorney.onboarding_completed = True
+    db.add(current_attorney)
+    db.commit()
+    db.refresh(current_attorney)
+    return _settings_response(current_attorney)
 
 
 @app.get("/api/agent/settings", response_model=SettingsResponse)
 def get_agent_settings(attorney: Attorney = Depends(get_attorney_from_api_key)):
-    """Get tracking_enabled for the desktop agent. Auth: X-API-Key."""
-    return SettingsResponse(tracking_enabled=attorney.tracking_enabled)
+    """Get settings for the desktop agent. Auth: X-API-Key."""
+    return _settings_response(attorney)
 
 
 # ============================================================================
@@ -653,6 +722,44 @@ def create_case(case: CaseCreate, current_attorney: Attorney = Depends(get_curre
     db.commit()
     db.refresh(db_case)
     return db_case
+
+@app.post("/api/cases/import", response_model=CaseImportResult)
+def import_cases(
+    request: CaseImportRequest,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db),
+):
+    """Bulk-create matters, e.g. from a CSV of name/client_name rows. Skips rows whose
+    name (case-insensitive) already exists as an active matter for this attorney."""
+    existing_names = {
+        c.name.strip().lower()
+        for c in db.query(Case).filter(Case.attorney_id == current_attorney.id, Case.status == "active").all()
+    }
+    created_cases: List[Case] = []
+    skipped = 0
+    seen_this_batch = set()
+    for row in request.rows:
+        name = (row.name or "").strip()
+        if not name:
+            skipped += 1
+            continue
+        key = name.lower()
+        if key in existing_names or key in seen_this_batch:
+            skipped += 1
+            continue
+        seen_this_batch.add(key)
+        db_case = Case(
+            name=name,
+            client_name=(row.client_name or "").strip() or None,
+            attorney_id=current_attorney.id,
+            firm_id=current_attorney.firm_id,
+        )
+        db.add(db_case)
+        created_cases.append(db_case)
+    db.commit()
+    for c in created_cases:
+        db.refresh(c)
+    return CaseImportResult(created=len(created_cases), skipped=skipped, cases=created_cases)
 
 @app.get("/api/cases", response_model=List[CaseResponse])
 def get_cases(
@@ -778,6 +885,26 @@ def _auto_assign_case(db: Session, attorney_id: int, activity_data: dict) -> Opt
             return rule.case_id
     return None
 
+def _is_excluded(attorney: Attorney, activity_data: dict) -> bool:
+    """Check the attorney's excluded-keywords list (newline-separated, case-insensitive
+    substrings) against the fields a user would recognize an app/site/contact by. Used only
+    at agent-capture time, so passive tracking never records what someone has excluded."""
+    raw = (attorney.excluded_keywords or "").strip()
+    if not raw:
+        return False
+    keywords = [k.strip().lower() for k in raw.splitlines() if k.strip()]
+    if not keywords:
+        return False
+    haystacks = [
+        (activity_data.get("document_name") or ""),
+        (activity_data.get("email_from") or ""),
+        (activity_data.get("email_subject") or ""),
+        (activity_data.get("contact_name") or ""),
+        (activity_data.get("description") or ""),
+    ]
+    haystack = " ".join(haystacks).lower()
+    return any(kw in haystack for kw in keywords)
+
 @app.post("/api/activities", response_model=ActivityResponse)
 def create_activity(
     activity: ActivityCreate,
@@ -791,12 +918,16 @@ def create_activity(
 
     # Auto-assign case based on rules (if no case already set)
     case_id = activity_dict.get("case_id")
+    confidence = None
     if not case_id:
         case_id = _auto_assign_case(db, current_attorney.id, activity_dict)
+        if case_id:
+            confidence = "high"
 
     db_activity = Activity(
         **activity_dict,
         case_id=case_id,
+        confidence=confidence,
         firm_id=current_attorney.firm_id,
         duration_minutes=duration
     )
@@ -952,6 +1083,31 @@ def bulk_assign_activities(
 
     db.commit()
     return {"message": f"Assigned {len(activities)} activities to case", "count": len(activities)}
+
+@app.post("/api/activities/bulk-approve")
+def bulk_approve_activities(
+    request: BulkApproveRequest,
+    current_attorney: Attorney = Depends(get_current_attorney),
+    db: Session = Depends(get_db)
+):
+    """Approve multiple activities at once. Entries without a matter assigned are skipped -
+    nothing is approved without both a matter and explicit user action."""
+    activities = db.query(Activity).filter(
+        Activity.id.in_(request.activity_ids),
+        Activity.attorney_id == current_attorney.id
+    ).all()
+
+    approved = 0
+    skipped = 0
+    for activity in activities:
+        if activity.case_id is None:
+            skipped += 1
+            continue
+        activity.status = "approved"
+        approved += 1
+
+    db.commit()
+    return {"approved": approved, "skipped": skipped}
 
 @app.post("/api/activities/merge", response_model=ActivityResponse)
 def merge_activities(
@@ -1219,6 +1375,11 @@ def agent_create_activity(
 
     duration = int((payload.end_time - payload.start_time).total_seconds() / 60)
     data = payload.dict()
+
+    if _is_excluded(attorney, data):
+        # Excluded apps/contacts are never captured, not just hidden after the fact.
+        return JSONResponse(status_code=200, content={"skipped": True, "reason": "excluded"})
+
     data["attorney_id"] = attorney.id
     data["firm_id"] = attorney.firm_id
     data["source"] = "agent"
@@ -1228,6 +1389,7 @@ def agent_create_activity(
     db_activity = Activity(
         **data,
         case_id=case_id,
+        confidence=("high" if case_id else None),
         duration_minutes=duration,
     )
     db.add(db_activity)

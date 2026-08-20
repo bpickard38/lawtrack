@@ -4,24 +4,24 @@ import { fetchCases } from './api';
 import { useAuth } from './AuthContext';
 import AuthPage from './components/AuthPage';
 import AdminDashboard from './components/AdminDashboard';
-import Profile from './components/Profile';
 import CaseReports from './components/CaseReports';
-import Timesheet from './components/Timesheet';
-import CaseRules from './components/CaseRules';
-import Privacy from './components/Privacy';
+import Today from './components/Today';
+import Matters from './components/Matters';
+import Settings from './components/Settings';
+import Onboarding from './components/Onboarding';
 import LandingPage from './components/LandingPage';
 import AgentStatusBadge from './components/AgentStatusBadge';
 import ConnectionBanner from './components/ConnectionBanner';
 import './styles.css';
 
-type View = 'timesheet' | 'reports' | 'rules' | 'profile' | 'privacy';
+type View = 'today' | 'matters' | 'approved' | 'settings';
 type PublicView = 'home' | 'auth';
 
 function App() {
   const { user, attorney, logout, isLoading: authLoading } = useAuth();
   
   const [cases, setCases] = useState<Case[]>([]);
-  const [currentView, setCurrentView] = useState<View>('timesheet');
+  const [currentView, setCurrentView] = useState<View>('today');
   const [loading, setLoading] = useState(true);
   const [publicView, setPublicView] = useState<PublicView>(
     () => window.location.hash === '#auth' ? 'auth' : 'home'
@@ -142,6 +142,11 @@ function App() {
     );
   }
 
+  // New attorney accounts complete a short setup wizard before reaching the dashboard.
+  if (!attorney.onboarding_completed) {
+    return <Onboarding onDone={() => { loadCases(); }} />;
+  }
+
   // Logged in, but user wants to view the homepage/marketing site.
   if (showHomepage) {
     return (
@@ -170,10 +175,10 @@ function App() {
                     onClick={() => {
                       setMarketingMenuOpen(false);
                       setShowHomepage(false);
-                      setCurrentView('profile');
+                      setCurrentView('settings');
                     }}
                   >
-                    Profile
+                    Settings
                   </button>
                   <button
                     type="button"
@@ -205,33 +210,33 @@ function App() {
 
           <nav className="nav-tabs">
             <button
-              className={`nav-tab ${currentView === 'timesheet' ? 'active' : ''}`}
-              onClick={() => setCurrentView('timesheet')}
+              className={`nav-tab ${currentView === 'today' ? 'active' : ''}`}
+              onClick={() => setCurrentView('today')}
             >
-              Timesheet
+              Today
             </button>
             <button
-              className={`nav-tab ${currentView === 'reports' ? 'active' : ''}`}
-              onClick={() => setCurrentView('reports')}
+              className={`nav-tab ${currentView === 'matters' ? 'active' : ''}`}
+              onClick={() => setCurrentView('matters')}
             >
-              Reports
+              Matters
             </button>
             <button
-              className={`nav-tab ${currentView === 'rules' ? 'active' : ''}`}
-              onClick={() => setCurrentView('rules')}
+              className={`nav-tab ${currentView === 'approved' ? 'active' : ''}`}
+              onClick={() => setCurrentView('approved')}
             >
-              Rules
+              Approved time
             </button>
             <button
-              className={`nav-tab ${currentView === 'privacy' ? 'active' : ''}`}
-              onClick={() => setCurrentView('privacy')}
+              className={`nav-tab ${currentView === 'settings' ? 'active' : ''}`}
+              onClick={() => setCurrentView('settings')}
             >
-              Privacy
+              Settings
             </button>
           </nav>
 
           {attorney && (
-            <AgentStatusBadge onClick={() => setCurrentView('profile')} />
+            <AgentStatusBadge onClick={() => setCurrentView('settings')} />
           )}
 
           <div className="attorney-info">
@@ -245,11 +250,11 @@ function App() {
             </button>
             {userMenuOpen && (
               <div className="user-menu-dropdown" role="menu">
-                {(currentView === 'profile' || currentView === 'privacy') ? (
+                {currentView === 'settings' ? (
                   <button
                     type="button"
                     className="user-menu-item"
-                    onClick={() => { setUserMenuOpen(false); setCurrentView('timesheet'); }}
+                    onClick={() => { setUserMenuOpen(false); setCurrentView('today'); }}
                   >
                     Back to app
                   </button>
@@ -257,9 +262,9 @@ function App() {
                   <button
                     type="button"
                     className="user-menu-item"
-                    onClick={() => { setUserMenuOpen(false); setCurrentView('profile'); }}
+                    onClick={() => { setUserMenuOpen(false); setCurrentView('settings'); }}
                   >
-                    Profile
+                    Settings
                   </button>
                 )}
                 <button
@@ -276,30 +281,33 @@ function App() {
       </header>
 
       <main className="app-main">
-        {currentView === 'profile' ? (
-          <Profile onBack={() => setCurrentView('timesheet')} />
-        ) : currentView === 'privacy' ? (
-          <Privacy onOpenProfile={() => setCurrentView('profile')} />
-        ) : currentView === 'timesheet' ? (
-          <div className="timesheet-view">
-            <Timesheet
-              attorneyId={attorney.id}
-              cases={cases}
-              onCaseAdded={handleCaseAdded}
-              onNavigateToRules={() => setCurrentView('rules')}
-              onNavigateToReports={() => setCurrentView('reports')}
-            />
-          </div>
-        ) : currentView === 'rules' ? (
-          <div className="rules-view">
-            <CaseRules cases={cases} />
-          </div>
+        {currentView === 'settings' ? (
+          <Settings cases={cases} onBack={() => setCurrentView('today')} />
+        ) : currentView === 'today' ? (
+          <Today
+            attorneyId={attorney.id}
+            attorney={attorney}
+            cases={cases}
+            onCaseAdded={handleCaseAdded}
+            onNavigateToApprovedTime={() => setCurrentView('approved')}
+          />
+        ) : currentView === 'matters' ? (
+          <Matters
+            attorneyId={attorney.id}
+            cases={cases}
+            onCasesChanged={handleCaseAdded}
+          />
         ) : (
           <div className="reports-view">
             <div className="view-header">
-              <h2>Case Time Reports</h2>
+              <h2>Approved time</h2>
             </div>
-            <CaseReports attorneyId={attorney.id} cases={cases} onCaseAdded={handleCaseAdded} />
+            <CaseReports
+              attorneyId={attorney.id}
+              cases={cases}
+              onCaseAdded={handleCaseAdded}
+              initialShowAddCase={false}
+            />
           </div>
         )}
       </main>

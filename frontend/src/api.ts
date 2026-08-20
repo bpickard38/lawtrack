@@ -1,4 +1,4 @@
-import type { Attorney, Case, Activity, ActivityCreate, CaseTimeSummary, CaseRule, RuleType } from './types';
+import type { Attorney, Case, Activity, ActivityCreate, CaseTimeSummary, CaseRule, RuleType, Settings } from './types';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -57,6 +57,16 @@ export async function deleteCase(caseId: number): Promise<void> {
     headers: getAuthHeaders()
   });
   if (!response.ok) throw new Error('Failed to delete case');
+}
+
+export async function importCases(rows: { name: string; client_name?: string }[]): Promise<{ created: number; skipped: number; cases: Case[] }> {
+  const response = await fetch(`${API_BASE}/api/cases/import`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ rows }),
+  });
+  if (!response.ok) throw new Error('Failed to import matters');
+  return response.json();
 }
 
 // Activities
@@ -139,6 +149,16 @@ export async function bulkAssignActivities(activityIds: number[], caseId: number
     body: JSON.stringify({ activity_ids: activityIds, case_id: caseId }),
   });
   if (!response.ok) throw new Error('Failed to bulk assign activities');
+  return response.json();
+}
+
+export async function bulkApproveActivities(activityIds: number[]): Promise<{ approved: number; skipped: number }> {
+  const response = await fetch(`${API_BASE}/api/activities/bulk-approve`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ activity_ids: activityIds }),
+  });
+  if (!response.ok) throw new Error('Failed to approve activities');
   return response.json();
 }
 
@@ -262,8 +282,8 @@ export async function revokeAgentKey(): Promise<void> {
   if (!response.ok) throw new Error('Failed to revoke agent key');
 }
 
-// Settings (tracking toggle)
-export async function getSettings(): Promise<{ tracking_enabled: boolean }> {
+// Settings
+export async function getSettings(): Promise<Settings> {
   const response = await fetch(`${API_BASE}/api/settings`, {
     headers: getAuthHeaders()
   });
@@ -271,13 +291,52 @@ export async function getSettings(): Promise<{ tracking_enabled: boolean }> {
   return response.json();
 }
 
-export async function updateTrackingEnabled(enabled: boolean): Promise<{ tracking_enabled: boolean }> {
+export async function updateTrackingEnabled(enabled: boolean): Promise<Settings> {
   const response = await fetch(`${API_BASE}/api/settings/tracking`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify({ enabled })
   });
   if (!response.ok) throw new Error('Failed to update tracking setting');
+  return response.json();
+}
+
+export async function updateReminderTime(reminderTime: string | null): Promise<Settings> {
+  const response = await fetch(`${API_BASE}/api/settings/reminder`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ reminder_time: reminderTime })
+  });
+  if (!response.ok) throw new Error('Failed to update reminder setting');
+  return response.json();
+}
+
+export async function updateExcludedKeywords(excludedKeywords: string): Promise<Settings> {
+  const response = await fetch(`${API_BASE}/api/settings/excluded-keywords`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ excluded_keywords: excludedKeywords })
+  });
+  if (!response.ok) throw new Error('Failed to update excluded keywords');
+  return response.json();
+}
+
+export async function completeOnboarding(): Promise<Settings> {
+  const response = await fetch(`${API_BASE}/api/settings/onboarding-complete`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) throw new Error('Failed to complete onboarding');
+  return response.json();
+}
+
+export async function updateAttorneyRate(billableRate: number): Promise<Attorney> {
+  const response = await fetch(`${API_BASE}/api/auth/attorney`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ billable_rate: billableRate })
+  });
+  if (!response.ok) throw new Error('Failed to update billable rate');
   return response.json();
 }
 

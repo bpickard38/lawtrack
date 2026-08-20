@@ -5,8 +5,11 @@ import {
   createActivity,
   updateActivity,
   deleteActivity,
+  bulkAssignActivities,
 } from '../api';
 import QuickActions from './QuickActions';
+import TimesheetReview from './TimesheetReview';
+import { parseUTC, toYMD } from '../utils/timesheetDates';
 
 const SLOT_MINUTES = 30;
 const GRID_START_HOUR = 6;
@@ -19,18 +22,14 @@ interface TimesheetProps {
   cases: Case[];
   onCaseAdded: () => void;
   onNavigateToRules?: () => void;
-  onNavigateToReports?: () => void;
+  onNewCase?: () => void;
+  /** When true, always shows the Calendar (workday timeline) and hides the Review tab -
+   * used when embedding this as the timeline under the Today page, which owns daily review itself. */
+  timelineOnly?: boolean;
 }
 
 type AddActivityPayload = { day: Date; slotIndex: number } | null;
 type EditActivityPayload = Activity | null;
-
-function toYMD(d: Date) {
-  const y = d.getFullYear();
-  const m = (d.getMonth() + 1).toString().padStart(2, '0');
-  const day = d.getDate().toString().padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 function slotToTime(slotIndex: number): { h: number; m: number } {
   const totalMin = slotIndex * SLOT_MINUTES;
@@ -44,16 +43,12 @@ function slotToDate(day: Date, slotIndex: number): Date {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m, 0, 0);
 }
 
-/** Parse API datetime as UTC so display (local) matches what we sent. Append Z if no tz. */
-function parseUTC(s: string): Date {
-  const t = s.trim();
-  if (!/Z$|[-+]\d{2}:?\d{2}$/.test(t) && t.includes('T')) return new Date(t + 'Z');
-  return new Date(t);
-}
-
-
-export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateToRules, onNavigateToReports }: TimesheetProps) {
+export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateToRules, onNewCase, timelineOnly }: TimesheetProps) {
   const [weekOffset, setWeekOffset] = useState(0);
+  const [view, setView] = useState<'review' | 'calendar'>('review');
+  const [isNarrow, setIsNarrow] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
+  );
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [addAt, setAddAt] = useState<AddActivityPayload>(null);
@@ -115,6 +110,18 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
+
+  // Smaller screens always get the Review view - the seven-column calendar
+  // isn't usable at mobile widths.
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 768px)');
+    const onChange = () => setIsNarrow(mql.matches);
+    onChange();
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  const effectiveView: 'review' | 'calendar' = timelineOnly ? 'calendar' : isNarrow ? 'review' : view;
 
   // Scroll grid to center on the red "now" line when viewing the week that contains today (e.g. on refresh)
   const todayInWeek = days.some(d => d.toDateString() === new Date().toDateString());
@@ -242,6 +249,56 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
     return activities.reduce((s, a) => s + a.duration_minutes, 0);
   }, [activities]);
 
+  const weekLabel = useMemo(() => {
+    const s = days[0], e = days[6];
+    const sm = s.toLocaleDateString('en-US', { month: 'long' });
+    const em = e.toLocaleDateString('en-US', { month: 'long' });
+    const yr = e.getFullYear();
+    return sm === em
+      ? `${sm} ${s.getDate()} – ${e.getDate()}, ${yr}`
+      : `${sm} ${s.getDate()} – ${em} ${e.getDate()}, ${yr}`;
+  }, [days]);
+
+  const handleAssignCase = useCallback(async (activityId: number, caseId: number | null) => {
+    const prev = activities;
+    setActivities(cur => cur.map(a => a.id === activityId ? { ...a, case_id: caseId } : a));
+    try {
+      await updateActivity(activityId, { case_id: caseId, status: 'edited' });
+    } catch (err) {
+      console.error('Failed to assign case:', err);
+      setActivities(prev);
+      alert('Failed to assign case: ' + (err as Error).message);
+    }
+  }, [activities]);
+
+  const handleBulkAssign = useCallback(async (activityIds: number[], caseId: number) => {
+    try {
+      await bulkAssignActivities(activityIds, caseId);
+      setActivities(cur => cur.map(a => activityIds.includes(a.id) ? { ...a, case_id: caseId } : a));
+    } catch (err) {
+      console.error('Failed to bulk assign activities:', err);
+      alert('Failed to assign case: ' + (err as Error).message);
+      throw err;
+    }
+  }, []);
+
+  const handleBulkDelete = useCallback(async (activityIds: number[]) => {
+    try {
+      await Promise.all(activityIds.map(id => deleteActivity(id)));
+      setActivities(cur => cur.filter(a => !activityIds.includes(a.id)));
+    } catch (err) {
+      console.error('Failed to delete activities:', err);
+      alert('Failed to delete one or more activities: ' + (err as Error).message);
+      loadActivities();
+      throw err;
+    }
+  }, [loadActivities]);
+
+  const handleEditActivity = (a: Activity) => {
+    setEditActivity(a);
+    setAddAt(null);
+  };
+
   const handleCellClick = (day: Date, slotIndex: number) => {
     setAddAt({ day, slotIndex });
     setEditActivity(null);
@@ -287,23 +344,67 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
 
   return (
     <div className="timesheet-calendar">
-      {onNavigateToReports && (
+      {onNewCase && !timelineOnly && (
         <QuickActions
-          onNewCase={onNavigateToReports}
+          onNewCase={onNewCase}
           onNewRule={onNavigateToRules ?? (() => {})}
           onLogActivity={handleQuickLogActivity}
         />
       )}
+
+      {!timelineOnly && (
+      <div className="ts-view-toggle" role="tablist" aria-label="Timesheet view">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={effectiveView === 'review'}
+          className={`ts-view-tab ${effectiveView === 'review' ? 'active' : ''}`}
+          onClick={() => setView('review')}
+        >
+          Review
+        </button>
+        {!isNarrow && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={effectiveView === 'calendar'}
+            className={`ts-view-tab ${effectiveView === 'calendar' ? 'active' : ''}`}
+            onClick={() => setView('calendar')}
+          >
+            Calendar
+          </button>
+        )}
+      </div>
+      )}
+
       {loading && (
         <div className="ts-loading" aria-live="polite">Loading timesheet…</div>
       )}
-      {!loading && activities.length === 0 && !hasInitialized.current && (
+      {!loading && effectiveView === 'review' && (
+        <TimesheetReview
+          days={days}
+          weekLabel={weekLabel}
+          activitiesByDay={activitiesByDay}
+          weekTotalMinutes={weekTotalMinutes}
+          cases={cases}
+          onToday={() => setWeekOffset(0)}
+          onPrevWeek={() => setWeekOffset(o => o - 1)}
+          onNextWeek={() => setWeekOffset(o => o + 1)}
+          onEditActivity={handleEditActivity}
+          onAssignCase={handleAssignCase}
+          onBulkAssign={handleBulkAssign}
+          onBulkDelete={handleBulkDelete}
+          getActivityName={getActivityName}
+          getActivityTypeLabel={getActivityTypeLabel}
+        />
+      )}
+      {!loading && effectiveView === 'calendar' && activities.length === 0 && !hasInitialized.current && (
         <div className="ts-empty-state">
           <h3 className="ts-empty-title">No activity this week</h3>
           <p className="ts-empty-desc">Click any time slot below to add an entry, or use the quick actions above.</p>
         </div>
       )}
-      {!loading && (
+      {!loading && effectiveView === 'calendar' && (
         <div className="ts-grid-outer">
           <div className="ts-grid-head-wrapper">
             <div className="ts-toolbar">
@@ -331,17 +432,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
                 >
                   ›
                 </button>
-                <span className="ts-week-label">
-                  {(() => {
-                    const s = days[0], e = days[6];
-                    const sm = s.toLocaleDateString('en-US', { month: 'long' });
-                    const em = e.toLocaleDateString('en-US', { month: 'long' });
-                    const yr = e.getFullYear();
-                    return sm === em
-                      ? `${sm} ${s.getDate()} – ${e.getDate()}, ${yr}`
-                      : `${sm} ${s.getDate()} – ${em} ${e.getDate()}, ${yr}`;
-                  })()}
-                </span>
+                <span className="ts-week-label">{weekLabel}</span>
               </div>
             </div>
             <div
@@ -522,7 +613,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
   );
 }
 
-interface ActivityModalProps {
+export interface ActivityModalProps {
   mode: 'add' | 'edit';
   attorneyId: number;
   cases: Case[];
@@ -535,7 +626,7 @@ interface ActivityModalProps {
   onDeleted?: (deletedId: number) => void;
 }
 
-function ActivityModal({
+export function ActivityModal({
   mode,
   attorneyId,
   cases,
@@ -574,6 +665,7 @@ function ActivityModal({
   const [name, setName] = useState(() => getActName(activity));
   const [description, setDescription] = useState(activity?.description ?? '');
   const [caseId, setCaseId] = useState<string>(activity?.case_id?.toString() ?? '');
+  const [isBillable, setIsBillable] = useState(activity?.is_billable ?? true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -606,6 +698,7 @@ function ActivityModal({
           start_time: start.toISOString(),
           end_time: end.toISOString(),
           description: description || undefined,
+          is_billable: isBillable,
         };
         if (type === 'document') payload.document_name = name || undefined;
         else if (type === 'email') payload.email_subject = name || undefined;
@@ -623,6 +716,7 @@ function ActivityModal({
           description: description || undefined,
           case_id: caseId ? parseInt(caseId) : null,
           status: 'edited',
+          is_billable: isBillable,
         };
         if (type === 'document') up.document_name = name || undefined;
         else if (type === 'email') up.email_subject = name || undefined;
@@ -696,6 +790,12 @@ function ActivityModal({
               <option value="">—</option>
               {cases.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+          </div>
+          <div className="ts-form-row ts-form-row-checkbox">
+            <label className="ts-checkbox-label">
+              <input type="checkbox" checked={isBillable} onChange={e => setIsBillable(e.target.checked)} />
+              Billable
+            </label>
           </div>
           <div className="ts-form-actions">
             {mode === 'edit' && onDeleted && (

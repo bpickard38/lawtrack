@@ -115,18 +115,35 @@ class AttorneyResponse(BaseModel):
     name: str
     email: str
     billable_rate: float
+    onboarding_completed: bool = False
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
+class AttorneyUpdate(BaseModel):
+    billable_rate: Optional[float] = None
+
+
 class SettingsResponse(BaseModel):
     tracking_enabled: bool
+    billable_rate: float
+    reminder_time: Optional[str] = None
+    excluded_keywords: Optional[str] = None
+    onboarding_completed: bool = False
 
 
 class TrackingSettingUpdate(BaseModel):
     enabled: bool
+
+
+class ReminderSettingUpdate(BaseModel):
+    reminder_time: Optional[str] = None  # "HH:MM", or None to turn off
+
+
+class ExcludedKeywordsUpdate(BaseModel):
+    excluded_keywords: Optional[str] = None  # newline-separated substrings
 
 
 # ============================================================================
@@ -143,6 +160,13 @@ class CaseUpdate(BaseModel):
     client_name: Optional[str] = None
     status: Optional[str] = None
 
+class CaseImportRow(BaseModel):
+    name: str
+    client_name: Optional[str] = None
+
+class CaseImportRequest(BaseModel):
+    rows: list[CaseImportRow]
+
 class CaseResponse(BaseModel):
     id: int
     name: str
@@ -150,9 +174,14 @@ class CaseResponse(BaseModel):
     attorney_id: int
     status: str
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
+
+class CaseImportResult(BaseModel):
+    created: int
+    skipped: int
+    cases: list[CaseResponse]
 
 # ============================================================================
 # ACTIVITY SCHEMAS
@@ -225,8 +254,9 @@ class ActivityResponse(BaseModel):
     is_billable: Optional[bool] = True
     narrative: Optional[str] = None
     status: Optional[str] = "captured"
+    confidence: Optional[str] = None
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -237,6 +267,9 @@ class ActivityResponse(BaseModel):
 class BulkAssignRequest(BaseModel):
     activity_ids: list[int]
     case_id: int
+
+class BulkApproveRequest(BaseModel):
+    activity_ids: list[int]
 
 class MergeActivitiesRequest(BaseModel):
     activity_ids: list[int]  # min 2

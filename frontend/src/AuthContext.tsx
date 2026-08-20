@@ -16,6 +16,7 @@ interface Attorney {
   name: string;
   email: string;
   billable_rate: number;
+  onboarding_completed: boolean;
 }
 
 interface AuthContextType {
@@ -33,6 +34,7 @@ interface AuthContextType {
   updateProfile: (args: { email?: string; fullName?: string }) => Promise<void>;
   changePassword: (args: { currentPassword: string; newPassword: string }) => Promise<void>;
   deleteAccount: () => Promise<void>;
+  refreshAttorney: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   oauthError: string | null;
@@ -257,6 +259,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout();
   }
 
+  async function refreshAttorney() {
+    if (!token) return;
+    const response = await fetch(`${API_BASE}/api/auth/attorney`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (response.ok) {
+      setAttorney(await response.json());
+    }
+  }
+
   function logout() {
     localStorage.removeItem('auth_token');
     setToken(null);
@@ -265,7 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, attorney, token, login, register, updateProfile, changePassword, deleteAccount, logout, isLoading, oauthError, clearOauthError }}>
+    <AuthContext.Provider value={{ user, attorney, token, login, register, updateProfile, changePassword, deleteAccount, refreshAttorney, logout, isLoading, oauthError, clearOauthError }}>
       {children}
     </AuthContext.Provider>
   );

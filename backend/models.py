@@ -60,6 +60,9 @@ class Attorney(Base):
     email = Column(String(255), unique=True, nullable=False)
     billable_rate = Column(DECIMAL(10, 2), default=300.00)
     tracking_enabled = Column(Boolean, default=True)
+    reminder_time = Column(String(5), nullable=True)  # "HH:MM" 24h local time for daily review reminder, or None
+    onboarding_completed = Column(Boolean, default=False)
+    excluded_keywords = Column(Text, nullable=True)  # newline-separated substrings; matching activity is not captured
     created_at = Column(TIMESTAMP, server_default=func.now())
 
 class Case(Base):
@@ -101,6 +104,7 @@ class Activity(Base):
     is_billable = Column(Boolean, default=True)
     narrative = Column(Text)  # Billing-friendly description
     status = Column(String(50), default="captured")  # captured/edited/approved/invoiced
+    confidence = Column(String(20), nullable=True)  # "high" when a case_rule matched deterministically, else None
     
     created_at = Column(TIMESTAMP, server_default=func.now())
 

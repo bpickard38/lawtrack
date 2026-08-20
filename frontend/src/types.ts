@@ -6,6 +6,7 @@ export interface Attorney {
   name: string;
   email: string;
   billable_rate: number;
+  onboarding_completed: boolean;
   created_at: string;
 }
 
@@ -42,6 +43,7 @@ export interface Activity {
   is_billable: boolean;
   narrative: string | null;
   status: ActivityStatus;
+  confidence: 'high' | null;
   created_at: string;
 }
 
@@ -78,6 +80,14 @@ export type RuleType =
   | 'email_domain_equals'
   | 'contact_name_contains'
   | 'description_contains';
+
+export interface Settings {
+  tracking_enabled: boolean;
+  billable_rate: number;
+  reminder_time: string | null;
+  excluded_keywords: string | null;
+  onboarding_completed: boolean;
+}
 
 export interface CaseRule {
   id: number;
