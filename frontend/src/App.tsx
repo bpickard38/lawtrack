@@ -89,7 +89,7 @@ function App() {
           <header className="app-header">
             <div className="header-content">
               <button className="app-logo" type="button" onClick={() => navigatePublic('home')}>
-                <img src="/logo.jpg" alt="" style={{height: '26px', width: 'auto', mixBlendMode: 'multiply'}} /><span style={{fontSize: '15px', fontWeight: 700, color: '#7A7A7A', letterSpacing: '-0.03em'}}>LawTrack</span>
+                <img src="/logo.jpg" alt="" style={{height: '26px', width: 'auto', mixBlendMode: 'multiply'}} /><span style={{fontSize: '15px', fontWeight: 700, color: '#476788', letterSpacing: '-0.03em'}}>LawTrack</span>
               </button>
               <button className="logout-btn" type="button" onClick={() => navigatePublic('home')}>
                 Back
@@ -200,7 +200,7 @@ function App() {
         <div className="header-content">
           <button className="app-logo" type="button" onClick={() => setShowHomepage(true)}>
             <img src="/logo.jpg" alt="" style={{height: '26px', width: 'auto', mixBlendMode: 'multiply'}} />
-            <span style={{fontSize: '15px', fontWeight: 700, color: '#7A7A7A', letterSpacing: '-0.03em'}}>LawTrack</span>
+            <span style={{fontSize: '15px', fontWeight: 700, color: '#476788', letterSpacing: '-0.03em'}}>LawTrack</span>
           </button>
 
           <nav className="nav-tabs">

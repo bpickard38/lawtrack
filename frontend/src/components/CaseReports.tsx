@@ -407,14 +407,14 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               onChange={(e) => setNewCaseName(e.target.value)}
               placeholder="Case name *"
               required
-              style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, flex: 1 }}
+              style={{ padding: '8px 12px', border: '1px solid #d4e0ed', borderRadius: 8, flex: 1 }}
             />
             <input
               type="text"
               value={newClientName}
               onChange={(e) => setNewClientName(e.target.value)}
               placeholder="Client name"
-              style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, flex: 1 }}
+              style={{ padding: '8px 12px', border: '1px solid #d4e0ed', borderRadius: 8, flex: 1 }}
             />
             <button type="submit" className="submit-btn" disabled={creatingCase} style={{ padding: '8px 16px' }}>
               {creatingCase ? 'Creating...' : 'Create'}
@@ -454,14 +454,14 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
               onChange={(e) => setNewCaseName(e.target.value)}
               placeholder="Case name *"
               required
-              style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, flex: 1 }}
+              style={{ padding: '8px 12px', border: '1px solid #d4e0ed', borderRadius: 8, flex: 1 }}
             />
             <input
               type="text"
               value={newClientName}
               onChange={(e) => setNewClientName(e.target.value)}
               placeholder="Client name"
-              style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, flex: 1 }}
+              style={{ padding: '8px 12px', border: '1px solid #d4e0ed', borderRadius: 8, flex: 1 }}
             />
             <button type="submit" className="submit-btn" disabled={creatingCase} style={{ padding: '8px 16px' }}>
               {creatingCase ? 'Creating...' : 'Create'}
@@ -704,7 +704,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                 <select
                   value={exportCaseId}
                   onChange={(e) => setExportCaseId(e.target.value === '' ? '' : Number(e.target.value))}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6 }}
+                  style={{ padding: '8px 12px', border: '1px solid #d4e0ed', borderRadius: 8 }}
                 >
                   <option value="">Select case</option>
                   {cases.map((c) => (
@@ -718,7 +718,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                   type="date"
                   value={exportStartDate}
                   onChange={(e) => setExportStartDate(e.target.value)}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6 }}
+                  style={{ padding: '8px 12px', border: '1px solid #d4e0ed', borderRadius: 8 }}
                 />
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -727,7 +727,7 @@ export default function CaseReports({ attorneyId, cases, onCaseAdded }: CaseRepo
                   type="date"
                   value={exportEndDate}
                   onChange={(e) => setExportEndDate(e.target.value)}
-                  style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6 }}
+                  style={{ padding: '8px 12px', border: '1px solid #d4e0ed', borderRadius: 8 }}
                 />
               </label>
             </div>
@@ -914,7 +914,7 @@ function BreakdownSection({
                             if (caseId) handleAssign(a, caseId);
                           }}
                           disabled={assigningId === a.id}
-                          style={{ padding: '4px 8px', fontSize: 12, marginRight: 8, border: '1px solid #e5e7eb', borderRadius: 4 }}
+                          style={{ padding: '4px 8px', fontSize: 12, marginRight: 8, border: '1px solid #d4e0ed', borderRadius: 4 }}
                           defaultValue=""
                         >
                           <option value="">Assign to...</option>
@@ -1103,7 +1103,7 @@ function DeleteConfirmModal({ activity, onConfirm, onCancel }: DeleteConfirmModa
     <div className="ts-modal-overlay" onClick={onCancel} style={{ zIndex: 1001 }}>
       <div className="ts-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
         <h3 style={{ marginBottom: 16 }}>Delete Activity?</h3>
-        <p style={{ marginBottom: 24, color: '#6b7280' }}>
+        <p style={{ marginBottom: 24, color: '#476788' }}>
           Are you sure you want to delete "{getActivityName(activity)}"? This action cannot be undone.
         </p>
         <div className="ts-form-actions">
@@ -1250,7 +1250,7 @@ function UnassignedActivityItem({
           {end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} ({activity.duration_minutes}m)
         </span>
         {activity.description && (
-          <span style={{ display: 'block', fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+          <span style={{ display: 'block', fontSize: 12, color: '#476788', marginTop: 4 }}>
             {activity.description}
           </span>
         )}
@@ -1259,7 +1259,7 @@ function UnassignedActivityItem({
         <select
           value={selectedCaseId}
           onChange={(e) => setSelectedCaseId(e.target.value)}
-          style={{ padding: '6px 12px', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 13 }}
+          style={{ padding: '6px 12px', border: '1px solid #d4e0ed', borderRadius: 8, fontSize: 13 }}
           disabled={assigningId === activity.id}
         >
           <option value="">Select case...</option>

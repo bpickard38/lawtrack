@@ -160,7 +160,7 @@ export default function Profile({ onBack }: { onBack: () => void }) {
             </button>
           </form>
 
-          <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+          <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #d4e0ed' }} />
 
           <h2 style={{ marginBottom: 12 }}>Change password</h2>
           <form onSubmit={handleChangePassword}>
@@ -183,9 +183,9 @@ export default function Profile({ onBack }: { onBack: () => void }) {
 
           {attorney && (
             <>
-              <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+              <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #d4e0ed' }} />
               <h2 style={{ marginBottom: 12 }}>Auto-tracking agent</h2>
-              <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
+              <p style={{ color: '#476788', fontSize: 14, marginBottom: 16 }}>
                 The desktop app tracks documents, email, and calls and sends activities to LawTrack. Install it, then
                 open the app and sign in with your LawTrack email and password — no API key needed.
               </p>
@@ -216,15 +216,15 @@ export default function Profile({ onBack }: { onBack: () => void }) {
               {/* Only one device can be connected at a time (a new sign-in replaces
                   the old key), so this is a single status card, not a device list. */}
               {agentKeyStatus?.has_key ? (
-                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
+                <div style={{ background: '#f0f3f8', border: '1px solid #d4e0ed', borderRadius: 8, padding: 12 }}>
                   <p style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
                     ● {agentKeyStatus.device_name || 'Unnamed device'} connected{' '}
                     <code style={{ fontSize: 12, fontWeight: 400 }}>({agentKeyStatus.key_prefix}…)</code>
                   </p>
-                  <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
+                  <p style={{ color: '#476788', fontSize: 13, margin: 0 }}>
                     Connected since {agentKeyStatus.created_at ? new Date(agentKeyStatus.created_at).toLocaleString() : 'unknown'}
                   </p>
-                  <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
+                  <p style={{ color: '#476788', fontSize: 13, margin: 0 }}>
                     Last synced: {agentKeyStatus.last_activity_at
                       ? new Date(agentKeyStatus.last_activity_at).toLocaleString()
                       : "never — hasn't sent any activity yet"}
@@ -239,8 +239,8 @@ export default function Profile({ onBack }: { onBack: () => void }) {
                   </button>
                 </div>
               ) : (
-                <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
-                  <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>
+                <div style={{ background: '#f0f3f8', border: '1px solid #d4e0ed', borderRadius: 8, padding: 12 }}>
+                  <p style={{ color: '#476788', fontSize: 13, margin: 0 }}>
                     No device connected yet. Signing in from the desktop app connects it automatically — or
                   </p>
                   <button
@@ -256,10 +256,10 @@ export default function Profile({ onBack }: { onBack: () => void }) {
             </>
           )}
 
-          <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+          <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid #d4e0ed' }} />
 
           <h2 style={{ marginBottom: 12 }}>Danger zone</h2>
-          <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
+          <p style={{ color: '#476788', fontSize: 14, marginBottom: 16 }}>
             Permanently delete your account and all associated data. This action cannot be undone.
           </p>
           <button
