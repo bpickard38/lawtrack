@@ -54,3 +54,8 @@ AGENTS.md
 linear.png
 linear.app_.png
 new logo.jpg
+
+# Original brand source files (unused by the site; the app serves logo.jpg / favicon.png)
+frontend/public/Logo.png
+frontend/public/Symbol.png
+frontend/public/Wordmark.png
