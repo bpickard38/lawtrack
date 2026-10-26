@@ -20,7 +20,7 @@ Lawyers bill in 6-minute increments, and many reconstruct their day from memory 
 - **Rule-based auto-assignment.** Each attorney defines prioritized rules (`document name contains "smith v jones"`, `email domain equals acmecorp.com`, …). Incoming activity is matched server-side and tagged *Auto-matched*. Anything unmatched lands in a review queue.
 - **Daily review workflow.** Activities move from `captured` → `edited` → `approved` → `invoiced`. You can bulk-approve, merge, split, or drag entries on a weekly calendar.
 - **Billing reports and PDF invoices.** Per-matter hour breakdowns by activity type, CSV export, and client invoices generated in the browser with jsPDF.
-- **Privacy controls.** Excluded keywords are checked before an activity is stored, so personal apps and sites are never recorded at all.
+- **Privacy controls.** Excluded keywords are checked before an activity is stored, so personal apps and sites are never recorded at all. Tracking can also be paused from any browser: the agent polls the setting and stops capturing, and the server rejects agent activity while paused.
 - **Multi-tenant and role-aware.** Data is scoped per attorney and per firm, with `attorney`, `billing`, and `admin` roles, JWT auth for the web app, Google sign-in, and separate hashed API keys for the desktop agent.
 
 | Matters | Auto-assignment rules |
