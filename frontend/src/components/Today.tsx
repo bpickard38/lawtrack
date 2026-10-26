@@ -3,6 +3,7 @@ import type { Activity, Case, RuleType } from '../types';
 import {
   fetchActivities, updateActivity, bulkApproveActivities,
   createCase, createCaseRule, getSettings, updateTrackingEnabled,
+  getAgentKeyStatus, isAgentInstalled,
 } from '../api';
 import { toYMD, formatDuration, formatClockTime, parseUTC } from '../utils/timesheetDates';
 import { computeWarnings, WARNING_LABELS } from '../utils/reviewWarnings';
@@ -77,6 +78,8 @@ export default function Today({ attorneyId, attorney, cases, onCaseAdded, onNavi
   const [newMatterClient, setNewMatterClient] = useState('');
   const [creatingMatter, setCreatingMatter] = useState(false);
   const [trackingEnabled, setTrackingEnabled] = useState<boolean | null>(null);
+  // The pause toggle controls the desktop agent, so it's only meaningful once one is installed.
+  const [agentInstalled, setAgentInstalled] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
 
   const date = useMemo(() => addDays(new Date(), dayOffset), [dayOffset]);
@@ -99,6 +102,7 @@ export default function Today({ attorneyId, attorney, cases, onCaseAdded, onNavi
 
   useEffect(() => {
     getSettings().then(s => setTrackingEnabled(s.tracking_enabled)).catch(() => {});
+    getAgentKeyStatus().then(s => setAgentInstalled(isAgentInstalled(s))).catch(() => {});
   }, []);
 
   const warningsById = useMemo(() => {
@@ -231,16 +235,18 @@ export default function Today({ attorneyId, attorney, cases, onCaseAdded, onNavi
           <span className="today-date-label">{isToday ? `Today · ${dateLabel}` : dateLabel}</span>
         </div>
         <div className="today-header-actions">
-          <button
-            type="button"
-            className={`today-tracking-pill ${trackingEnabled ? 'on' : 'off'}`}
-            onClick={handleToggleTracking}
-            disabled={trackingEnabled == null}
-            title="Pause or resume automatic capture"
-          >
-            <span className="today-tracking-dot" />
-            {trackingEnabled == null ? 'Loading…' : trackingEnabled ? 'Tracking' : 'Paused'}
-          </button>
+          {agentInstalled && (
+            <button
+              type="button"
+              className={`today-tracking-pill ${trackingEnabled ? 'on' : 'off'}`}
+              onClick={handleToggleTracking}
+              disabled={trackingEnabled == null}
+              title="Pause or resume the desktop app's automatic capture"
+            >
+              <span className="today-tracking-dot" />
+              {trackingEnabled == null ? 'Loading…' : trackingEnabled ? 'Tracking' : 'Paused'}
+            </button>
+          )}
           <button type="button" className="today-add-btn" onClick={() => setAddingActivity(true)}>
             + Add
           </button>

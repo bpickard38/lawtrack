@@ -248,6 +248,12 @@ export async function testCaseRules(activityData: {
 }
 
 // Agent API key (for auto-tracking desktop agent)
+// A key alone doesn't mean the desktop app is installed - registration creates
+// one automatically. The app always sends its device name when it signs in.
+export function isAgentInstalled(s: { has_key: boolean; device_name: string | null }): boolean {
+  return s.has_key && !!s.device_name;
+}
+
 export async function getAgentKeyStatus(): Promise<{
   has_key: boolean;
   key_prefix: string | null;

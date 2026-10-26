@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAgentKeyStatus } from '../api';
+import { getAgentKeyStatus, isAgentInstalled } from '../api';
 
 interface AgentStatusBadgeProps {
   onClick: () => void;
@@ -36,7 +36,7 @@ export default function AgentStatusBadge({ onClick }: AgentStatusBadgeProps) {
         .then((s) => {
           if (cancelled) return;
           setDeviceName(s.device_name);
-          setStatus(s.has_key ? 'connected' : 'not_connected');
+          setStatus(isAgentInstalled(s) ? 'connected' : 'not_connected');
           setCurrentActivity(
             s.current_activity_label && s.current_activity_started_at
               ? { label: s.current_activity_label, startedAt: s.current_activity_started_at }
