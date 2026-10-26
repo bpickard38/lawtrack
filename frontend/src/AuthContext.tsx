@@ -2,6 +2,17 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+// The API always answers errors with JSON {detail}. Anything else (an empty or
+// HTML body) means the request never reached it - usually a bad VITE_API_URL.
+async function errorFromResponse(response: Response, fallback: string): Promise<Error> {
+  try {
+    const body = await response.json();
+    return new Error(body.detail || fallback);
+  } catch {
+    return new Error(`Can't reach the LawTrack server (HTTP ${response.status}). Please try again shortly.`);
+  }
+}
+
 interface User {
   id: number;
   email: string;
@@ -144,8 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Login failed');
+      throw await errorFromResponse(response, 'Login failed');
     }
 
     const data = await response.json();
@@ -178,8 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Registration failed');
+      throw await errorFromResponse(response, 'Registration failed');
     }
 
     // Auto-login after registration; desktop agent uses same email/password to sign in
