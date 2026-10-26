@@ -15,6 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
+from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
 from datetime import datetime, timedelta
 
@@ -31,6 +32,8 @@ from schemas import (
     BulkAssignRequest, BulkApproveRequest, MergeActivitiesRequest, SplitActivityRequest,
     CaseRuleCreate, CaseRuleUpdate, CaseRuleResponse
 )
+from rules import first_matching_case
+from demo import DEMO_EMAIL, DEMO_PASSWORD, demo_enabled, ensure_fresh_demo, is_demo_user
 from auth_utils import (
     get_password_hash, verify_password, create_access_token,
     decode_access_token, oauth2_scheme, SECRET_KEY
@@ -46,6 +49,9 @@ def _ensure_schema() -> None:
     This project currently uses create_all() (no Alembic), so we add a small
     safety net to create the new firms table and add new columns if missing.
     """
+    if engine.dialect.name != "postgresql":
+        # e.g. the SQLite test database - create_all() below builds a fresh schema.
+        return
     try:
         with engine.begin() as conn:
             # Create new table(s) if missing
@@ -118,14 +124,14 @@ def _ensure_schema() -> None:
             conn.execute(text("ALTER TABLE agent_api_keys ADD COLUMN IF NOT EXISTS current_activity_started_at TIMESTAMP;"))
             conn.execute(text("ALTER TABLE agent_api_keys ADD COLUMN IF NOT EXISTS last_heartbeat_at TIMESTAMP;"))
     except Exception:
-        # Don't crash startup if this is running on a non-Postgres/local setup.
-        # The ORM create_all will still run below. Still log it, so a real
-        # migration failure on a Postgres deploy doesn't silently vanish.
+        # Don't crash startup on a failed migration step - the ORM create_all
+        # still runs below. Log it so a real failure doesn't silently vanish.
         LOG.exception("_ensure_schema() failed; falling back to Base.metadata.create_all()")
 
-# Create/upgrade tables
-_ensure_schema()
+# Create missing tables first (fresh databases get the full current schema),
+# then patch columns onto tables created by older versions.
 Base.metadata.create_all(bind=engine)
+_ensure_schema()
 
 app = FastAPI(title="LawTrack API", version="1.0.0")
 
@@ -236,6 +242,9 @@ async def get_attorney_from_api_key(
 @limiter.limit("10/hour")
 def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user. For attorneys, an agent API key is created and returned once."""
+    if user.email.lower() == DEMO_EMAIL:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
@@ -382,6 +391,17 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 @limiter.limit("10/minute")
 def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login and get access token"""
+    if form_data.username == DEMO_EMAIL:
+        if not demo_enabled():
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="The demo account is disabled")
+        if form_data.password == DEMO_PASSWORD:
+            try:
+                ensure_fresh_demo(db)
+            except SQLAlchemyError:
+                # Wipe + reseed is one transaction, so a failure leaves the previous
+                # demo data in place and the visitor still signs in to it.
+                db.rollback()
+                LOG.exception("Demo reseed failed")
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -404,6 +424,8 @@ def get_me(current_user: User = Depends(get_current_user)):
 @app.patch("/api/auth/me", response_model=UserUpdateResponse)
 def update_me(update: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Update current user's profile (name/email)."""
+    if is_demo_user(current_user):
+        raise HTTPException(status_code=403, detail="The demo account can't be changed. Create your own account to try this.")
     email_changed = False
 
     if update.email and update.email != current_user.email:
@@ -441,6 +463,8 @@ def update_me(update: UserUpdate, current_user: User = Depends(get_current_user)
 @app.post("/api/auth/change-password")
 def change_password(payload: PasswordChange, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Change current user's password."""
+    if is_demo_user(current_user):
+        raise HTTPException(status_code=403, detail="The demo account can't be changed. Create your own account to try this.")
     if not verify_password(payload.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
@@ -456,6 +480,8 @@ def change_password(payload: PasswordChange, current_user: User = Depends(get_cu
 @app.delete("/api/auth/me")
 def delete_account(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Delete the current user's account and all associated data."""
+    if is_demo_user(current_user):
+        raise HTTPException(status_code=403, detail="The demo account can't be changed. Create your own account to try this.")
     # Delete attorney profile if exists (cascades to activities, cases, rules, agent keys)
     if current_user.role == UserRole.ATTORNEY.value:
         attorney = db.query(Attorney).filter(Attorney.user_id == current_user.id).first()
@@ -505,6 +531,8 @@ def create_agent_key(
     db: Session = Depends(get_db),
 ):
     """Create or replace agent API key for auto-tracking. Returns raw key once; store it securely."""
+    if current_attorney.email == DEMO_EMAIL:
+        raise HTTPException(status_code=403, detail="The desktop agent can't be connected to the demo account. Create your own account to try it.")
     raw = "lt_" + secrets.token_urlsafe(24)
     key_hash = _hash_api_key(raw)
     key_prefix = _api_key_prefix(raw)
@@ -545,6 +573,8 @@ def agent_key_from_login(request: Request, payload: AgentKeyLoginRequest, db: Se
     Creates a key if the attorney doesn't have one. The agent stores it locally; user never sees it.
     """
     user = db.query(User).filter(User.email == payload.email).first()
+    if is_demo_user(user):
+        raise HTTPException(status_code=403, detail="The desktop agent can't be connected to the demo account. Create your own account to try it.")
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
     if not verify_password(payload.password, user.hashed_password):
@@ -698,13 +728,20 @@ def get_agent_settings(attorney: Attorney = Depends(get_attorney_from_api_key)):
 # ATTORNEYS (Protected)
 # ============================================================================
 
+def _visible_attorneys(current_user: User, db: Session):
+    """Attorneys in the caller's firm. Users without a firm only see themselves."""
+    query = db.query(Attorney)
+    if current_user.firm_id is None:
+        return query.filter(Attorney.user_id == current_user.id)
+    return query.filter(Attorney.firm_id == current_user.firm_id)
+
 @app.get("/api/attorneys", response_model=List[AttorneyResponse])
 def get_attorneys(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Attorney).all()
+    return _visible_attorneys(current_user, db).all()
 
 @app.get("/api/attorneys/{attorney_id}", response_model=AttorneyResponse)
 def get_attorney(attorney_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    attorney = db.query(Attorney).filter(Attorney.id == attorney_id).first()
+    attorney = _visible_attorneys(current_user, db).filter(Attorney.id == attorney_id).first()
     if not attorney:
         raise HTTPException(status_code=404, detail="Attorney not found")
     return attorney
@@ -845,34 +882,6 @@ def delete_case(
 # ACTIVITIES (Protected)
 # ============================================================================
 
-def _match_rule(rule: CaseRule, activity_data: dict) -> bool:
-    """Check if an activity matches a case rule (case-insensitive)."""
-    pattern = rule.pattern.lower()
-    rule_type = rule.rule_type
-
-    if rule_type == "document_contains":
-        doc_name = (activity_data.get("document_name") or "").lower()
-        return pattern in doc_name
-    elif rule_type == "email_subject_contains":
-        subject = (activity_data.get("email_subject") or "").lower()
-        return pattern in subject
-    elif rule_type == "email_from_contains":
-        email_from = (activity_data.get("email_from") or "").lower()
-        return pattern in email_from
-    elif rule_type == "email_domain_equals":
-        email_from = activity_data.get("email_from") or ""
-        if "@" in email_from:
-            domain = email_from.split("@")[1].lower()
-            return domain == pattern
-        return False
-    elif rule_type == "contact_name_contains":
-        contact = (activity_data.get("contact_name") or "").lower()
-        return pattern in contact
-    elif rule_type == "description_contains":
-        desc = (activity_data.get("description") or "").lower()
-        return pattern in desc
-    return False
-
 def _auto_assign_case(db: Session, attorney_id: int, activity_data: dict) -> Optional[int]:
     """Find the first matching rule and return the case_id, or None."""
     rules = db.query(CaseRule).filter(
@@ -880,10 +889,7 @@ def _auto_assign_case(db: Session, attorney_id: int, activity_data: dict) -> Opt
         CaseRule.enabled == True
     ).order_by(CaseRule.priority.desc(), CaseRule.id).all()
 
-    for rule in rules:
-        if _match_rule(rule, activity_data):
-            return rule.case_id
-    return None
+    return first_matching_case(rules, activity_data)
 
 def _is_excluded(attorney: Attorney, activity_data: dict) -> bool:
     """Check the attorney's excluded-keywords list (newline-separated, case-insensitive

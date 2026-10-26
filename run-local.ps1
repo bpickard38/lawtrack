@@ -114,7 +114,7 @@ FRONTEND_URL=http://localhost:5173
 "@ | Set-Content -Encoding utf8 $envPath
 }
 
-Write-Host "Seeding sample data (skips if already present)..." -ForegroundColor Cyan
+Write-Host "Seeding demo data..." -ForegroundColor Cyan
 Push-Location $backendDir
 & $venvPython init_db.py
 Pop-Location
@@ -170,7 +170,7 @@ if ($backendUp -and $frontendUp) {
 }
 Write-Host "  App:   http://localhost:5173" -ForegroundColor Yellow
 Write-Host "  API:   http://localhost:8001"
-Write-Host "  Login: demo@lawtrack.local / demopassword123"
+Write-Host "  Login: demo@lawtrack.app / demo1234"
 Write-Host ""
 Write-Host "Backend and frontend run hidden in the background (no terminal windows)."
 Write-Host "  Logs:  $logDir\backend.out.log, backend.err.log, frontend.out.log, frontend.err.log"

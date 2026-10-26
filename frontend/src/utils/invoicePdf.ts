@@ -65,7 +65,6 @@ export function buildAndDownloadInvoicePdf(
   const totalHours = totalMinutes / 60;
 
   const doc = new jsPDF({ format: 'a4', unit: 'mm' });
-  const pageW = doc.getPageWidth();
   let y = 20;
 
   // Header
@@ -82,11 +81,11 @@ export function buildAndDownloadInvoicePdf(
 
   // Table header
   doc.setFontSize(10);
-  doc.setFont(undefined, 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.text('Date', 20, y);
   doc.text('Description', 50, y);
   doc.text('Duration', 130, y);
-  doc.setFont(undefined, 'normal');
+  doc.setFont('helvetica', 'normal');
   y += 8;
 
   // Group by day for subtotals
@@ -110,9 +109,9 @@ export function buildAndDownloadInvoicePdf(
       doc.text(line.durationHHMM, 130, y);
       y += 6;
     }
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.text(`Subtotal ${date}: ${minutesToHHMM(dayTotal)}`, 50, y);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     y += 8;
   }
 
@@ -121,9 +120,9 @@ export function buildAndDownloadInvoicePdf(
     y = 20;
   }
   y += 4;
-  doc.setFont(undefined, 'bold');
+  doc.setFont('helvetica', 'bold');
   doc.text(`Grand total hours: ${totalHours.toFixed(2)}`, 20, y);
-  doc.setFont(undefined, 'normal');
+  doc.setFont('helvetica', 'normal');
 
   const filename = `invoice-${caseData.name.replace(/[^a-zA-Z0-9]/g, '-')}-${startDate}-${endDate}.pdf`;
   doc.save(filename);

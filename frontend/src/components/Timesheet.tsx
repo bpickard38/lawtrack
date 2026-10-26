@@ -43,7 +43,7 @@ function slotToDate(day: Date, slotIndex: number): Date {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m, 0, 0);
 }
 
-export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateToRules, onNewCase, timelineOnly }: TimesheetProps) {
+export default function Timesheet({ attorneyId, cases, onNavigateToRules, onNewCase, timelineOnly }: TimesheetProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [view, setView] = useState<'review' | 'calendar'>('review');
   const [isNarrow, setIsNarrow] = useState(() =>
@@ -57,12 +57,12 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
   const [dropTarget, setDropTarget] = useState<{ dayIndex: number; slotIndex: number } | null>(null);
   const [dragPreview, setDragPreview] = useState<{ x: number; y: number } | null>(null);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
-  const [didDrag, setDidDrag] = useState(false);
+  const [, setDidDrag] = useState(false);
   const dragRef = useRef<{ activity: Activity; startX: number; startY: number; didMove: boolean } | null>(null);
   const dropTargetRef = useRef<{ dayIndex: number; slotIndex: number } | null>(null);
   const gridBodyWrapRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
-  const [now, setNow] = useState(() => new Date());
+  const [, setNow] = useState(() => new Date());
 
   const { weekStart, weekEnd, days, slotCount } = useMemo(() => {
     const today = new Date();
@@ -241,7 +241,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
       const key = parseUTC(a.start_time).toDateString();
       if (map.has(key)) map.get(key)!.push(a);
     });
-    map.forEach((arr, k) => arr.sort((x, y) => parseUTC(x.start_time).getTime() - parseUTC(y.start_time).getTime()));
+    map.forEach(arr => arr.sort((x, y) => parseUTC(x.start_time).getTime() - parseUTC(y.start_time).getTime()));
     return map;
   }, [activities, days]);
 
@@ -524,7 +524,6 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
                   <div className="ts-day-blocks">
                     {dayActivities.map(a => {
                       const start = parseUTC(a.start_time);
-                      const end = parseUTC(a.end_time);
                       const dayStart = new Date(day);
                       dayStart.setHours(GRID_START_HOUR, 0, 0, 0);
                       const topMin = (start.getTime() - dayStart.getTime()) / 60000;
@@ -582,7 +581,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
           initialSlotIndex={addAt.slotIndex}
           slotToTime={slotToTime}
           onClose={() => setAddAt(null)}
-          onSaved={(created) => {
+          onSaved={() => {
             setAddAt(null);
             // Reload activities to ensure we have the latest data from server
             loadActivities();
@@ -598,7 +597,7 @@ export default function Timesheet({ attorneyId, cases, onCaseAdded, onNavigateTo
           activity={editActivity}
           slotToTime={slotToTime}
           onClose={() => setEditActivity(null)}
-          onSaved={(updated) => {
+          onSaved={() => {
             setEditActivity(null);
             // Reload activities to ensure we have the latest data from server
             loadActivities();

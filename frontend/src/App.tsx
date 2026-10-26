@@ -29,7 +29,6 @@ function App() {
   const [showHomepage, setShowHomepage] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [marketingMenuOpen, setMarketingMenuOpen] = useState(false);
-  const [showDesktopDownloadFallback, setShowDesktopDownloadFallback] = useState(false);
   const openDesktopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function navigatePublic(view: PublicView) {

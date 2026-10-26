@@ -3188,6 +3188,30 @@ body {
   cursor: not-allowed;
 }
 
+.auth-demo-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 16px;
+  border: 1px dashed #a6bbd1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0b3558;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.auth-demo-btn:hover:not(:disabled) {
+  border-color: #476788;
+  background: white;
+}
+
+.auth-demo-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .auth-footer-text {
   text-align: center;
   margin-top: 20px;
@@ -4738,6 +4762,24 @@ body {
   background: var(--color-pebble);
 }
 
+.today-delete-btn {
+  margin-left: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-paper);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: #C53030;
+  cursor: pointer;
+}
+
+.today-delete-btn:hover {
+  background: #FFF5F5;
+  border-color: #FED7D7;
+}
+
 @media (max-width: 700px) {
   .review-view {
     padding: 0 12px 24px;
@@ -4976,6 +5018,17 @@ body {
 .rule-actions .edit-btn:hover {
   background: #f8f9fb;
   border-color: #0b3558;
+}
+
+.rule-actions .delete-btn {
+  width: auto;
+  height: auto;
+  color: #C53030;
+  font-family: inherit;
+}
+
+.rule-actions {
+  flex-shrink: 0;
 }
 
 .rule-actions .delete-btn:hover {
@@ -5811,4 +5864,13 @@ body {
   .today-approve-btn {
     transition: none;
   }
+}
+.error-message {
+  background: #FFF5F5;
+  border: 1px solid #FED7D7;
+  color: #C53030;
+  padding: 11px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13.5px;
 }

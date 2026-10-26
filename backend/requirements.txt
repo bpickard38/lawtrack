@@ -15,3 +15,4 @@ openpyxl==3.1.5
 itsdangerous==2.2.0
 # Pin bcrypt to a version compatible with passlib on Railway (avoids backend issues)
 bcrypt==3.2.2
+tzdata>=2024.1  # zoneinfo data for the demo seeder on Windows/slim images

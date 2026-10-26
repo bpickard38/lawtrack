@@ -35,3 +35,22 @@ build/
 
 # Personal local dev helper scripts
 uninstall-agent-local.sh
+
+# Build outputs (ship the installer via GitHub Releases instead)
+Agent/installer_output/
+Agent/dist/
+Agent/build/
+frontend/public/LawTrackAgent-local.zip
+.local-logs/
+
+# Intermediates / local-only tooling
+.tmp/
+tools/
+.claude/
+.codex/
+AGENTS.md
+
+# Design reference images
+linear.png
+linear.app_.png
+new logo.jpg

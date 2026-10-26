@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const DEMO_EMAIL = 'demo@lawtrack.app';
+const DEMO_PASSWORD = 'demo1234';
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
@@ -30,17 +32,21 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
     }
   }, [oauthError, clearOauthError]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function signIn(loginEmail: string, loginPassword: string) {
     setError('');
     setIsLoading(true);
     try {
-      await login(email, password);
+      await login(loginEmail, loginPassword);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid email or password');
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    signIn(email, password);
   }
 
   return (
@@ -93,6 +99,15 @@ export default function Login({ onSwitchToRegister }: LoginProps) {
             {isLoading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+
+        <button
+          type="button"
+          className="auth-demo-btn"
+          disabled={isLoading}
+          onClick={() => signIn(DEMO_EMAIL, DEMO_PASSWORD)}
+        >
+          Explore the demo account
+        </button>
 
         <p className="auth-footer-text">
           No account?{' '}

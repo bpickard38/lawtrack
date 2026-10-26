@@ -171,7 +171,7 @@ export default function CaseRules({ cases, onRulesChanged }: CaseRulesProps) {
           onChange={e => { setTestInput(e.target.value); setTestResult(null); }}
           onKeyDown={e => e.key === 'Enter' && handleTest()}
         />
-        <button onClick={handleTest}>Test</button>
+        <button type="button" className="btn-outline" onClick={handleTest}>Test</button>
         {testResult && (
           <span className={`test-result ${testResult.matched ? 'matched' : 'no-match'}`}>
             {testResult.matched ? `→ ${testResult.case_name}` : 'No match'}

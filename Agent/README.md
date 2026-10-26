@@ -4,11 +4,11 @@ Desktop agent that tracks active windows (Word, Outlook, browsers, etc.) and sen
 
 ---
 
-## For your brother (or anyone at the firm) — install and use
+## Install and use
 
 ### 1. Get the installer
 
-- You (or your brother) need the file **`LawTrackAgent-Setup.exe`** (see “Building the installer” below for how to create it).
+- Download **`LawTrackAgent-Setup.exe`** from the [latest GitHub Release](https://github.com/bpickard38/lawtrack/releases/latest), or build it yourself (see “Building the installer” below).
 
 ### 2. Install
 
@@ -109,7 +109,7 @@ This creates **`dist/LawTrackAgent.exe`** (single file, no console window; tray 
 iscc installer.iss
 ```
 
-- The installer will be **`installer_output/LawTrackAgent-Setup.exe`**. Send that file to your brother (or your firm); they run it once to install and optionally “Run when I sign in”.
+- The installer will be **`installer_output/LawTrackAgent-Setup.exe`**. Users run it once to install and can optionally choose “Run when I sign in”.
 
 ### 4. Run without building an installer
 

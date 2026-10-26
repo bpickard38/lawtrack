@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../AuthContext';
 import { getAgentKeyStatus, createAgentKey, revokeAgentKey } from '../api';
 
-export default function Profile({ onBack }: { onBack: () => void }) {
+export default function Profile(_props: { onBack: () => void }) {
   const { user, attorney, updateProfile, changePassword, deleteAccount } = useAuth();
 
   const [fullName, setFullName] = useState('');
@@ -139,7 +139,6 @@ export default function Profile({ onBack }: { onBack: () => void }) {
 
         <div style={{ marginBottom: 16 }}>
           <div><strong>Role:</strong> {user?.role || 'attorney'}</div>
-          <div><strong>Firm ID:</strong> {user?.firm_id ?? '—'}</div>
           {attorney && (
             <div><strong>Billable rate:</strong> ${attorney.billable_rate}/hr</div>
           )}
@@ -155,7 +154,7 @@ export default function Profile({ onBack }: { onBack: () => void }) {
               <label>Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
-            <button type="submit" className="auth-submit-btn" disabled={saving}>
+            <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? 'Saving...' : 'Save changes'}
             </button>
           </form>
@@ -176,7 +175,7 @@ export default function Profile({ onBack }: { onBack: () => void }) {
               <label>Confirm new password</label>
               <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} required />
             </div>
-            <button type="submit" className="auth-submit-btn" disabled={saving}>
+            <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? 'Saving...' : 'Update password'}
             </button>
           </form>
@@ -207,7 +206,7 @@ export default function Profile({ onBack }: { onBack: () => void }) {
                     New key created — copy it now, it won't be shown again:
                   </p>
                   <code style={{ fontSize: 13, wordBreak: 'break-all' }}>{agentKeyJustCreated}</code>
-                  <button type="button" onClick={copyAgentKey} style={{ marginLeft: 8, fontSize: 13 }}>
+                  <button type="button" className="btn-outline" onClick={copyAgentKey} style={{ marginLeft: 8, fontSize: 13 }}>
                     Copy
                   </button>
                 </div>
