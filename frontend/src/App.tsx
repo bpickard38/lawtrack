@@ -14,6 +14,8 @@ import AgentStatusBadge from './components/AgentStatusBadge';
 import ConnectionBanner from './components/ConnectionBanner';
 import './styles.css';
 
+const DEMO_EMAIL = 'demo@lawtrack.app';
+
 type View = 'today' | 'matters' | 'approved' | 'settings';
 type PublicView = 'home' | 'auth';
 
@@ -235,7 +237,7 @@ function App() {
           </nav>
 
           {attorney && (
-            <AgentStatusBadge onClick={() => setCurrentView('settings')} />
+            <AgentStatusBadge onClick={() => setCurrentView('settings')} isDemo={user.email === DEMO_EMAIL} />
           )}
 
           <div className="attorney-info">

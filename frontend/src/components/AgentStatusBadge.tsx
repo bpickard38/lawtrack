@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { getAgentKeyStatus, isAgentInstalled } from '../api';
+import InstallAgentModal from './InstallAgentModal';
 
 interface AgentStatusBadgeProps {
   onClick: () => void;
+  isDemo: boolean;
 }
 
 type Status = 'loading' | 'not_connected' | 'connected' | 'offline';
@@ -22,8 +24,9 @@ function formatElapsed(startedAt: string, now: number): string {
   return `${hours}h ${minutes % 60}m`;
 }
 
-export default function AgentStatusBadge({ onClick }: AgentStatusBadgeProps) {
+export default function AgentStatusBadge({ onClick, isDemo }: AgentStatusBadgeProps) {
   const [status, setStatus] = useState<Status>('loading');
+  const [showInstall, setShowInstall] = useState(false);
   const [deviceName, setDeviceName] = useState<string | null>(null);
   const [currentActivity, setCurrentActivity] = useState<CurrentActivity | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -81,15 +84,20 @@ export default function AgentStatusBadge({ onClick }: AgentStatusBadgeProps) {
     status === 'offline' ? 'agent-status-dot-stale' :
     'agent-status-dot-off';
 
+  const notConnected = status === 'not_connected';
+
   return (
-    <button
-      type="button"
-      className="agent-status-badge"
-      onClick={onClick}
-      title="View desktop agent connection details"
-    >
-      <span className={`agent-status-dot ${dotClass}`} />
-      {label}
-    </button>
+    <>
+      <button
+        type="button"
+        className="agent-status-badge"
+        onClick={notConnected ? () => setShowInstall(true) : onClick}
+        title={notConnected ? 'Install the desktop app' : 'View desktop agent connection details'}
+      >
+        <span className={`agent-status-dot ${dotClass}`} />
+        {label}
+      </button>
+      {showInstall && <InstallAgentModal isDemo={isDemo} onClose={() => setShowInstall(false)} />}
+    </>
   );
 }

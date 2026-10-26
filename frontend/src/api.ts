@@ -248,6 +248,10 @@ export async function testCaseRules(activityData: {
 }
 
 // Agent API key (for auto-tracking desktop agent)
+export const AGENT_INSTALLER_URL =
+  (import.meta.env.VITE_AGENT_INSTALLER_URL as string | undefined) ||
+  'https://github.com/bpickard38/lawtrack/releases/latest/download/LawTrackAgent-Setup.exe';
+
 // A key alone doesn't mean the desktop app is installed - registration creates
 // one automatically. The app always sends its device name when it signs in.
 export function isAgentInstalled(s: { has_key: boolean; device_name: string | null }): boolean {
